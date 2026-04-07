@@ -39,6 +39,23 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - Cmd+B — build only
 - Cmd+Shift+K — clean build folder
 
+## Gotchas (Learned the Hard Way)
+- ALWAYS force light mode — `INFOPLIST_KEY_UIUserInterfaceStyle: Light` in project.yml AND `.preferredColorScheme(.light)` on root view
+- NEVER use `Color(.systemGray6)` or any adaptive system colors — use explicit hex `Color(hex: "F3F4F6")`
+- NEVER use `.foregroundStyle(.secondary)` — use explicit `Color(hex: "6B7280")`
+- `@Observable` CANNOT track computed properties that read from UserDefaults — use a stored property with `didSet` to persist
+- `scaleEffect()` on large views (1080x1920) does NOT work for previews — the layout engine still allocates full size. Use inline screen-sized preview instead.
+- `.sheet(item:)` is more reliable than `.sheet(isPresented:)` when the sheet content depends on state set at tap time
+- `xcodegen generate` resets the signing team — user must re-select in Xcode
+- Integer division in Swift: `250/255 = 0` not `0.98`. Use `250.0/255.0` for UIColor
+- Claude API may return JSON wrapped in markdown fences — always strip them server-side
+- Edge Functions with `verify_jwt = true` block the auth token from reaching the function code — use `--no-verify-jwt` and validate in-function
+
+## Supabase Project
+- Ref: hxfiaowayrhuhzhhbaix
+- Region: East US (North Virginia)
+- Bundle ID: com.loucesario.seek
+
 ## Current Phase
 Phase 1 — MVP (App Store Ready)
 See @docs/build-plan.md for task checklist

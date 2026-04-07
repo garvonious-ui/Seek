@@ -76,3 +76,51 @@
 - Premium template lock overlay in card creator
 - Decision: Local notification scheduling as fallback (server push needs APNs cert)
 - Remaining: App icon, launch screen, AdMob, offline mode, App Store assets
+
+## 2026-04-07 — Session 2 (Color Palette, Auth Fixes, Features, Testing)
+
+### Built
+- Switched entire color palette from blue/gold to Gold + Soft Sage (#5B7B5E, #CDA349, #8AAF8D)
+- Forced light mode (INFOPLIST_KEY_UIUserInterfaceStyle + .preferredColorScheme(.light))
+- Replaced ALL Color(.systemGray6) with explicit Color(hex: "F3F4F6") across all views
+- Replaced ALL .foregroundStyle(.secondary/.tertiary) with explicit hex colors
+- Created Supabase project "Seek" (hxfiaowayrhuhzhhbaix), pushed DB schema, deployed Edge Functions
+- Set Anthropic API key in Supabase secrets — chat is live with Claude
+- Fixed auth flow: hasCompletedOnboarding changed from computed UserDefaults property to stored @Observable property (SwiftUI couldn't track UserDefaults changes)
+- Reordered onboarding: Welcome → Sign In → Personalization → Notifications
+- Returning users (sign in) skip personalization/notifications, go straight to home
+- Revamped home screen: time-based greeting, 6 quick prompt chips in 2-col grid, removed redundant "Start a conversation" button
+- ChatListView: recent conversations list + "New Conversation" button on Chat tab
+- Load past conversations: messages parsed from stored JSON back into verse cards, prayer cards, etc.
+- Card creator: fixed blank screen (inline preview instead of 1080x1920 scaleEffect)
+- Card creator: .sheet(item:) instead of .sheet(isPresented:) — fixes blank on first tap
+- Chat JSON parsing: strip markdown fences from Claude response, "return raw JSON only" in system prompt
+- Action steps: Claude returns practical real-world actions based on emotional state (e.g., Anxiety → "Release + Move")
+- Action card UI: numbered steps with sage green styling
+- Worship song: Apple Music + Spotify deep links with web fallback
+- Heart toggle: filled/unfilled state on daily verse and chat verse cards
+- Favorites → Create Card: tap any favorited verse to open card creator
+- NSPhotoLibraryAddUsageDescription added to Info.plist (was crashing on save)
+- Edge Functions deployed with --no-verify-jwt (chat + daily-verse)
+- User account set to premium in Supabase for testing
+
+### Decisions
+- Dark mode root cause: app never forced light mode, user's phone was in dark mode
+- Removed UIKit UINavigationBarAppearance hacks — unnecessary with forced light mode
+- Google Sign-In deferred to post-launch
+- AdMob deferred to post-launch
+- Action steps added to Claude system prompt with examples for common emotions
+
+### Bugs Found / Issues for Next Session
+- Apple Sign In needs Apple Service ID configured in Supabase dashboard
+- daily_verses table is empty — daily verse returns 404, fallback shows Psalm 46:1
+- Loading past conversations opens them read-only — can't continue the conversation
+- Premium upgrade sheet not wired from rate limit card in chat
+- SupabaseService still has a stale TODO comment about credentials (they're set)
+- xcodegen resets signing team on every regenerate — need to add team ID to project.yml
+
+### Current Status
+- Phase 1 MVP: ~85% complete
+- All core features working: auth, chat with Claude, card creator, library, streaks, notifications, monetization
+- Remaining: App icon, launch screen, AdMob, offline mode, App Store assets, TestFlight, final QA
+- 8 commits on main, Supabase project live with Edge Functions deployed
