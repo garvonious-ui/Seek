@@ -7,17 +7,45 @@ struct HomeView: View {
     @Query private var profiles: [UserProfile]
     @State private var dailyVerse: DailyVerse?
     @State private var isLoadingVerse = false
-    @State private var navigateToChat = false
     @State private var showProfile = false
+    @State private var chatPrompt: String?
 
     private var profile: UserProfile? { profiles.first }
+
+    private var greeting: String {
+        let hour = Calendar.current.component(.hour, from: .now)
+        let name = profile?.displayName.isEmpty == false ? ", \(profile!.displayName)" : ""
+        switch hour {
+        case 5..<12: return "Good morning\(name)"
+        case 12..<17: return "Good afternoon\(name)"
+        case 17..<21: return "Good evening\(name)"
+        default: return "Peace be with you\(name)"
+        }
+    }
+
+    private let quickPrompts = [
+        ("I'm feeling grateful", "heart.fill"),
+        ("I need strength today", "bolt.heart.fill"),
+        ("Help me find peace", "leaf.fill"),
+        ("I want to praise God", "hands.sparkles.fill"),
+        ("Going through something hard", "cloud.rain.fill"),
+        ("I'm celebrating!", "party.popper.fill"),
+    ]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
-                    // Streak Counter
-                    HStack {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Greeting + streak
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(greeting)
+                                .font(.title2.bold())
+                                .foregroundStyle(Color(hex: "1A1A1A"))
+                            Text("What's on your heart?")
+                                .font(.subheadline)
+                                .foregroundStyle(Color(hex: "6B7280"))
+                        }
                         Spacer()
                         Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
                             .font(.headline)
@@ -31,41 +59,43 @@ struct HomeView: View {
                     // Daily Verse Card
                     dailyVerseCard
 
-                    // Remaining chats indicator
-                    if let profile {
-                        let remaining = (profile.isPremium ? 50 : 5) - profile.dailyChatsUsed
-                        HStack(spacing: 4) {
-                            Image(systemName: "bubble.left.and.bubble.right")
-                                .font(.caption)
-                            Text("\(max(remaining, 0)) chats remaining today")
-                                .font(.caption)
-                        }
-                        .foregroundStyle(Color(hex: "9CA3AF"))
-                    }
+                    // Quick Prompts
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Seek scripture for...")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color(hex: "6B7280"))
+                            .padding(.horizontal)
 
-                    // Chat Prompt
-                    VStack(spacing: 16) {
-                        Text("What's on your heart today?")
-                            .font(.title2.bold())
-                            .foregroundStyle(Color(hex: "1A1A1A"))
-
-                        NavigationLink(destination: ChatView()) {
-                            HStack {
-                                Image(systemName: "message")
-                                Text("Start a conversation")
+                        LazyVGrid(columns: [
+                            GridItem(.flexible(), spacing: 10),
+                            GridItem(.flexible(), spacing: 10),
+                        ], spacing: 10) {
+                            ForEach(quickPrompts, id: \.0) { prompt, icon in
+                                NavigationLink {
+                                    ChatView(initialMessage: prompt)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: icon)
+                                            .font(.system(size: 14))
+                                            .foregroundStyle(Color(hex: "5B7B5E"))
+                                        Text(prompt)
+                                            .font(.caption)
+                                            .foregroundStyle(Color(hex: "1A1A1A"))
+                                            .lineLimit(1)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 14)
+                                    .background(.white)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
+                                }
                             }
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(hex: "5B7B5E"))
-                            .foregroundStyle(.white)
-                            .clipShape(RoundedRectangle(cornerRadius: 24))
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
 
-                    Spacer(minLength: 80)
+                    Spacer(minLength: 40)
                 }
                 .padding(.top)
             }

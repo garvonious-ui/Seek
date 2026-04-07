@@ -16,7 +16,7 @@ struct ContentView: View {
                 }
                 .tag(Tab.home)
 
-            ChatView()
+            ChatListView()
                 .tabItem {
                     Image(systemName: "message.fill")
                     Text("Chat")

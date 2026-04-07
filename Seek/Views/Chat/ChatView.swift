@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct ChatView: View {
+    var initialMessage: String? = nil
+
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @State private var messageText = ""
@@ -13,6 +15,7 @@ struct ChatView: View {
     @State private var showCardCreator = false
     @State private var selectedVerse: VerseResult?
     @State private var scrollToBottom = false
+    @State private var hasLoadedInitialMessage = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -87,6 +90,13 @@ struct ChatView: View {
         .background(Color(hex: "FAFAF6"))
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if let initial = initialMessage, !hasLoadedInitialMessage {
+                hasLoadedInitialMessage = true
+                messageText = initial
+                sendMessage()
+            }
+        }
         .sheet(isPresented: $showCardCreator) {
             if let verse = selectedVerse {
                 CardCreatorView(
