@@ -124,3 +124,23 @@
 - All core features working: auth, chat with Claude, card creator, library, streaks, notifications, monetization
 - Remaining: App icon, launch screen, AdMob, offline mode, App Store assets, TestFlight, final QA
 - 8 commits on main, Supabase project live with Edge Functions deployed
+
+## 2026-04-07 — Session 2b (TestFlight Deploy)
+- Generated 1024x1024 app icon (sage green + gold circle + book + "Seek" text)
+- Added iPad orientation support (all 4 orientations required by App Store)
+- Added DEVELOPMENT_TEAM (6QU295KVS2) to project.yml
+- Added NSPhotoLibraryAddUsageDescription to Info.plist
+- Created "Seek - Scripture Companion" app record in App Store Connect
+- Successfully archived and uploaded Seek 1.0.0 (1) to TestFlight
+- App name "Seek" was taken — using "Seek - Scripture Companion" on App Store
+- 10 commits on main
+
+### Remaining for App Store submission
+- Professional app icon (current is placeholder)
+- App Store screenshots (6.7" and 6.1")
+- Privacy nutrition labels
+- Seed daily_verses table (365 verses)
+- Configure Apple Sign In service ID in Supabase
+- AdMob integration (optional for launch)
+- Offline mode handling
+- Final QA pass

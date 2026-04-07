@@ -98,7 +98,7 @@
 - [ ] App Store screenshots (6.7" and 6.1")
 - [ ] App Store description and metadata
 - [ ] Privacy nutrition labels
-- [ ] TestFlight beta distribution
+- [x] TestFlight beta distribution
 - [ ] Final QA pass
 - [ ] Submit to App Store
 
