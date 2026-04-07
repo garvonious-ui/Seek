@@ -130,28 +130,33 @@ struct FavoritesListView: View {
         } else {
             List {
                 ForEach(favorites) { verse in
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(verse.reference)
-                            .font(.subheadline.bold())
-                            .foregroundStyle(Color(hex: "5B7B5E"))
-                        Text(verse.text)
-                            .font(.custom("Georgia", size: 14))
-                            .lineSpacing(3)
-                            .lineLimit(3)
-                        HStack {
-                            Text(verse.source == "daily_verse" ? "Daily Verse" : "Chat")
-                                .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(hex: "5B7B5E").opacity(0.08))
-                                .clipShape(Capsule())
-                            Spacer()
-                            Text(verse.savedAt.formatted(.dateTime.month(.abbreviated).day()))
-                                .font(.caption2)
-                                .foregroundStyle(Color(hex: "9CA3AF"))
+                    NavigationLink {
+                        CardCreatorView(verseReference: verse.reference, verseText: verse.text)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(verse.reference)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(Color(hex: "5B7B5E"))
+                            Text(verse.text)
+                                .font(.custom("Georgia", size: 14))
+                                .lineSpacing(3)
+                                .lineLimit(3)
+                                .foregroundStyle(Color(hex: "1A1A1A"))
+                            HStack {
+                                Text(verse.source == "daily_verse" ? "Daily Verse" : "Chat")
+                                    .font(.caption2)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color(hex: "5B7B5E").opacity(0.08))
+                                    .clipShape(Capsule())
+                                Spacer()
+                                Label("Create Card", systemImage: "rectangle.on.rectangle")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(Color(hex: "5B7B5E"))
+                            }
                         }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
                     .contextMenu {
                         Button {
                             UIPasteboard.general.string = "\(verse.text)\n— \(verse.reference)"
@@ -188,7 +193,7 @@ struct HistoryListView: View {
             List {
                 ForEach(conversations) { conversation in
                     NavigationLink {
-                        ChatView()
+                        ChatView(existingConversation: conversation)
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(conversation.summary ?? "Scripture chat")

@@ -31,7 +31,7 @@ struct ChatListView: View {
                         Section {
                             ForEach(conversations) { conversation in
                                 NavigationLink {
-                                    ChatView()
+                                    ChatView(existingConversation: conversation)
                                 } label: {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(conversation.summary ?? "Scripture chat")

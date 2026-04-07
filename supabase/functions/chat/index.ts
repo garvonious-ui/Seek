@@ -37,8 +37,22 @@ Respond in this JSON format:
     "artist": "Artist name",
     "context": "One sentence on why this song fits"
   },
-  "followUp": "Optional — a gentle prompt for further exploration"
+  "followUp": "Optional — a gentle prompt for further exploration",
+  "action": {
+    "title": "A short action title like 'Release + Move' or 'Express It'",
+    "steps": ["Step 1", "Step 2", "Step 3"],
+    "reason": "One sentence on why this action helps"
+  }
 }
+
+Also include a practical "action" — a real-world step the user can take right now based on their emotional state. Examples:
+- Anxiety → "Release + Move": Take a 10-minute walk without your phone, Speak your worries out loud to God, Write down what you can control vs. what you can't
+- Gratitude → "Express It": Tell someone "thank you" directly, Write down 3 blessings, Give generously (time or resource)
+- Grief → "Sit + Remember": Light a candle and sit in silence for 5 minutes, Write a letter to who you're missing, Call someone who knew them too
+- Celebration → "Share the Joy": Text someone the good news, Do something kind for a stranger, Dance or sing — literally
+- Depression → "One Small Step": Get outside for 5 minutes, Text one person you trust, Do one act of service for someone else
+
+The action should feel doable, not overwhelming. 2-3 concrete steps. Match the user's energy.
 
 IMPORTANT: Return ONLY the raw JSON object. Do NOT wrap it in markdown code fences or any other formatting. Just the raw JSON.`;
 

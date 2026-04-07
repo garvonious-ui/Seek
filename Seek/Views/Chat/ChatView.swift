@@ -3,16 +3,17 @@ import SwiftData
 
 struct ChatView: View {
     var initialMessage: String? = nil
+    var existingConversation: ChatConversation? = nil
 
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
+    @Query private var favoriteVerses: [FavoriteVerse]
     @State private var messageText = ""
     @State private var messages: [DisplayMessage] = []
     @State private var isLoading = false
     @State private var conversationHistory: [[String: String]] = []
     @State private var currentConversation: ChatConversation?
     @State private var rateLimitMessage: String?
-    @State private var showCardCreator = false
     @State private var selectedVerse: VerseResult?
     @State private var scrollToBottom = false
     @State private var hasLoadedInitialMessage = false
@@ -41,6 +42,8 @@ struct ChatView: View {
                                 prayerCard(text)
                             case .worshipSong(let song):
                                 worshipSongCard(song)
+                            case .action(let action):
+                                actionCard(action)
                             case .followUp(let text):
                                 followUpBubble(text)
                             case .error(let text):
@@ -91,19 +94,27 @@ struct ChatView: View {
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if let initial = initialMessage, !hasLoadedInitialMessage {
+            if !hasLoadedInitialMessage {
                 hasLoadedInitialMessage = true
-                messageText = initial
-                sendMessage()
+
+                // Load existing conversation
+                if let conv = existingConversation {
+                    currentConversation = conv
+                    loadConversationMessages(conv)
+                }
+
+                // Auto-send initial message from quick prompt
+                if let initial = initialMessage {
+                    messageText = initial
+                    sendMessage()
+                }
             }
         }
-        .sheet(isPresented: $showCardCreator) {
-            if let verse = selectedVerse {
-                CardCreatorView(
-                    verseReference: verse.reference,
-                    verseText: verse.text
-                )
-            }
+        .sheet(item: $selectedVerse) { verse in
+            CardCreatorView(
+                verseReference: verse.reference,
+                verseText: verse.text
+            )
         }
     }
 
@@ -180,7 +191,6 @@ struct ChatView: View {
             ForEach(verses) { verse in
                 Button {
                     selectedVerse = verse
-                    showCardCreator = true
                 } label: {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(verse.reference)
@@ -196,8 +206,16 @@ struct ChatView: View {
                             .font(.caption)
                             .foregroundStyle(Color(hex: "6B7280"))
 
-                        HStack {
+                        HStack(spacing: 16) {
                             Spacer()
+                            Button {
+                                toggleFavorite(verse)
+                            } label: {
+                                let isFav = favoriteVerses.contains { $0.reference == verse.reference }
+                                Label("Favorite", systemImage: isFav ? "heart.fill" : "heart")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(Color(hex: "CDA349"))
+                            }
                             Label("Create Card", systemImage: "rectangle.on.rectangle")
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(Color(hex: "5B7B5E"))
@@ -283,6 +301,39 @@ struct ChatView: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(hex: "5B7B5E").opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func actionCard(_ action: ActionStep) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(action.title, systemImage: "figure.walk")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(hex: "5B7B5E"))
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(action.steps.enumerated()), id: \.offset) { index, step in
+                    HStack(alignment: .top, spacing: 10) {
+                        Text("\(index + 1)")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 20, height: 20)
+                            .background(Color(hex: "5B7B5E"))
+                            .clipShape(Circle())
+                        Text(step)
+                            .font(.subheadline)
+                            .foregroundStyle(Color(hex: "1A1A1A"))
+                    }
+                }
+            }
+
+            Text(action.reason)
+                .font(.caption)
+                .foregroundStyle(Color(hex: "6B7280"))
+                .italic()
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: "5B7B5E").opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -422,6 +473,11 @@ struct ChatView: View {
                         messages.append(DisplayMessage(kind: .worshipSong(song)))
                     }
 
+                    // Add action
+                    if let action = response.action {
+                        messages.append(DisplayMessage(kind: .action(action)))
+                    }
+
                     // Add follow-up
                     if let followUp = response.followUp, !followUp.isEmpty {
                         messages.append(DisplayMessage(kind: .followUp(followUp)))
@@ -471,6 +527,59 @@ struct ChatView: View {
             }
         }
     }
+
+    // MARK: - Favorite Verse
+
+    private func toggleFavorite(_ verse: VerseResult) {
+        if let existing = favoriteVerses.first(where: { $0.reference == verse.reference }) {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(FavoriteVerse(reference: verse.reference, text: verse.text, source: "chat"))
+        }
+        try? modelContext.save()
+    }
+
+    // MARK: - Load Existing Conversation
+
+    private func loadConversationMessages(_ conversation: ChatConversation) {
+        let sorted = conversation.messages.sorted { $0.timestamp < $1.timestamp }
+
+        for msg in sorted {
+            if msg.role == "user" {
+                messages.append(DisplayMessage(kind: .user(msg.content)))
+                conversationHistory.append(["role": "user", "content": msg.content])
+            } else {
+                // Try to parse assistant JSON response
+                if let data = msg.content.data(using: .utf8),
+                   let response = try? JSONDecoder().decode(ChatResponse.self, from: data) {
+
+                    if !response.message.isEmpty {
+                        messages.append(DisplayMessage(kind: .intro(response.message)))
+                    }
+                    if !response.verses.isEmpty {
+                        messages.append(DisplayMessage(kind: .verses(response.verses)))
+                    }
+                    if !response.prayer.isEmpty {
+                        messages.append(DisplayMessage(kind: .prayer(response.prayer)))
+                    }
+                    if let song = response.worshipSong {
+                        messages.append(DisplayMessage(kind: .worshipSong(song)))
+                    }
+                    if let action = response.action {
+                        messages.append(DisplayMessage(kind: .action(action)))
+                    }
+                    if let followUp = response.followUp, !followUp.isEmpty {
+                        messages.append(DisplayMessage(kind: .followUp(followUp)))
+                    }
+                    conversationHistory.append(["role": "assistant", "content": response.message])
+                } else {
+                    // Fallback: show as plain text
+                    messages.append(DisplayMessage(kind: .intro(msg.content)))
+                    conversationHistory.append(["role": "assistant", "content": msg.content])
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Display Message Model
@@ -485,6 +594,7 @@ struct DisplayMessage: Identifiable {
         case verses([VerseResult])
         case prayer(String)
         case worshipSong(WorshipSong)
+        case action(ActionStep)
         case followUp(String)
         case error(String)
         case rateLimit(String)

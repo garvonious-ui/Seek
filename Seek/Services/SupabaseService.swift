@@ -145,7 +145,14 @@ struct ChatResponse: Codable {
     let prayer: String
     let worshipSong: WorshipSong?
     let followUp: String?
+    let action: ActionStep?
     let remainingChats: Int?
+}
+
+struct ActionStep: Codable {
+    let title: String
+    let steps: [String]
+    let reason: String
 }
 
 struct VerseResult: Codable, Identifiable {

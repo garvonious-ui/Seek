@@ -23,6 +23,7 @@ settings:
     INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
     INFOPLIST_KEY_CFBundleDisplayName: "Seek"
     INFOPLIST_KEY_UIUserInterfaceStyle: Light
+    INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "Save verse cards to your photo library."
 
 targets:
   Seek:

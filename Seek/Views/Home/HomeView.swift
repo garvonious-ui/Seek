@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
+    @Query private var favoriteVerses: [FavoriteVerse]
     @State private var dailyVerse: DailyVerse?
     @State private var isLoadingVerse = false
     @State private var showProfile = false
@@ -152,10 +153,10 @@ struct HomeView: View {
                         .foregroundStyle(Color(hex: "5B7B5E"))
                     Spacer()
                     Button {
-                        favoriteVerse(verse)
+                        toggleFavorite(reference: verse.reference, text: verse.text, source: "daily_verse")
                     } label: {
-                        Image(systemName: "heart")
-                            .foregroundStyle(Color(hex: "5B7B5E"))
+                        Image(systemName: favoriteVerses.contains { $0.reference == verse.reference } ? "heart.fill" : "heart")
+                            .foregroundStyle(Color(hex: "CDA349"))
                     }
                 }
 
@@ -172,9 +173,18 @@ struct HomeView: View {
                     .foregroundStyle(Color(hex: "1A1A1A"))
                     .lineSpacing(6)
 
-                Text("— Psalm 46:1")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(Color(hex: "5B7B5E"))
+                HStack {
+                    Text("— Psalm 46:1")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Color(hex: "5B7B5E"))
+                    Spacer()
+                    Button {
+                        toggleFavorite(reference: "Psalm 46:1", text: "God is our refuge and strength, a very present help in trouble.", source: "daily_verse")
+                    } label: {
+                        Image(systemName: favoriteVerses.contains { $0.reference == "Psalm 46:1" } ? "heart.fill" : "heart")
+                            .foregroundStyle(Color(hex: "CDA349"))
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -198,13 +208,12 @@ struct HomeView: View {
         }
     }
 
-    private func favoriteVerse(_ verse: DailyVerse) {
-        let favorite = FavoriteVerse(
-            reference: verse.reference,
-            text: verse.text,
-            source: "daily_verse"
-        )
-        modelContext.insert(favorite)
+    private func toggleFavorite(reference: String, text: String, source: String) {
+        if let existing = favoriteVerses.first(where: { $0.reference == reference }) {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(FavoriteVerse(reference: reference, text: text, source: source))
+        }
         try? modelContext.save()
     }
 }
