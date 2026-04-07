@@ -45,3 +45,18 @@
 - Decision: Google Sign-In deferred — Apple + email covers App Store launch
 - Decision: Edge cases handled via Claude system prompt (server-side), plus 500-char client truncation
 - Next: Verse Card Creator (templates), Saved Library, Streak logic
+
+## 2026-04-07 — Session 1c (Card Creator + Library + Streaks)
+- Built 18 card templates across 4 categories (Nature 5, Minimal 5, Watercolor 4, Bold 4)
+- 6 templates marked premium-only (Mountain, Blush, Seafoam, Rose, Fire, Gold)
+- VerseCardView renders at 1080x1920 (9:16 IG story) with auto-sizing font
+- CardCreatorView: live preview, horizontal template picker, save to Photos, share sheet
+- App watermark on all cards (semi-transparent, bottom corner)
+- LibraryView with 3 tabs: Cards (thumbnail grid), Favorites (swipe-to-delete list), History (conversation list)
+- Cards grid shows mini previews with correct template colors
+- Favorites show source tag (Chat / Daily Verse) + context menu copy
+- History shows conversation summaries with message count
+- StreakManager: daily activity tracking, consecutive day detection, grace period, milestone check
+- Streak recorded on HomeView appear
+- Decision: Card templates defined in code (CardTemplate struct), not in asset catalog
+- Next: Push notifications, Profile settings, Monetization (StoreKit 2)

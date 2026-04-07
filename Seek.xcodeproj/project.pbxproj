@@ -20,12 +20,15 @@
 		B2B71EDD9BAFB550DFF4B882 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3477F498DF685933489DA4D /* SupabaseService.swift */; };
 		B676FB639C47F71CD4AD0693 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E2FD2990F68632F4168020 /* ContentView.swift */; };
 		BEA7486CDD56706D7B337E27 /* kjv.json in Resources */ = {isa = PBXBuildFile; fileRef = 6138CC96248B4F0DB8A6D986 /* kjv.json */; };
+		C4D5435BE3925B6EFD25D764 /* CardTemplate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DE237109EA51D36872CBCC5 /* CardTemplate.swift */; };
+		CDCCEC2A19E5FBBD8622F819 /* StreakManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F0FF9F69872AF91291CA6A /* StreakManager.swift */; };
 		D9584D32F45E2C011755F788 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A69E39476DCE0152C599D42 /* SignInView.swift */; };
 		E2CD307B44A4954E66EBC7EA /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6BE2E404635C19F7B9BA965 /* OnboardingView.swift */; };
 		E72553080B1DFEA56666C636 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C138E835CC868B78432878 /* ChatView.swift */; };
 		E8E69355F1DA85C21D49D6BA /* BibleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CBA6A1FF77EC4B10D24DF6E /* BibleService.swift */; };
 		EE37DDD4CDE80E4605EFD8F5 /* SavedCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = D91DF269EFF2AFEB6BABD92D /* SavedCard.swift */; };
 		F61A7C562AA06A752068CB7F /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E401C5BA46EEA339C6D832A /* ChatMessage.swift */; };
+		F75DF2C6763784999B4906FE /* VerseCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA5AC610BB9D76E64199671 /* VerseCardView.swift */; };
 		FDD7DDCCA3ED7F0B51CA0EA0 /* ChatConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A46FE0B1F5B96078CCE1037A /* ChatConversation.swift */; };
 /* End PBXBuildFile section */
 
@@ -34,6 +37,7 @@
 		18DA92189B90BBA039FA720B /* FavoriteVerse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteVerse.swift; sourceTree = "<group>"; };
 		2414D0CBEED548A87A86B20C /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		25D80CCDB51FA0F6E2DD2F9C /* Seek.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Seek.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3DE237109EA51D36872CBCC5 /* CardTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardTemplate.swift; sourceTree = "<group>"; };
 		48EF3AEB98357E3DD79F9F14 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		6138CC96248B4F0DB8A6D986 /* kjv.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = kjv.json; sourceTree = "<group>"; };
 		75C138E835CC868B78432878 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -43,9 +47,11 @@
 		A1E2FD2990F68632F4168020 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A46FE0B1F5B96078CCE1037A /* ChatConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatConversation.swift; sourceTree = "<group>"; };
 		A6BE2E404635C19F7B9BA965 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		ABA5AC610BB9D76E64199671 /* VerseCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerseCardView.swift; sourceTree = "<group>"; };
 		B40059C79FEC650C1412AC07 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		BCCE4721B5F33104CF2EBCEB /* Seek.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Seek.entitlements; sourceTree = "<group>"; };
 		D2D0A7482B49100DFAE1CD8E /* SeekApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeekApp.swift; sourceTree = "<group>"; };
+		D6F0FF9F69872AF91291CA6A /* StreakManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreakManager.swift; sourceTree = "<group>"; };
 		D7415D95463F6BC217019DA7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		D91DF269EFF2AFEB6BABD92D /* SavedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedCard.swift; sourceTree = "<group>"; };
 		D96E020A355A91F2A3F06E5A /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
@@ -78,6 +84,7 @@
 			children = (
 				937F10171702BCE24D38D097 /* AuthManager.swift */,
 				9CBA6A1FF77EC4B10D24DF6E /* BibleService.swift */,
+				D6F0FF9F69872AF91291CA6A /* StreakManager.swift */,
 				F3477F498DF685933489DA4D /* SupabaseService.swift */,
 			);
 			path = Services;
@@ -120,6 +127,8 @@
 		70471D23867464DB01465C9E /* CardTemplates */ = {
 			isa = PBXGroup;
 			children = (
+				3DE237109EA51D36872CBCC5 /* CardTemplate.swift */,
+				ABA5AC610BB9D76E64199671 /* VerseCardView.swift */,
 			);
 			path = CardTemplates;
 			sourceTree = "<group>";
@@ -280,6 +289,7 @@
 				53D8CFAF9B454433ECF60C1E /* AuthManager.swift in Sources */,
 				E8E69355F1DA85C21D49D6BA /* BibleService.swift in Sources */,
 				7BA25CF1D0F7376821D41170 /* CardCreatorView.swift in Sources */,
+				C4D5435BE3925B6EFD25D764 /* CardTemplate.swift in Sources */,
 				FDD7DDCCA3ED7F0B51CA0EA0 /* ChatConversation.swift in Sources */,
 				F61A7C562AA06A752068CB7F /* ChatMessage.swift in Sources */,
 				E72553080B1DFEA56666C636 /* ChatView.swift in Sources */,
@@ -292,8 +302,10 @@
 				EE37DDD4CDE80E4605EFD8F5 /* SavedCard.swift in Sources */,
 				0BD5F868B38038EB84B4DBA1 /* SeekApp.swift in Sources */,
 				D9584D32F45E2C011755F788 /* SignInView.swift in Sources */,
+				CDCCEC2A19E5FBBD8622F819 /* StreakManager.swift in Sources */,
 				B2B71EDD9BAFB550DFF4B882 /* SupabaseService.swift in Sources */,
 				8C3BFCCA3CB468396CACC84D /* UserProfile.swift in Sources */,
+				F75DF2C6763784999B4906FE /* VerseCardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

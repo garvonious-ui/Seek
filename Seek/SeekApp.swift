@@ -22,6 +22,10 @@ struct SeekApp: App {
                         OnboardingView()
                     } else {
                         ContentView()
+                            .onAppear {
+                                // Record daily activity for streak tracking
+                                // modelContext not available here — handled in HomeView
+                            }
                     }
                 }
             }

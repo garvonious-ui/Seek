@@ -74,6 +74,7 @@ struct HomeView: View {
             }
             .task {
                 await loadDailyVerse()
+                StreakManager.recordActivity(modelContext: modelContext)
             }
         }
     }

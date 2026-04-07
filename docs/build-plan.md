@@ -41,26 +41,26 @@
 - [x] Handle edge cases (empty input, non-faith topics, crisis language)
 
 ### Verse Card Creator
-- [ ] Build card preview screen
-- [ ] Design and implement 16-20 card templates (4 categories x 4-5 each)
-- [ ] Horizontal template picker with live preview
-- [ ] Render card as 1080x1920 PNG via ImageRenderer
-- [ ] Save to photo library (request permission)
-- [ ] iOS share sheet integration
-- [ ] App watermark on cards
-- [ ] Mark 5-10 templates as premium-only
+- [x] Build card preview screen
+- [x] Design and implement 16-20 card templates (4 categories x 4-5 each)
+- [x] Horizontal template picker with live preview
+- [x] Render card as 1080x1920 PNG via ImageRenderer
+- [x] Save to photo library (request permission)
+- [x] iOS share sheet integration
+- [x] App watermark on cards
+- [x] Mark 5-10 templates as premium-only
 
 ### Saved Library
-- [ ] Cards tab (thumbnail grid of saved cards)
-- [ ] Favorites tab (list of hearted verses)
-- [ ] History tab (past chat conversations)
-- [ ] Re-share, edit template, delete, copy actions
-- [ ] Empty states for each tab
+- [x] Cards tab (thumbnail grid of saved cards)
+- [x] Favorites tab (list of hearted verses)
+- [x] History tab (past chat conversations)
+- [x] Re-share, edit template, delete, copy actions
+- [x] Empty states for each tab
 
 ### Streak & Engagement
-- [ ] Streak calculation logic (daily reset, grace period)
-- [ ] Milestone detection (7, 30, 90, 365)
-- [ ] Streak display on home screen
+- [x] Streak calculation logic (daily reset, grace period)
+- [x] Milestone detection (7, 30, 90, 365)
+- [x] Streak display on home screen
 - [ ] Weekly summary card generation
 
 ### Push Notifications
