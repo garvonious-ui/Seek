@@ -1,0 +1,26 @@
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+build/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/plans/
+
+# Build prompt (not needed in repo)
+Seek_Build_Prompt.md
+Claude_Code_Project_Structure_Guide.md
