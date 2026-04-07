@@ -64,36 +64,36 @@
 - [ ] Weekly summary card generation
 
 ### Push Notifications
-- [ ] Request notification permission (onboarding + settings)
-- [ ] Store APNs device token in Supabase notification_settings
-- [ ] Deploy daily verse push Edge Function + pg_cron schedule
-- [ ] Deploy streak nudge Edge Function + pg_cron schedule
-- [ ] Notification preferences UI in settings
-- [ ] Handle notification tap deep links
+- [x] Request notification permission (onboarding + settings)
+- [x] Store APNs device token in Supabase notification_settings
+- [x] Deploy daily verse push Edge Function + pg_cron schedule
+- [x] Deploy streak nudge Edge Function + pg_cron schedule
+- [x] Notification preferences UI in settings
+- [x] Handle notification tap deep links
 
 ### Profile & Settings
-- [ ] Profile screen with stats
-- [ ] Settings screen (notifications, translation, subscription)
-- [ ] Subscription management screen
-- [ ] Rate/review prompt (after 7-day streak)
-- [ ] Share app action
-- [ ] Privacy policy and terms of service screens
+- [x] Profile screen with stats
+- [x] Settings screen (notifications, translation, subscription)
+- [x] Subscription management screen
+- [x] Rate/review prompt (after 7-day streak)
+- [x] Share app action
+- [x] Privacy policy and terms of service screens
 
 ### Monetization
-- [ ] Configure StoreKit 2 products (monthly + annual)
-- [ ] Build premium upgrade screen (feature comparison)
-- [ ] Implement receipt validation Edge Function
-- [ ] Premium status sync (local + Supabase)
-- [ ] Free trial (7 days) implementation
-- [ ] Restore purchases flow
+- [x] Configure StoreKit 2 products (monthly + annual)
+- [x] Build premium upgrade screen (feature comparison)
+- [x] Implement receipt validation Edge Function
+- [x] Premium status sync (local + Supabase)
+- [x] Free trial (7 days) implementation
+- [x] Restore purchases flow
 - [ ] Ad removal for premium users
-- [ ] Premium template unlock logic
+- [x] Premium template unlock logic
 
 ### Polish & Launch
 - [ ] App icon design (multiple sizes)
 - [ ] Launch screen
-- [ ] Loading states and skeleton screens
-- [ ] Error handling (network, auth, API failures)
+- [x] Loading states and skeleton screens
+- [x] Error handling (network, auth, API failures)
 - [ ] Offline mode handling (graceful degradation)
 - [ ] App Store screenshots (6.7" and 6.1")
 - [ ] App Store description and metadata

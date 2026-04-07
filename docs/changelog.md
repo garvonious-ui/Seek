@@ -60,3 +60,19 @@
 - Streak recorded on HomeView appear
 - Decision: Card templates defined in code (CardTemplate struct), not in asset catalog
 - Next: Push notifications, Profile settings, Monetization (StoreKit 2)
+
+## 2026-04-07 — Session 1d (Notifications + Monetization + Polish)
+- NotificationManager: permission handling, APNs token storage to Supabase, local scheduling fallback
+- Daily verse reminder (default 7:00 AM) and streak nudge (default 7:00 PM)
+- Deep link routing from notification taps (openDailyVerse, openHome)
+- NotificationSettingsView: toggles + time pickers for each notification type
+- StoreManager: StoreKit 2 product loading, purchasing, restore, transaction listener
+- SeekProducts.storekit config: monthly ($4.99) and yearly ($39.99) with 7-day free trials
+- PremiumUpgradeView: feature comparison, plan selector, subscribe CTA
+- SubscriptionManagementView: current plan display, App Store management link
+- ProfileView fully wired: notifications, subscription, rate/review, share, privacy/terms
+- WebContentView: WKWebView wrapper for privacy policy and terms
+- LoadingView and ErrorView reusable components
+- Premium template lock overlay in card creator
+- Decision: Local notification scheduling as fallback (server push needs APNs cert)
+- Remaining: App icon, launch screen, AdMob, offline mode, App Store assets

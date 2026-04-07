@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 struct ProfileView: View {
     @Environment(AuthManager.self) private var authManager
@@ -7,6 +8,7 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var profiles: [UserProfile]
     @State private var showDeleteConfirmation = false
+    @State private var showPremiumUpgrade = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -35,22 +37,73 @@ struct ProfileView: View {
                     .padding(.vertical, 8)
                 }
 
+                // Premium badge
+                if profile?.isPremium == true {
+                    Section {
+                        HStack {
+                            Image(systemName: "star.circle.fill")
+                                .foregroundStyle(Color(hex: "D4A853"))
+                            Text("Seek+ Member")
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text("Active")
+                                .font(.caption)
+                                .foregroundStyle(.green)
+                        }
+                    }
+                }
+
                 // Stats
                 Section("Stats") {
-                    Label("\(profile?.streakCount ?? 0)-day streak", systemImage: "flame.fill")
-                        .foregroundStyle(.primary)
+                    HStack {
+                        Label("\(profile?.streakCount ?? 0)-day streak", systemImage: "flame.fill")
+                        Spacer()
+                        if let longest = profile?.longestStreak, longest > 0 {
+                            Text("Best: \(longest)")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
                     Label("\(profile?.totalVersesExplored ?? 0) verses explored", systemImage: "book.closed")
                     Label("\(profile?.totalCardsCreated ?? 0) cards created", systemImage: "rectangle.on.rectangle")
-                    if let longest = profile?.longestStreak, longest > 0 {
-                        Label("Longest streak: \(longest) days", systemImage: "trophy")
-                    }
                 }
 
                 // Settings
                 Section("Settings") {
-                    Label("Notifications", systemImage: "bell")
-                    Label("Subscription", systemImage: "star")
-                    Label("Rate Seek", systemImage: "heart")
+                    NavigationLink {
+                        NotificationSettingsView()
+                    } label: {
+                        Label("Notifications", systemImage: "bell")
+                    }
+
+                    if profile?.isPremium != true {
+                        Button {
+                            showPremiumUpgrade = true
+                        } label: {
+                            HStack {
+                                Label("Upgrade to Seek+", systemImage: "star")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .foregroundStyle(Color(hex: "D4A853"))
+                        }
+                    } else {
+                        NavigationLink {
+                            SubscriptionManagementView()
+                        } label: {
+                            Label("Manage Subscription", systemImage: "star")
+                        }
+                    }
+
+                    Button {
+                        requestReview()
+                    } label: {
+                        Label("Rate Seek", systemImage: "heart")
+                            .foregroundStyle(.primary)
+                    }
+
                     ShareLink(item: URL(string: "https://apps.apple.com/app/seek")!) {
                         Label("Share App", systemImage: "square.and.arrow.up")
                     }
@@ -58,8 +111,16 @@ struct ProfileView: View {
 
                 // Legal
                 Section {
-                    Label("Privacy Policy", systemImage: "lock.shield")
-                    Label("Terms of Service", systemImage: "doc.text")
+                    NavigationLink {
+                        WebContentView(title: "Privacy Policy", urlString: "https://seek-app.com/privacy")
+                    } label: {
+                        Label("Privacy Policy", systemImage: "lock.shield")
+                    }
+                    NavigationLink {
+                        WebContentView(title: "Terms of Service", urlString: "https://seek-app.com/terms")
+                    } label: {
+                        Label("Terms of Service", systemImage: "doc.text")
+                    }
                 }
 
                 // Account actions
@@ -100,6 +161,15 @@ struct ProfileView: View {
             } message: {
                 Text("This will permanently delete your account and all data. This cannot be undone.")
             }
+            .sheet(isPresented: $showPremiumUpgrade) {
+                PremiumUpgradeView()
+            }
+        }
+    }
+
+    private func requestReview() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            AppStore.requestReview(in: windowScene)
         }
     }
 }
