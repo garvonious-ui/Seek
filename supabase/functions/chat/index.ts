@@ -38,7 +38,9 @@ Respond in this JSON format:
     "context": "One sentence on why this song fits"
   },
   "followUp": "Optional — a gentle prompt for further exploration"
-}`;
+}
+
+IMPORTANT: Return ONLY the raw JSON object. Do NOT wrap it in markdown code fences or any other formatting. Just the raw JSON.`;
 
 serve(async (req: Request) => {
   try {
@@ -174,10 +176,15 @@ serve(async (req: Request) => {
       { onConflict: "user_id,log_date" },
     );
 
-    // Parse Claude's JSON response
+    // Parse Claude's JSON response — strip markdown fences if present
+    let cleanedMessage = assistantMessage.trim();
+    if (cleanedMessage.startsWith("```")) {
+      cleanedMessage = cleanedMessage.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    }
+
     let parsed;
     try {
-      parsed = JSON.parse(assistantMessage);
+      parsed = JSON.parse(cleanedMessage);
     } catch {
       parsed = {
         message: assistantMessage,

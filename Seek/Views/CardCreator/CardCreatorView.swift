@@ -20,22 +20,21 @@ struct CardCreatorView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Card preview (scaled down)
-                cardPreview
-                    .padding(.top, 16)
-                    .padding(.horizontal)
+            ScrollView {
+                VStack(spacing: 16) {
+                    // Card preview
+                    cardPreview
+                        .padding(.horizontal)
+                        .padding(.top, 16)
 
-                // Template picker
-                templatePicker
-                    .padding(.top, 16)
+                    // Template picker
+                    templatePicker
 
-                Spacer()
-
-                // Actions
-                actionButtons
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
+                    // Actions
+                    actionButtons
+                        .padding(.horizontal)
+                        .padding(.bottom, 16)
+                }
             }
             .background(Color(hex: "FAFAF6"))
             .navigationTitle("Create Card")
@@ -68,21 +67,57 @@ struct CardCreatorView: View {
         }
     }
 
-    // MARK: - Card Preview
+    // MARK: - Card Preview (screen-sized, not the 1080x1920 export)
 
     private var cardPreview: some View {
-        VerseCardView(
-            verseText: verseText,
-            verseReference: verseReference,
-            template: selectedTemplate
-        )
-        .scaleEffect(0.28)
-        .frame(
-            width: VerseCardView.renderWidth * 0.28,
-            height: VerseCardView.renderHeight * 0.28
-        )
+        ZStack {
+            if let gradient = selectedTemplate.backgroundGradient {
+                LinearGradient(
+                    colors: gradient,
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            } else {
+                selectedTemplate.backgroundColor
+            }
+
+            VStack(spacing: 16) {
+                Spacer()
+
+                Text(verseText)
+                    .font(.custom(selectedTemplate.fontName, size: previewFontSize))
+                    .lineSpacing(6)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(selectedTemplate.textColor)
+                    .padding(.horizontal, 24)
+
+                Text("— \(verseReference)")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(selectedTemplate.referenceColor)
+
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Image(systemName: "book.closed.fill")
+                        .font(.system(size: 8))
+                    Text("Seek")
+                        .font(.system(size: 8, weight: .medium))
+                }
+                .foregroundStyle(selectedTemplate.textColor.opacity(0.3))
+                .padding(.bottom, 12)
+            }
+        }
+        .frame(height: 480)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+    }
+
+    private var previewFontSize: CGFloat {
+        let length = verseText.count
+        if length < 80 { return 20 }
+        if length < 150 { return 17 }
+        if length < 250 { return 15 }
+        return 13
     }
 
     // MARK: - Template Picker

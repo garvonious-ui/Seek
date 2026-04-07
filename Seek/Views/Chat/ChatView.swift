@@ -236,6 +236,39 @@ struct ChatView: View {
             Text(song.context)
                 .font(.caption)
                 .foregroundStyle(Color(hex: "9CA3AF"))
+
+            // Music links
+            HStack(spacing: 16) {
+                Button {
+                    let query = "\(song.title) \(song.artist)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                    if let url = URL(string: "music://music.apple.com/search?term=\(query)") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Label("Apple Music", systemImage: "music.note")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color(hex: "5B7B5E"))
+                }
+
+                Button {
+                    let query = "\(song.title) \(song.artist)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                    if let url = URL(string: "spotify:search:\(query)") {
+                        UIApplication.shared.open(url) { success in
+                            if !success {
+                                // Spotify not installed — open web
+                                if let webURL = URL(string: "https://open.spotify.com/search/\(query)") {
+                                    UIApplication.shared.open(webURL)
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Spotify", systemImage: "play.circle")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Color(hex: "1DB954"))
+                }
+            }
+            .padding(.top, 4)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
