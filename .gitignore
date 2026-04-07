@@ -24,3 +24,4 @@ supabase/.branches/
 # Build prompt (not needed in repo)
 Seek_Build_Prompt.md
 Claude_Code_Project_Structure_Guide.md
+*.xcuserstate

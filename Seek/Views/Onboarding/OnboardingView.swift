@@ -46,14 +46,15 @@ struct OnboardingView: View {
 
             Text("Seek")
                 .font(.system(size: 42, weight: .bold, design: .default))
+                .foregroundStyle(Color(hex: "1A1A1A"))
 
             Text("Scripture for every moment")
                 .font(.title3)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
 
             Text("Whether you're celebrating, seeking, or simply reflecting — find the right verse for your moment.")
                 .font(.subheadline)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color(hex: "9CA3AF"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 
@@ -83,10 +84,11 @@ struct OnboardingView: View {
 
             Text("What brings you here?")
                 .font(.title2.bold())
+                .foregroundStyle(Color(hex: "1A1A1A"))
 
             Text("Select all that apply — this helps us personalize your experience")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
@@ -153,10 +155,11 @@ struct OnboardingView: View {
 
             Text("Start each day with scripture")
                 .font(.title2.bold())
+                .foregroundStyle(Color(hex: "1A1A1A"))
 
             Text("Get a verse every morning to begin your day with God's word, and a gentle reminder to keep your streak going.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 

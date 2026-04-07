@@ -15,8 +15,9 @@ struct SignInView: View {
             VStack(spacing: 8) {
                 Text(isSignUp ? "Create Account" : "Welcome Back")
                     .font(.title2.bold())
+                    .foregroundStyle(Color(hex: "1A1A1A"))
                 Text(isSignUp ? "Sign up to get started" : "Sign in to continue")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(hex: "6B7280"))
             }
 
             // Sign in with Apple
@@ -37,11 +38,11 @@ struct SignInView: View {
 
             // Divider
             HStack {
-                Rectangle().frame(height: 1).foregroundStyle(.quaternary)
+                Rectangle().frame(height: 1).foregroundStyle(Color(hex: "E5E7EB"))
                 Text("or")
                     .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Rectangle().frame(height: 1).foregroundStyle(.quaternary)
+                    .foregroundStyle(Color(hex: "9CA3AF"))
+                Rectangle().frame(height: 1).foregroundStyle(Color(hex: "E5E7EB"))
             }
 
             // Email form
@@ -103,7 +104,7 @@ struct SignInView: View {
             } label: {
                 Text(isSignUp ? "Already have an account? **Sign In**" : "Don't have an account? **Sign Up**")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(hex: "6B7280"))
             }
 
             // Error message
