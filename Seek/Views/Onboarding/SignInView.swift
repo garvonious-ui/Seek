@@ -8,6 +8,7 @@ struct SignInView: View {
     @State private var password = ""
     @State private var isSignUp = false
     @State private var isLoading = false
+    var onAuthenticated: ((_ isNewUser: Bool) -> Void)?
 
     var body: some View {
         VStack(spacing: 32) {
@@ -53,17 +54,27 @@ struct SignInView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(hex: "F3F4F6"))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 SecureField("Password", text: $password)
                     .textContentType(isSignUp ? .newPassword : .password)
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color(hex: "F3F4F6"))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                // Error message (above button so keyboard doesn't hide it)
+                if let error = authManager.errorMessage {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.vertical, 4)
+                }
 
                 Button {
                     isLoading = true
+                    print("[SignIn] Attempting \(isSignUp ? "sign up" : "sign in") with \(email)")
                     Task {
                         if isSignUp {
                             await authManager.signUpWithEmail(
@@ -78,7 +89,12 @@ struct SignInView: View {
                                 modelContext: modelContext
                             )
                         }
+                        print("[SignIn] Done. authState=\(authManager.authState), error=\(authManager.errorMessage ?? "none")")
                         isLoading = false
+                        if authManager.authState == .authenticated {
+                            print("[SignIn] Calling onAuthenticated, isNewUser=\(isSignUp)")
+                            onAuthenticated?(isSignUp)
+                        }
                     }
                 } label: {
                     if isLoading {
@@ -91,7 +107,7 @@ struct SignInView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "2C5F7C"))
+                .tint(Color(hex: "5B7B5E"))
                 .controlSize(.large)
                 .clipShape(RoundedRectangle(cornerRadius: 24))
                 .disabled(email.isEmpty || password.count < 6 || isLoading)
@@ -107,15 +123,13 @@ struct SignInView: View {
                     .foregroundStyle(Color(hex: "6B7280"))
             }
 
-            // Error message
-            if let error = authManager.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
-            }
         }
         .padding(.horizontal, 24)
+        .onChange(of: authManager.authState) { _, newState in
+            if newState == .authenticated {
+                onAuthenticated?(isSignUp)
+            }
+        }
     }
 }
 

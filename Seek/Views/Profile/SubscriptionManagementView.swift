@@ -18,7 +18,7 @@ struct SubscriptionManagementView: View {
                     Spacer()
                     Image(systemName: "star.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(Color(hex: "D4A853"))
+                        .foregroundStyle(Color(hex: "CDA349"))
                 }
             }
 

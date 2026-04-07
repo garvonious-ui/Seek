@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab: Tab = .home
-    @State private var showProfile = false
 
     enum Tab: String {
         case home, chat, library
@@ -12,36 +11,26 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             HomeView()
                 .tabItem {
-                    Label("Home", systemImage: selectedTab == .home ? "house.fill" : "house")
+                    Image(systemName: "house.fill")
+                    Text("Home")
                 }
                 .tag(Tab.home)
 
             ChatView()
                 .tabItem {
-                    Label("Chat", systemImage: selectedTab == .chat ? "message.fill" : "message")
+                    Image(systemName: "message.fill")
+                    Text("Chat")
                 }
                 .tag(Tab.chat)
 
             LibraryView()
                 .tabItem {
-                    Label("Library", systemImage: selectedTab == .library ? "bookmark.fill" : "bookmark")
+                    Image(systemName: "bookmark.fill")
+                    Text("Library")
                 }
                 .tag(Tab.library)
         }
-        .tint(Color(hex: "2C5F7C"))
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showProfile = true
-                } label: {
-                    Image(systemName: "person.circle")
-                        .font(.title3)
-                }
-            }
-        }
-        .sheet(isPresented: $showProfile) {
-            ProfileView()
-        }
+        .tint(Color(hex: "5B7B5E"))
     }
 }
 

@@ -56,14 +56,14 @@ extension CardTemplate {
             name: "Ocean",
             category: .nature,
             backgroundColor: Color(hex: "1A3A5C"),
-            backgroundGradient: [Color(hex: "1A3A5C"), Color(hex: "2C5F7C"), Color(hex: "4A8BA8")]
+            backgroundGradient: [Color(hex: "1A3A5C"), Color(hex: "5B7B5E"), Color(hex: "8AAF8D")]
         ),
         CardTemplate(
             id: "nature_sunrise",
             name: "Sunrise",
             category: .nature,
-            backgroundColor: Color(hex: "D4A853"),
-            backgroundGradient: [Color(hex: "1A1A2E"), Color(hex: "D4A853"), Color(hex: "F5C882")]
+            backgroundColor: Color(hex: "CDA349"),
+            backgroundGradient: [Color(hex: "1A1A2E"), Color(hex: "CDA349"), Color(hex: "F5C882")]
         ),
         CardTemplate(
             id: "nature_forest",
@@ -95,7 +95,7 @@ extension CardTemplate {
             category: .minimal,
             backgroundColor: Color(hex: "FAF7F0"),
             textColor: Color(hex: "1A1A1A"),
-            referenceColor: Color(hex: "2C5F7C")
+            referenceColor: Color(hex: "5B7B5E")
         ),
         CardTemplate(
             id: "minimal_navy",
@@ -169,7 +169,7 @@ extension CardTemplate {
             name: "Midnight",
             category: .bold,
             backgroundColor: .black,
-            referenceColor: Color(hex: "D4A853"),
+            referenceColor: Color(hex: "CDA349"),
             fontName: "Helvetica-Bold"
         ),
         CardTemplate(
@@ -178,7 +178,7 @@ extension CardTemplate {
             category: .bold,
             backgroundColor: Color(hex: "1E0A3C"),
             backgroundGradient: [Color(hex: "1E0A3C"), Color(hex: "4A1A7A")],
-            referenceColor: Color(hex: "D4A853")
+            referenceColor: Color(hex: "CDA349")
         ),
         CardTemplate(
             id: "bold_fire",
@@ -186,7 +186,7 @@ extension CardTemplate {
             category: .bold,
             isPremium: true,
             backgroundColor: Color(hex: "8B0000"),
-            backgroundGradient: [Color(hex: "8B0000"), Color(hex: "D4A853")]
+            backgroundGradient: [Color(hex: "8B0000"), Color(hex: "CDA349")]
         ),
         CardTemplate(
             id: "bold_gold",
@@ -195,7 +195,7 @@ extension CardTemplate {
             isPremium: true,
             backgroundColor: Color(hex: "1A1A1A"),
             backgroundGradient: [Color(hex: "1A1A1A"), Color(hex: "3D3520")],
-            referenceColor: Color(hex: "D4A853")
+            referenceColor: Color(hex: "CDA349")
         ),
     ]
 

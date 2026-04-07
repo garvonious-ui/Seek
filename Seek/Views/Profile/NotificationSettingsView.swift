@@ -20,7 +20,7 @@ struct NotificationSettingsView: View {
                                 .font(.subheadline.weight(.medium))
                             Text("Enable in Settings to receive daily verses")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color(hex: "6B7280"))
                         }
                         Spacer()
                         Button("Enable") {
@@ -33,14 +33,14 @@ struct NotificationSettingsView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
-                        .tint(Color(hex: "2C5F7C"))
+                        .tint(Color(hex: "5B7B5E"))
                     }
                 }
             }
 
             Section("Daily Verse") {
                 Toggle("Morning Verse", isOn: $dailyVerseEnabled)
-                    .tint(Color(hex: "2C5F7C"))
+                    .tint(Color(hex: "5B7B5E"))
 
                 if dailyVerseEnabled {
                     DatePicker("Time", selection: $dailyVerseTime, displayedComponents: .hourAndMinute)
@@ -57,7 +57,7 @@ struct NotificationSettingsView: View {
 
             Section("Streak Reminder") {
                 Toggle("Evening Nudge", isOn: $streakNudgeEnabled)
-                    .tint(Color(hex: "2C5F7C"))
+                    .tint(Color(hex: "5B7B5E"))
 
                 if streakNudgeEnabled {
                     DatePicker("Time", selection: $streakNudgeTime, displayedComponents: .hourAndMinute)

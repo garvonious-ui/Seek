@@ -22,6 +22,7 @@ settings:
     INFOPLIST_KEY_UILaunchScreen_Generation: YES
     INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
     INFOPLIST_KEY_CFBundleDisplayName: "Seek"
+    INFOPLIST_KEY_UIUserInterfaceStyle: Light
 
 targets:
   Seek:

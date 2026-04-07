@@ -15,14 +15,14 @@ struct PremiumUpgradeView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "star.circle.fill")
                             .font(.system(size: 56))
-                            .foregroundStyle(Color(hex: "D4A853"))
+                            .foregroundStyle(Color(hex: "CDA349"))
 
                         Text("Seek+")
                             .font(.largeTitle.bold())
 
                         Text("Deepen your daily scripture practice")
                             .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color(hex: "6B7280"))
                     }
                     .padding(.top, 24)
 
@@ -70,7 +70,7 @@ struct PremiumUpgradeView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Color(hex: "D4A853"))
+                    .tint(Color(hex: "CDA349"))
                     .controlSize(.large)
                     .clipShape(RoundedRectangle(cornerRadius: 24))
                     .disabled(isPurchasing)
@@ -80,13 +80,13 @@ struct PremiumUpgradeView: View {
                     VStack(spacing: 8) {
                         Text("7-day free trial, then auto-renews")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color(hex: "6B7280"))
 
                         Button("Restore Purchases") {
                             Task { await storeManager.restorePurchases() }
                         }
                         .font(.caption)
-                        .foregroundStyle(Color(hex: "2C5F7C"))
+                        .foregroundStyle(Color(hex: "5B7B5E"))
                     }
 
                     if let error = storeManager.errorMessage {
@@ -96,7 +96,7 @@ struct PremiumUpgradeView: View {
                     }
                 }
             }
-            .background(Color(hex: "FAFAF8"))
+            .background(Color(hex: "FAFAF6"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -112,14 +112,14 @@ struct PremiumUpgradeView: View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundStyle(Color(hex: "D4A853"))
+                .foregroundStyle(Color(hex: "CDA349"))
                 .frame(width: 32)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline.weight(.semibold))
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(hex: "6B7280"))
             }
         }
     }
@@ -140,28 +140,28 @@ struct PremiumUpgradeView: View {
                                 .font(.caption2.weight(.bold))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color(hex: "D4A853"))
+                                .background(Color(hex: "CDA349"))
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
                         }
                     }
                     Text(product.displayPrice + (product.id == StoreManager.yearlyID ? "/year" : "/month"))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(hex: "6B7280"))
                 }
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? Color(hex: "D4A853") : .secondary)
+                    .foregroundStyle(isSelected ? Color(hex: "CDA349") : Color(hex: "9CA3AF"))
             }
             .padding()
-            .background(isSelected ? Color(hex: "D4A853").opacity(0.08) : Color(.systemGray6))
+            .background(isSelected ? Color(hex: "CDA349").opacity(0.08) : Color(hex: "F3F4F6"))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color(hex: "D4A853") : .clear, lineWidth: 2)
+                    .stroke(isSelected ? Color(hex: "CDA349") : .clear, lineWidth: 2)
             )
         }
-        .foregroundStyle(.primary)
+        .foregroundStyle(Color(hex: "1A1A1A"))
     }
 
     // MARK: - Purchase

@@ -37,7 +37,7 @@ struct CardCreatorView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 16)
             }
-            .background(Color(hex: "FAFAF8"))
+            .background(Color(hex: "FAFAF6"))
             .navigationTitle("Create Card")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -91,7 +91,7 @@ struct CardCreatorView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Choose a style")
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -111,12 +111,12 @@ struct CardCreatorView: View {
                                     .overlay {
                                         if tmpl.id == selectedTemplate.id {
                                             RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color(hex: "2C5F7C"), lineWidth: 2.5)
+                                                .stroke(Color(hex: "5B7B5E"), lineWidth: 2.5)
                                         }
                                     }
                                 Text(tmpl.name)
                                     .font(.caption2)
-                                    .foregroundStyle(tmpl.id == selectedTemplate.id ? Color(hex: "2C5F7C") : .secondary)
+                                    .foregroundStyle(tmpl.id == selectedTemplate.id ? Color(hex: "5B7B5E") : Color(hex: "9CA3AF"))
                             }
                         }
                     }
@@ -148,7 +148,7 @@ struct CardCreatorView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color(hex: "2C5F7C"))
+            .tint(Color(hex: "5B7B5E"))
         }
         .controlSize(.large)
         .clipShape(RoundedRectangle(cornerRadius: 24))

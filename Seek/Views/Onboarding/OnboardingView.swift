@@ -20,17 +20,17 @@ struct OnboardingView: View {
             // MARK: Page 0 — Welcome
             welcomePage.tag(0)
 
-            // MARK: Page 1 — Personalization
-            personalizationPage.tag(1)
+            // MARK: Page 1 — Sign In
+            signInPage.tag(1)
 
-            // MARK: Page 2 — Notifications
-            notificationPage.tag(2)
+            // MARK: Page 2 — Personalization
+            personalizationPage.tag(2)
 
-            // MARK: Page 3 — Sign In
-            signInPage.tag(3)
+            // MARK: Page 3 — Notifications
+            notificationPage.tag(3)
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
-        .background(Color(hex: "FAFAF8"))
+        .background(Color(hex: "FAFAF6"))
         .animation(.easeInOut, value: currentPage)
     }
 
@@ -42,7 +42,7 @@ struct OnboardingView: View {
 
             Image(systemName: "book.closed.fill")
                 .font(.system(size: 72))
-                .foregroundStyle(Color(hex: "2C5F7C"))
+                .foregroundStyle(Color(hex: "5B7B5E"))
 
             Text("Seek")
                 .font(.system(size: 42, weight: .bold, design: .default))
@@ -68,7 +68,7 @@ struct OnboardingView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color(hex: "2C5F7C"))
+            .tint(Color(hex: "5B7B5E"))
             .controlSize(.large)
             .clipShape(RoundedRectangle(cornerRadius: 24))
             .padding(.horizontal, 24)
@@ -109,18 +109,18 @@ struct OnboardingView: View {
                             Spacer()
                             if selectedTopics.contains(topic) {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(Color(hex: "2C5F7C"))
+                                    .foregroundStyle(Color(hex: "5B7B5E"))
                             }
                         }
                         .padding()
                         .background(
                             selectedTopics.contains(topic)
-                                ? Color(hex: "2C5F7C").opacity(0.08)
-                                : Color(.systemGray6)
+                                ? Color(hex: "5B7B5E").opacity(0.08)
+                                : Color(hex: "F3F4F6")
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(Color(hex: "1A1A1A"))
                 }
             }
             .padding(.horizontal, 24)
@@ -128,14 +128,14 @@ struct OnboardingView: View {
             Spacer()
 
             Button {
-                withAnimation { currentPage = 2 }
+                withAnimation { currentPage = 3 }
             } label: {
                 Text("Continue")
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color(hex: "2C5F7C"))
+            .tint(Color(hex: "5B7B5E"))
             .controlSize(.large)
             .clipShape(RoundedRectangle(cornerRadius: 24))
             .padding(.horizontal, 24)
@@ -151,7 +151,7 @@ struct OnboardingView: View {
 
             Image(systemName: "bell.badge.fill")
                 .font(.system(size: 56))
-                .foregroundStyle(Color(hex: "D4A853"))
+                .foregroundStyle(Color(hex: "CDA349"))
 
             Text("Start each day with scripture")
                 .font(.title2.bold())
@@ -168,23 +168,23 @@ struct OnboardingView: View {
             VStack(spacing: 12) {
                 Button {
                     requestNotificationPermission()
-                    withAnimation { currentPage = 3 }
+                    finishOnboarding()
                 } label: {
                     Text("Enable Notifications")
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "2C5F7C"))
+                .tint(Color(hex: "5B7B5E"))
                 .controlSize(.large)
                 .clipShape(RoundedRectangle(cornerRadius: 24))
 
                 Button {
-                    withAnimation { currentPage = 3 }
+                    finishOnboarding()
                 } label: {
                     Text("Maybe Later")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(hex: "6B7280"))
                 }
             }
             .padding(.horizontal, 24)
@@ -198,21 +198,28 @@ struct OnboardingView: View {
         VStack {
             Spacer()
 
-            SignInView()
+            SignInView { isNewUser in
+                if isNewUser {
+                    // New sign-up — show personalization + notifications
+                    withAnimation { currentPage = 2 }
+                } else {
+                    // Returning sign-in — skip straight to home
+                    finishOnboarding()
+                }
+            }
 
             Spacer()
-        }
-        .onChange(of: authManager.authState) { _, newState in
-            if newState == .authenticated {
-                authManager.completeOnboarding(
-                    topics: Array(selectedTopics),
-                    modelContext: modelContext
-                )
-            }
         }
     }
 
     // MARK: - Helpers
+
+    private func finishOnboarding() {
+        authManager.completeOnboarding(
+            topics: Array(selectedTopics),
+            modelContext: modelContext
+        )
+    }
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }

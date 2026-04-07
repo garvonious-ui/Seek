@@ -30,7 +30,7 @@ struct LibraryView: View {
                     HistoryListView()
                 }
             }
-            .background(Color(hex: "FAFAF8"))
+            .background(Color(hex: "FAFAF6"))
             .navigationTitle("Library")
         }
     }
@@ -99,10 +99,10 @@ struct CardsGridView: View {
 
             Text(card.verseReference)
                 .font(.caption2.weight(.medium))
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color(hex: "1A1A1A"))
             Text(card.createdAt.formatted(.dateTime.month(.abbreviated).day()))
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color(hex: "9CA3AF"))
         }
         .contextMenu {
             Button {
@@ -133,7 +133,7 @@ struct FavoritesListView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text(verse.reference)
                             .font(.subheadline.bold())
-                            .foregroundStyle(Color(hex: "2C5F7C"))
+                            .foregroundStyle(Color(hex: "5B7B5E"))
                         Text(verse.text)
                             .font(.custom("Georgia", size: 14))
                             .lineSpacing(3)
@@ -143,12 +143,12 @@ struct FavoritesListView: View {
                                 .font(.caption2)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Color(hex: "2C5F7C").opacity(0.08))
+                                .background(Color(hex: "5B7B5E").opacity(0.08))
                                 .clipShape(Capsule())
                             Spacer()
                             Text(verse.savedAt.formatted(.dateTime.month(.abbreviated).day()))
                                 .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(Color(hex: "9CA3AF"))
                         }
                     }
                     .padding(.vertical, 4)
@@ -197,11 +197,11 @@ struct HistoryListView: View {
                             HStack {
                                 Text("\(conversation.messages.count) messages")
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color(hex: "6B7280"))
                                 Spacer()
                                 Text(conversation.startedAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
                                     .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(Color(hex: "9CA3AF"))
                             }
                         }
                         .padding(.vertical, 4)
@@ -220,13 +220,13 @@ func libraryEmptyState(icon: String, title: String, subtitle: String) -> some Vi
         Spacer()
         Image(systemName: icon)
             .font(.system(size: 48))
-            .foregroundStyle(Color(hex: "2C5F7C").opacity(0.3))
+            .foregroundStyle(Color(hex: "5B7B5E").opacity(0.3))
         Text(title)
             .font(.headline)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color(hex: "6B7280"))
         Text(subtitle)
             .font(.subheadline)
-            .foregroundStyle(.tertiary)
+            .foregroundStyle(Color(hex: "9CA3AF"))
             .multilineTextAlignment(.center)
             .padding(.horizontal, 32)
         Spacer()

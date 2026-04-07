@@ -13,10 +13,10 @@ struct WebContentView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "doc.text")
                         .font(.system(size: 48))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(hex: "6B7280"))
                     Text("Content unavailable")
                         .font(.headline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color(hex: "6B7280"))
                 }
             }
         }

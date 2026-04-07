@@ -51,10 +51,16 @@ class SupabaseService {
             email: email,
             password: password
         )
-        guard let session = response.session else {
-            throw AuthError.sessionMissing
+        // If email confirmation is disabled, session is returned immediately
+        // If enabled, session may be nil — try signing in directly
+        if let session = response.session {
+            return session
         }
-        return session
+        // Fallback: sign in immediately after sign up
+        return try await client.auth.signIn(
+            email: email,
+            password: password
+        )
     }
 
     func signOut() async throws {

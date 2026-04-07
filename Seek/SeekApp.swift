@@ -12,7 +12,7 @@ struct SeekApp: App {
                 case .loading:
                     ProgressView("Loading...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(hex: "FAFAF8"))
+                        .background(Color(hex: "FAFAF6"))
 
                 case .unauthenticated:
                     OnboardingView()
@@ -22,13 +22,10 @@ struct SeekApp: App {
                         OnboardingView()
                     } else {
                         ContentView()
-                            .onAppear {
-                                // Record daily activity for streak tracking
-                                // modelContext not available here — handled in HomeView
-                            }
                     }
                 }
             }
+            .preferredColorScheme(.light)
             .environment(authManager)
         }
         .modelContainer(for: [

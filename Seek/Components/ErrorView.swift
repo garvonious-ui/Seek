@@ -17,7 +17,7 @@ struct ErrorView: View {
 
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -26,12 +26,12 @@ struct ErrorView: View {
                     retryAction()
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color(hex: "2C5F7C"))
+                .tint(Color(hex: "5B7B5E"))
                 .controlSize(.small)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "FAFAF8"))
+        .background(Color(hex: "FAFAF6"))
     }
 }
 

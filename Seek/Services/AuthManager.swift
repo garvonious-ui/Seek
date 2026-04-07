@@ -16,9 +16,12 @@ final class AuthManager {
     var authState: AuthState = .loading
     var errorMessage: String?
 
-    var hasCompletedOnboarding: Bool {
-        get { UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") }
-        set { UserDefaults.standard.set(newValue, forKey: "hasCompletedOnboarding") }
+    // Stored property so @Observable can track changes and trigger SwiftUI re-renders.
+    // Also persisted to UserDefaults so it survives app restarts.
+    var hasCompletedOnboarding: Bool = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") {
+        didSet {
+            UserDefaults.standard.set(hasCompletedOnboarding, forKey: "hasCompletedOnboarding")
+        }
     }
 
     /// Whether to show onboarding (not signed in OR hasn't completed onboarding)
@@ -90,13 +93,16 @@ final class AuthManager {
                     idToken: idToken,
                     nonce: nonce
                 )
-                createLocalProfileIfNeeded(
-                    userId: session.user.id.uuidString,
-                    email: session.user.email ?? "",
-                    displayName: appleIDCredential.fullName?.givenName ?? "",
-                    modelContext: modelContext
-                )
-                errorMessage = nil
+                await MainActor.run {
+                    createLocalProfileIfNeeded(
+                        userId: session.user.id.uuidString,
+                        email: session.user.email ?? "",
+                        displayName: appleIDCredential.fullName?.givenName ?? "",
+                        modelContext: modelContext
+                    )
+                    authState = .authenticated
+                    errorMessage = nil
+                }
             } catch {
                 errorMessage = "Sign in failed: \(error.localizedDescription)"
             }
@@ -111,36 +117,48 @@ final class AuthManager {
     // MARK: - Email Auth
 
     func signInWithEmail(email: String, password: String, modelContext: ModelContext) async {
-        errorMessage = nil
+        await MainActor.run { errorMessage = nil }
         do {
             let session = try await SupabaseService.shared.signInWithEmail(
                 email: email,
                 password: password
             )
-            createLocalProfileIfNeeded(
-                userId: session.user.id.uuidString,
-                email: email,
-                modelContext: modelContext
-            )
+            await MainActor.run {
+                createLocalProfileIfNeeded(
+                    userId: session.user.id.uuidString,
+                    email: email,
+                    modelContext: modelContext
+                )
+                authState = .authenticated
+            }
         } catch {
-            errorMessage = "Sign in failed: \(error.localizedDescription)"
+            print("[Auth] Sign in failed: \(error)")
+            await MainActor.run {
+                errorMessage = "Sign in failed: \(error.localizedDescription)"
+            }
         }
     }
 
     func signUpWithEmail(email: String, password: String, modelContext: ModelContext) async {
-        errorMessage = nil
+        await MainActor.run { errorMessage = nil }
         do {
             let session = try await SupabaseService.shared.signUpWithEmail(
                 email: email,
                 password: password
             )
-            createLocalProfileIfNeeded(
-                userId: session.user.id.uuidString,
-                email: email,
-                modelContext: modelContext
-            )
+            await MainActor.run {
+                createLocalProfileIfNeeded(
+                    userId: session.user.id.uuidString,
+                    email: email,
+                    modelContext: modelContext
+                )
+                authState = .authenticated
+            }
         } catch {
-            errorMessage = "Sign up failed: \(error.localizedDescription)"
+            print("[Auth] Sign up failed: \(error)")
+            await MainActor.run {
+                errorMessage = "Sign up failed: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -198,19 +216,24 @@ final class AuthManager {
         displayName: String = "",
         modelContext: ModelContext
     ) {
-        let descriptor = FetchDescriptor<UserProfile>(
-            predicate: #Predicate { $0.id == userId }
-        )
-        let existing = try? modelContext.fetch(descriptor)
-
-        if existing?.isEmpty ?? true {
-            let profile = UserProfile(
-                id: userId,
-                displayName: displayName,
-                email: email
+        do {
+            let descriptor = FetchDescriptor<UserProfile>(
+                predicate: #Predicate { $0.id == userId }
             )
-            modelContext.insert(profile)
-            try? modelContext.save()
+            let existing = try modelContext.fetch(descriptor)
+
+            if existing.isEmpty {
+                let profile = UserProfile(
+                    id: userId,
+                    displayName: displayName,
+                    email: email
+                )
+                modelContext.insert(profile)
+                try modelContext.save()
+            }
+        } catch {
+            print("Error creating local profile: \(error)")
+            // Don't block auth flow — profile will be created on next launch
         }
     }
 

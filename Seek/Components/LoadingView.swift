@@ -13,10 +13,10 @@ struct LoadingView: View {
                 .scaleEffect(1.2)
             Text(message)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: "FAFAF8"))
+        .background(Color(hex: "FAFAF6"))
     }
 }
 

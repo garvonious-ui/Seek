@@ -20,17 +20,17 @@ struct ProfileView: View {
                     HStack(spacing: 16) {
                         Image(systemName: "person.circle.fill")
                             .font(.system(size: 56))
-                            .foregroundStyle(Color(hex: "2C5F7C"))
+                            .foregroundStyle(Color(hex: "5B7B5E"))
                         VStack(alignment: .leading, spacing: 4) {
                             Text(profile?.displayName.isEmpty == false ? profile!.displayName : "Seeker")
                                 .font(.headline)
                             Text(profile?.email ?? "")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color(hex: "6B7280"))
                             if let date = profile?.createdAt {
                                 Text("Member since \(date.formatted(.dateTime.month(.wide).year()))")
                                     .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(Color(hex: "9CA3AF"))
                             }
                         }
                     }
@@ -42,7 +42,7 @@ struct ProfileView: View {
                     Section {
                         HStack {
                             Image(systemName: "star.circle.fill")
-                                .foregroundStyle(Color(hex: "D4A853"))
+                                .foregroundStyle(Color(hex: "CDA349"))
                             Text("Seek+ Member")
                                 .font(.subheadline.weight(.semibold))
                             Spacer()
@@ -61,7 +61,7 @@ struct ProfileView: View {
                         if let longest = profile?.longestStreak, longest > 0 {
                             Text("Best: \(longest)")
                                 .font(.caption)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(Color(hex: "9CA3AF"))
                         }
                     }
                     Label("\(profile?.totalVersesExplored ?? 0) verses explored", systemImage: "book.closed")
@@ -85,9 +85,9 @@ struct ProfileView: View {
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.caption)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(Color(hex: "9CA3AF"))
                             }
-                            .foregroundStyle(Color(hex: "D4A853"))
+                            .foregroundStyle(Color(hex: "CDA349"))
                         }
                     } else {
                         NavigationLink {
@@ -101,7 +101,7 @@ struct ProfileView: View {
                         requestReview()
                     } label: {
                         Label("Rate Seek", systemImage: "heart")
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color(hex: "1A1A1A"))
                     }
 
                     ShareLink(item: URL(string: "https://apps.apple.com/app/seek")!) {

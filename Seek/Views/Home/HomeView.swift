@@ -8,6 +8,7 @@ struct HomeView: View {
     @State private var dailyVerse: DailyVerse?
     @State private var isLoadingVerse = false
     @State private var navigateToChat = false
+    @State private var showProfile = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -20,10 +21,10 @@ struct HomeView: View {
                         Spacer()
                         Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
                             .font(.headline)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Color(hex: "CDA349"))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
-                            .background(.orange.opacity(0.1), in: Capsule())
+                            .background(Color(hex: "CDA349").opacity(0.12), in: Capsule())
                     }
                     .padding(.horizontal)
 
@@ -39,13 +40,14 @@ struct HomeView: View {
                             Text("\(max(remaining, 0)) chats remaining today")
                                 .font(.caption)
                         }
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Color(hex: "9CA3AF"))
                     }
 
                     // Chat Prompt
                     VStack(spacing: 16) {
                         Text("What's on your heart today?")
                             .font(.title2.bold())
+                            .foregroundStyle(Color(hex: "1A1A1A"))
 
                         NavigationLink(destination: ChatView()) {
                             HStack {
@@ -55,7 +57,7 @@ struct HomeView: View {
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color(hex: "2C5F7C"))
+                            .background(Color(hex: "5B7B5E"))
                             .foregroundStyle(.white)
                             .clipShape(RoundedRectangle(cornerRadius: 24))
                         }
@@ -67,8 +69,22 @@ struct HomeView: View {
                 }
                 .padding(.top)
             }
-            .background(Color(hex: "FAFAF8"))
+            .background(Color(hex: "FAFAF6"))
             .navigationTitle("Seek")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showProfile = true
+                    } label: {
+                        Image(systemName: "person.circle")
+                            .font(.title3)
+                            .foregroundStyle(Color(hex: "5B7B5E"))
+                    }
+                }
+            }
+            .sheet(isPresented: $showProfile) {
+                ProfileView()
+            }
             .refreshable {
                 await loadDailyVerse()
             }
@@ -86,7 +102,7 @@ struct HomeView: View {
             HStack {
                 Text("Daily Verse")
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(hex: "CDA349"))
                 Spacer()
                 if isLoadingVerse {
                     ProgressView()
@@ -97,39 +113,38 @@ struct HomeView: View {
             if let verse = dailyVerse {
                 Text("\"\(verse.text)\"")
                     .font(.custom("Georgia", size: 18))
+                    .foregroundStyle(Color(hex: "1A1A1A"))
                     .lineSpacing(6)
 
                 HStack {
                     Text("— \(verse.reference)")
                         .font(.subheadline.bold())
-                        .foregroundStyle(Color(hex: "2C5F7C"))
+                        .foregroundStyle(Color(hex: "5B7B5E"))
                     Spacer()
-                    // Favorite button
                     Button {
                         favoriteVerse(verse)
                     } label: {
                         Image(systemName: "heart")
-                            .foregroundStyle(Color(hex: "2C5F7C"))
+                            .foregroundStyle(Color(hex: "5B7B5E"))
                     }
                 }
 
-                // Theme tag
                 Text(verse.theme.capitalized)
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color(hex: "D4A853").opacity(0.15))
-                    .foregroundStyle(Color(hex: "D4A853"))
+                    .background(Color(hex: "CDA349").opacity(0.15))
+                    .foregroundStyle(Color(hex: "CDA349"))
                     .clipShape(Capsule())
             } else if !isLoadingVerse {
-                // Fallback static verse
                 Text("\"God is our refuge and strength, a very present help in trouble.\"")
                     .font(.custom("Georgia", size: 18))
+                    .foregroundStyle(Color(hex: "1A1A1A"))
                     .lineSpacing(6)
 
                 Text("— Psalm 46:1")
                     .font(.subheadline.bold())
-                    .foregroundStyle(Color(hex: "2C5F7C"))
+                    .foregroundStyle(Color(hex: "5B7B5E"))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -149,7 +164,6 @@ struct HomeView: View {
         do {
             dailyVerse = try await SupabaseService.shared.fetchDailyVerse()
         } catch {
-            // Silently fail — fallback verse shows
             print("Failed to load daily verse: \(error)")
         }
     }

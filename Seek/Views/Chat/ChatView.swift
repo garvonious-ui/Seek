@@ -52,7 +52,7 @@ struct ChatView: View {
                                 ProgressView()
                                 Text("Finding scripture...")
                                     .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color(hex: "6B7280"))
                             }
                             .padding()
                         }
@@ -84,7 +84,7 @@ struct ChatView: View {
             // Input bar
             inputBar
         }
-        .background(Color(hex: "FAFAF8"))
+        .background(Color(hex: "FAFAF6"))
         .navigationTitle("Chat")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showCardCreator) {
@@ -103,15 +103,15 @@ struct ChatView: View {
         VStack(spacing: 12) {
             Image(systemName: "book.closed")
                 .font(.system(size: 48))
-                .foregroundStyle(Color(hex: "2C5F7C").opacity(0.3))
+                .foregroundStyle(Color(hex: "5B7B5E").opacity(0.3))
 
             Text("Share what's on your heart")
                 .font(.headline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
 
             Text("Tell me what you're going through — joy, gratitude, struggle, or seeking — and I'll find scripture for your moment.")
                 .font(.subheadline)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color(hex: "9CA3AF"))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -135,8 +135,8 @@ struct ChatView: View {
                 .font(.subheadline)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                .background(Color(hex: "2C5F7C").opacity(0.08))
-                .foregroundStyle(Color(hex: "2C5F7C"))
+                .background(Color(hex: "5B7B5E").opacity(0.08))
+                .foregroundStyle(Color(hex: "5B7B5E"))
                 .clipShape(Capsule())
         }
     }
@@ -148,7 +148,7 @@ struct ChatView: View {
             Spacer(minLength: 60)
             Text(text)
                 .padding(12)
-                .background(Color(hex: "2C5F7C"))
+                .background(Color(hex: "5B7B5E"))
                 .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
         }
@@ -157,8 +157,9 @@ struct ChatView: View {
     private func assistantIntro(_ text: String) -> some View {
         HStack {
             Text(text)
+                .foregroundStyle(Color(hex: "1A1A1A"))
                 .padding(12)
-                .background(Color(.systemGray6))
+                .background(Color(hex: "F3F4F6"))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             Spacer(minLength: 60)
         }
@@ -174,22 +175,22 @@ struct ChatView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(verse.reference)
                             .font(.subheadline.bold())
-                            .foregroundStyle(Color(hex: "2C5F7C"))
+                            .foregroundStyle(Color(hex: "5B7B5E"))
 
                         Text(verse.text)
                             .font(.custom("Georgia", size: 15))
                             .lineSpacing(4)
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color(hex: "1A1A1A"))
 
                         Text(verse.context)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color(hex: "6B7280"))
 
                         HStack {
                             Spacer()
                             Label("Create Card", systemImage: "rectangle.on.rectangle")
                                 .font(.caption2.weight(.medium))
-                                .foregroundStyle(Color(hex: "2C5F7C"))
+                                .foregroundStyle(Color(hex: "5B7B5E"))
                         }
                     }
                     .padding(12)
@@ -207,16 +208,16 @@ struct ChatView: View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Prayer", systemImage: "hands.sparkles")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(hex: "D4A853"))
+                .foregroundStyle(Color(hex: "CDA349"))
 
             Text(text)
                 .font(.custom("Georgia", size: 15).italic())
                 .lineSpacing(4)
-                .foregroundStyle(.primary)
+                .foregroundStyle(Color(hex: "1A1A1A"))
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(hex: "D4A853").opacity(0.08))
+        .background(Color(hex: "CDA349").opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -224,20 +225,21 @@ struct ChatView: View {
         VStack(alignment: .leading, spacing: 6) {
             Label("Worship Song", systemImage: "music.note")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Color(hex: "2C5F7C"))
+                .foregroundStyle(Color(hex: "5B7B5E"))
 
             Text(song.title)
                 .font(.subheadline.bold())
+                .foregroundStyle(Color(hex: "1A1A1A"))
             Text("by \(song.artist)")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(hex: "6B7280"))
             Text(song.context)
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Color(hex: "9CA3AF"))
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(hex: "2C5F7C").opacity(0.06))
+        .background(Color(hex: "5B7B5E").opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -250,8 +252,8 @@ struct ChatView: View {
                 Text(text)
                     .font(.subheadline)
                     .padding(10)
-                    .background(Color(hex: "2C5F7C").opacity(0.08))
-                    .foregroundStyle(Color(hex: "2C5F7C"))
+                    .background(Color(hex: "5B7B5E").opacity(0.08))
+                    .foregroundStyle(Color(hex: "5B7B5E"))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             Spacer(minLength: 60)
@@ -274,7 +276,7 @@ struct ChatView: View {
         VStack(spacing: 12) {
             Image(systemName: "clock")
                 .font(.title2)
-                .foregroundStyle(Color(hex: "D4A853"))
+                .foregroundStyle(Color(hex: "CDA349"))
             Text(text)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
@@ -282,12 +284,12 @@ struct ChatView: View {
                 // TODO: Show premium upgrade
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color(hex: "D4A853"))
+            .tint(Color(hex: "CDA349"))
             .controlSize(.small)
         }
         .padding(16)
         .frame(maxWidth: .infinity)
-        .background(Color(hex: "D4A853").opacity(0.06))
+        .background(Color(hex: "CDA349").opacity(0.06))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
@@ -299,7 +301,7 @@ struct ChatView: View {
                 .textFieldStyle(.plain)
                 .lineLimit(1...4)
                 .padding(12)
-                .background(Color(.systemGray6))
+                .background(Color(hex: "F3F4F6"))
                 .clipShape(RoundedRectangle(cornerRadius: 20))
 
             Button {
@@ -307,13 +309,13 @@ struct ChatView: View {
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading ? .gray : Color(hex: "2C5F7C"))
+                    .foregroundStyle(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading ? .gray : Color(hex: "5B7B5E"))
             }
             .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
+        .background(Color.white.shadow(.drop(color: .black.opacity(0.05), radius: 4, y: -2)))
     }
 
     // MARK: - Send Message

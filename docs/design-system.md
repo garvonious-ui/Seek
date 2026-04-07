@@ -2,13 +2,14 @@
 
 ## Theme: Light, Clean, Reverent but Modern
 
-## Color Palette
+## Color Palette — Gold + Soft Sage
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Primary | #2C5F7C | Deep ocean blue — trust, depth, calm |
-| Primary Light | #4A8BA8 | Lighter variant for hover/active states |
-| Secondary | #D4A853 | Warm gold — faith, warmth, premium feel |
-| Background | #FAFAF8 | Warm off-white — not sterile pure white |
+| Gold | #CDA349 | Warm gold — faith, warmth, premium feel |
+| Light Gold | #EDD99A | Lighter gold for backgrounds, highlights |
+| Sage | #5B7B5E | Primary sage green — earthy, grounding, approachable |
+| Mid Sage | #8AAF8D | Lighter sage for hover/active states |
+| Background | #FAFAF6 | Warm off-white |
 | Surface | #FFFFFF | Cards, sheets, modals |
 | Text Primary | #1A1A1A | Near-black for readability |
 | Text Secondary | #6B7280 | Gray for supporting text |
