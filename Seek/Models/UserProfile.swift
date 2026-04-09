@@ -18,7 +18,7 @@ final class UserProfile {
     var totalCardsCreated: Int
     var dailyChatsUsed: Int
     var dailyChatsResetDate: Date
-    var preferredTranslation: String
+    var preferredTranslation: String = "NLT"
 
     init(
         id: String,
