@@ -25,14 +25,22 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify JWT
+    // Verify JWT and get user
     const token = authHeader.replace("Bearer ", "");
-    const { error: authError } = await supabase.auth.getUser(token);
-    if (authError) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401,
       });
     }
+
+    // Get user's preferred translation
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("preferred_translation")
+      .eq("id", user.id)
+      .single();
+    const translation = profile?.preferred_translation ?? "NLT";
 
     // Get a daily verse that hasn't been used recently (within 90 days)
     const ninetyDaysAgo = new Date();
@@ -41,6 +49,7 @@ serve(async (req: Request) => {
     const { data: verse, error } = await supabase
       .from("daily_verses")
       .select("*")
+      .eq("translation", translation)
       .or(
         `last_used_date.is.null,last_used_date.lt.${ninetyDaysAgo.toISOString().split("T")[0]}`,
       )
@@ -48,10 +57,11 @@ serve(async (req: Request) => {
       .single();
 
     if (error || !verse) {
-      // Fallback: get the least recently used verse
+      // Fallback: get the least recently used verse in user's translation
       const { data: fallback } = await supabase
         .from("daily_verses")
         .select("*")
+        .eq("translation", translation)
         .order("last_used_date", { ascending: true, nullsFirst: true })
         .limit(1)
         .single();

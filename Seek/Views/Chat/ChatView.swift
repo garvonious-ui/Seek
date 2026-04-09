@@ -193,45 +193,47 @@ struct ChatView: View {
     private func versesCard(_ verses: [VerseResult]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(verses) { verse in
-                Button {
-                    selectedVerse = verse
-                } label: {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(verse.reference)
-                            .font(.subheadline.bold())
-                            .foregroundStyle(Color(hex: "5B7B5E"))
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(verse.reference)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Color(hex: "5B7B5E"))
 
-                        Text(verse.text)
-                            .font(.custom("Georgia", size: 15))
-                            .lineSpacing(4)
-                            .foregroundStyle(Color(hex: "1A1A1A"))
+                    Text(verse.text)
+                        .font(.custom("Georgia", size: 15))
+                        .lineSpacing(4)
+                        .foregroundStyle(Color(hex: "1A1A1A"))
 
-                        Text(verse.context)
-                            .font(.caption)
-                            .foregroundStyle(Color(hex: "6B7280"))
+                    Text(verse.context)
+                        .font(.caption)
+                        .foregroundStyle(Color(hex: "6B7280"))
 
-                        HStack(spacing: 16) {
-                            Spacer()
-                            Button {
-                                toggleFavorite(verse)
-                            } label: {
-                                let isFav = favoriteVerses.contains { $0.reference == verse.reference }
-                                Label("Favorite", systemImage: isFav ? "heart.fill" : "heart")
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(Color(hex: "CDA349"))
-                            }
+                    HStack(spacing: 16) {
+                        Spacer()
+                        Button {
+                            toggleFavorite(verse)
+                        } label: {
+                            let isFav = favoriteVerses.contains { $0.reference == verse.reference }
+                            Label("Favorite", systemImage: isFav ? "heart.fill" : "heart")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(Color(hex: "CDA349"))
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            selectedVerse = verse
+                        } label: {
                             Label("Create Card", systemImage: "rectangle.on.rectangle")
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(Color(hex: "5B7B5E"))
                         }
+                        .buttonStyle(.plain)
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
                 }
-                .buttonStyle(.plain)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: .black.opacity(0.04), radius: 4, y: 1)
             }
         }
     }
