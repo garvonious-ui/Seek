@@ -112,6 +112,13 @@
 - [ ] Advanced analytics via Supabase + PostHog
 - [ ] Additional card template packs
 
+## Known Bugs
+- [x] Profile auto-create trigger not firing for Apple Sign In users — fixed: ensureRemoteProfile() called after Apple Sign In
+- [ ] Apple Sign In needs Apple Service ID configured in Supabase dashboard
+- [x] daily_verses table is empty — fixed: seed.sql has 365 verses across 20 themes
+- [x] Loading past conversations opens them read-only — fixed: input bar stays active, messages save to existing conversation
+- [x] Premium upgrade sheet not wired from rate limit card in chat — fixed: rate limit card triggers PremiumUpgradeView
+
 ## Pending Data / Blockers
 - Apple Developer Program enrollment ($99/year) required for App Store + push notifications
 - Supabase Pro plan may be needed for Edge Functions volume and pg_cron

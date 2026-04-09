@@ -90,15 +90,16 @@ class SupabaseService {
 
     // MARK: - Chat Proxy
 
-    func sendChatMessage(_ message: String, conversationHistory: [[String: String]]) async throws -> ChatResponse {
+    func sendChatMessage(_ message: String, conversationHistory: [[String: String]], translation: String = "NLT") async throws -> ChatResponse {
         struct ChatRequest: Encodable {
             let message: String
             let conversationHistory: [[String: String]]
+            let translation: String
         }
 
         let response: ChatResponse = try await client.functions.invoke(
             "chat",
-            options: .init(body: ChatRequest(message: message, conversationHistory: conversationHistory))
+            options: .init(body: ChatRequest(message: message, conversationHistory: conversationHistory, translation: translation))
         )
         return response
     }
@@ -114,9 +115,39 @@ class SupabaseService {
 
     // MARK: - Profile
 
-    func upsertProfile(userId: String, data: [String: AnyJSON]) async throws {
+    func ensureRemoteProfile(userId: String, email: String, displayName: String, preferredTranslation: String = "NLT") async throws {
         try await client.from("profiles")
-            .upsert(data)
+            .upsert([
+                "id": AnyJSON.string(userId),
+                "email": AnyJSON.string(email),
+                "display_name": AnyJSON.string(displayName),
+                "preferred_translation": AnyJSON.string(preferredTranslation),
+            ])
+            .execute()
+    }
+
+    func updatePreferredTranslation(userId: String, translation: String) async throws {
+        try await client.from("profiles")
+            .update(["preferred_translation": AnyJSON.string(translation)])
+            .eq("id", value: userId)
+            .execute()
+    }
+
+    func fetchRemotePremiumStatus(userId: String) async throws -> Bool {
+        struct ProfileRow: Decodable {
+            let is_premium: Bool
+        }
+        let response: [ProfileRow] = try await client.from("profiles")
+            .select("is_premium")
+            .eq("id", value: userId)
+            .execute()
+            .value
+        return response.first?.is_premium ?? false
+    }
+
+    func ensureNotificationSettings(userId: String) async throws {
+        try await client.from("notification_settings")
+            .upsert(["id": AnyJSON.string(userId)])
             .execute()
     }
 }

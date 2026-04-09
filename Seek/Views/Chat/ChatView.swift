@@ -17,6 +17,7 @@ struct ChatView: View {
     @State private var selectedVerse: VerseResult?
     @State private var scrollToBottom = false
     @State private var hasLoadedInitialMessage = false
+    @State private var showPremiumUpgrade = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -115,6 +116,9 @@ struct ChatView: View {
                 verseReference: verse.reference,
                 verseText: verse.text
             )
+        }
+        .sheet(isPresented: $showPremiumUpgrade) {
+            PremiumUpgradeView()
         }
     }
 
@@ -375,7 +379,7 @@ struct ChatView: View {
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
             Button("Upgrade to Seek+") {
-                // TODO: Show premium upgrade
+                showPremiumUpgrade = true
             }
             .buttonStyle(.borderedProminent)
             .tint(Color(hex: "CDA349"))
@@ -447,7 +451,8 @@ struct ChatView: View {
             do {
                 let response = try await SupabaseService.shared.sendChatMessage(
                     truncated,
-                    conversationHistory: conversationHistory
+                    conversationHistory: conversationHistory,
+                    translation: profile?.preferredTranslation ?? "NLT"
                 )
 
                 await MainActor.run {
@@ -502,8 +507,9 @@ struct ChatView: View {
                     modelContext.insert(assistantMsg)
                     try? modelContext.save()
 
-                    // Update conversation history
-                    conversationHistory.append(["role": "assistant", "content": response.message])
+                    // Update conversation history — include full response for follow-up context
+                    let fullContent = responseJSON.flatMap { String(data: $0, encoding: .utf8) } ?? response.message
+                    conversationHistory.append(["role": "assistant", "content": fullContent])
 
                     // Update profile stats
                     if let profile {
@@ -571,7 +577,7 @@ struct ChatView: View {
                     if let followUp = response.followUp, !followUp.isEmpty {
                         messages.append(DisplayMessage(kind: .followUp(followUp)))
                     }
-                    conversationHistory.append(["role": "assistant", "content": response.message])
+                    conversationHistory.append(["role": "assistant", "content": msg.content])
                 } else {
                     // Fallback: show as plain text
                     messages.append(DisplayMessage(kind: .intro(msg.content)))

@@ -4,11 +4,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 
-const SYSTEM_PROMPT = Deno.env.get("CLAUDE_SYSTEM_PROMPT") ?? `You are a compassionate scripture companion. When a user shares what's on their heart — whether they're celebrating, grateful, hurting, seeking, or simply reflecting — respond with 3-5 Bible verses (KJV translation) that speak to their moment.
+function buildSystemPrompt(translation: string): string {
+  const t = ["KJV", "NLT"].includes(translation) ? translation : "NLT";
+  return `You are a compassionate scripture companion. When a user shares what's on their heart — whether they're celebrating, grateful, hurting, seeking, or simply reflecting — respond with 3-5 Bible verses (${t} translation) that speak to their moment.
 
 For each verse, provide:
 1. The full reference (e.g., Philippians 4:6-7)
-2. The complete verse text in KJV
+2. The complete verse text in ${t}
 3. A brief 1-2 sentence explanation of how this verse relates to their situation
 
 Guidelines:
@@ -27,7 +29,7 @@ Respond in this JSON format:
   "verses": [
     {
       "reference": "Book Chapter:Verse",
-      "text": "Full KJV verse text",
+      "text": "Full verse text in the requested translation",
       "context": "Why this verse fits their situation"
     }
   ],
@@ -55,6 +57,9 @@ Also include a practical "action" — a real-world step the user can take right 
 The action should feel doable, not overwhelming. 2-3 concrete steps. Match the user's energy.
 
 IMPORTANT: Return ONLY the raw JSON object. Do NOT wrap it in markdown code fences or any other formatting. Just the raw JSON.`;
+}
+
+const SYSTEM_PROMPT = buildSystemPrompt("NLT");
 
 serve(async (req: Request) => {
   try {
@@ -94,8 +99,24 @@ serve(async (req: Request) => {
       });
     }
 
+    // Get user's timezone and premium status
+    const { data: notifSettings } = await supabase
+      .from("notification_settings")
+      .select("timezone")
+      .eq("id", user.id)
+      .single();
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_premium")
+      .eq("id", user.id)
+      .single();
+
+    // Compute "today" in the user's local timezone (not UTC)
+    const userTz = notifSettings?.timezone ?? "America/New_York";
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: userTz }); // "YYYY-MM-DD"
+
     // Check rate limit BEFORE calling Claude
-    const today = new Date().toISOString().split("T")[0];
     const { data: usage } = await supabase
       .from("usage_logs")
       .select("chat_count")
@@ -104,13 +125,6 @@ serve(async (req: Request) => {
       .single();
 
     const chatCount = usage?.chat_count ?? 0;
-
-    // Check premium status
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_premium")
-      .eq("id", user.id)
-      .single();
 
     const maxChats = profile?.is_premium ? 50 : 5;
 
@@ -131,7 +145,7 @@ serve(async (req: Request) => {
     }
 
     // Parse request
-    const { message, conversationHistory } = await req.json();
+    const { message, conversationHistory, translation } = await req.json();
 
     if (!message || typeof message !== "string") {
       return new Response(
@@ -158,7 +172,7 @@ serve(async (req: Request) => {
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: 1500,
-        system: SYSTEM_PROMPT,
+        system: buildSystemPrompt(translation ?? "NLT"),
         messages,
       }),
     });

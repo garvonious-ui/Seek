@@ -18,6 +18,7 @@ final class UserProfile {
     var totalCardsCreated: Int
     var dailyChatsUsed: Int
     var dailyChatsResetDate: Date
+    var preferredTranslation: String
 
     init(
         id: String,
@@ -25,7 +26,7 @@ final class UserProfile {
         email: String = "",
         profileImageURL: String? = nil,
         createdAt: Date = .now,
-        isPremium: Bool = false,
+        isPremium: Bool = true,
         premiumExpiresAt: Date? = nil,
         onboardingTopics: [String] = [],
         streakCount: Int = 0,
@@ -34,7 +35,8 @@ final class UserProfile {
         totalVersesExplored: Int = 0,
         totalCardsCreated: Int = 0,
         dailyChatsUsed: Int = 0,
-        dailyChatsResetDate: Date = .now
+        dailyChatsResetDate: Date = .now,
+        preferredTranslation: String = "NLT"
     ) {
         self.id = id
         self.displayName = displayName
@@ -51,5 +53,6 @@ final class UserProfile {
         self.totalCardsCreated = totalCardsCreated
         self.dailyChatsUsed = dailyChatsUsed
         self.dailyChatsResetDate = dailyChatsResetDate
+        self.preferredTranslation = preferredTranslation
     }
 }

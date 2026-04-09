@@ -71,6 +71,17 @@ struct ProfileView: View {
                 // Settings
                 Section("Settings") {
                     NavigationLink {
+                        TranslationPickerView()
+                    } label: {
+                        HStack {
+                            Label("Bible Translation", systemImage: "book")
+                            Spacer()
+                            Text(BibleTranslation(rawValue: profile?.preferredTranslation ?? "NLT")?.rawValue ?? "NLT")
+                                .foregroundStyle(Color(hex: "9CA3AF"))
+                        }
+                    }
+
+                    NavigationLink {
                         NotificationSettingsView()
                     } label: {
                         Label("Notifications", systemImage: "bell")
@@ -170,6 +181,55 @@ struct ProfileView: View {
     private func requestReview() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             AppStore.requestReview(in: windowScene)
+        }
+    }
+}
+
+// MARK: - Translation Picker
+
+struct TranslationPickerView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Query private var profiles: [UserProfile]
+    @State private var selectedTranslation: String = "NLT"
+
+    private var profile: UserProfile? { profiles.first }
+
+    var body: some View {
+        List {
+            ForEach(BibleTranslation.allCases) { translation in
+                Button {
+                    selectedTranslation = translation.rawValue
+                    if let profile {
+                        profile.preferredTranslation = translation.rawValue
+                        try? modelContext.save()
+                        Task {
+                            try? await SupabaseService.shared.updatePreferredTranslation(userId: profile.id, translation: translation.rawValue)
+                        }
+                    }
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(translation.displayName)
+                                .foregroundStyle(Color(hex: "1A1A1A"))
+                            Text(translation.rawValue)
+                                .font(.caption)
+                                .foregroundStyle(Color(hex: "9CA3AF"))
+                        }
+                        Spacer()
+                        if selectedTranslation == translation.rawValue {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(Color(hex: "5B7B5E"))
+                                .fontWeight(.semibold)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .navigationTitle("Bible Translation")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            selectedTranslation = profile?.preferredTranslation ?? "NLT"
         }
     }
 }
