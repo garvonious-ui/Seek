@@ -14,7 +14,7 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - NEVER call Claude API directly from client — always through Supabase Edge Function proxy
 - Scripture text always renders in serif font (Georgia/New York), distinct from UI text
 - Rate limit: 5 free chats/day, 50 premium — tracked server-side in Supabase usage_logs table
-- All scripture is KJV unless user has premium ESV enabled
+- Default translation is NLT; user can switch to KJV in Settings. Translation preference stored in UserProfile.preferredTranslation and Supabase profiles.preferred_translation
 - Denominationally neutral tone — no specific church doctrine in any AI response
 - Crisis language in chat must surface scripture AND encourage professional help
 - Match user's emotional energy — celebrate with those who celebrate, don't default to "comfort" tone
@@ -50,6 +50,8 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - Integer division in Swift: `250/255 = 0` not `0.98`. Use `250.0/255.0` for UIColor
 - Claude API may return JSON wrapped in markdown fences — always strip them server-side
 - Edge Functions with `verify_jwt = true` block the auth token from reaching the function code — use `--no-verify-jwt` and validate in-function
+- SwiftData @Model: new stored properties MUST have default values on the declaration (`var foo: String = "default"`), not just in the init parameter. Without declaration-level defaults, SwiftData can't perform lightweight migration and may wipe the local store.
+- NEVER nest Buttons in SwiftUI — the outer button swallows inner button taps. Use separate buttons side by side instead.
 
 ## Supabase Project
 - Ref: hxfiaowayrhuhzhhbaix

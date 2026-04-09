@@ -103,7 +103,7 @@
 - [ ] Submit to App Store
 
 ## Phase 2 — Expansion
-- [ ] ESV API integration as premium translation option
+- [x] ~~ESV API integration~~ Multi-translation support (NLT default, KJV switchable) — done in Phase 1
 - [ ] Verse of the Day widget (iOS home screen / lock screen)
 - [ ] Search/browse Bible by book and chapter
 - [ ] Topical verse index (pre-curated lists)
