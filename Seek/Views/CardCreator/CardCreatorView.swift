@@ -86,13 +86,13 @@ struct CardCreatorView: View {
 
                 Text(verseText)
                     .font(.custom(selectedTemplate.fontName, size: previewFontSize))
-                    .lineSpacing(6)
+                    .lineSpacing(10)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(selectedTemplate.textColor)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 32)
 
                 Text("— \(verseReference)")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(selectedTemplate.referenceColor)
 
                 Spacer()
@@ -114,10 +114,10 @@ struct CardCreatorView: View {
 
     private var previewFontSize: CGFloat {
         let length = verseText.count
-        if length < 80 { return 20 }
-        if length < 150 { return 17 }
-        if length < 250 { return 15 }
-        return 13
+        if length < 80 { return 36 }
+        if length < 150 { return 30 }
+        if length < 250 { return 24 }
+        return 20
     }
 
     // MARK: - Template Picker

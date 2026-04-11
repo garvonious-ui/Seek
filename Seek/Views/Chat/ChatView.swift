@@ -451,11 +451,18 @@ struct ChatView: View {
         isLoading = true
         Task {
             do {
-                let response = try await SupabaseService.shared.sendChatMessage(
+                var response = try await SupabaseService.shared.sendChatMessage(
                     truncated,
                     conversationHistory: conversationHistory,
                     translation: profile?.preferredTranslation ?? "NLT"
                 )
+
+                // Client-side fallback: if verses are empty but message looks like JSON, try re-parsing
+                if response.verses.isEmpty, response.message.trimmingCharacters(in: .whitespaces).hasPrefix("{"),
+                   let data = response.message.data(using: .utf8),
+                   let reparsed = try? JSONDecoder().decode(ChatResponse.self, from: data) {
+                    response = reparsed
+                }
 
                 await MainActor.run {
                     isLoading = false

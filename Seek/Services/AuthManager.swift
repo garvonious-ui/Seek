@@ -93,15 +93,23 @@ final class AuthManager {
                     idToken: idToken,
                     nonce: nonce
                 )
+                let userId = session.user.id.uuidString
+                let email = session.user.email ?? ""
+                let displayName = appleIDCredential.fullName?.givenName ?? ""
                 await MainActor.run {
                     createLocalProfileIfNeeded(
-                        userId: session.user.id.uuidString,
-                        email: session.user.email ?? "",
-                        displayName: appleIDCredential.fullName?.givenName ?? "",
+                        userId: userId,
+                        email: email,
+                        displayName: displayName,
                         modelContext: modelContext
                     )
                     authState = .authenticated
                     errorMessage = nil
+                }
+                // Ensure remote profile + notification settings exist
+                Task {
+                    try? await SupabaseService.shared.ensureRemoteProfile(userId: userId, email: email, displayName: displayName)
+                    try? await SupabaseService.shared.ensureNotificationSettings(userId: userId)
                 }
             } catch {
                 errorMessage = "Sign in failed: \(error.localizedDescription)"
@@ -123,13 +131,18 @@ final class AuthManager {
                 email: email,
                 password: password
             )
+            let userId = session.user.id.uuidString
             await MainActor.run {
                 createLocalProfileIfNeeded(
-                    userId: session.user.id.uuidString,
+                    userId: userId,
                     email: email,
                     modelContext: modelContext
                 )
                 authState = .authenticated
+            }
+            Task {
+                try? await SupabaseService.shared.ensureRemoteProfile(userId: userId, email: email, displayName: "")
+                try? await SupabaseService.shared.ensureNotificationSettings(userId: userId)
             }
         } catch {
             print("[Auth] Sign in failed: \(error)")
@@ -146,13 +159,18 @@ final class AuthManager {
                 email: email,
                 password: password
             )
+            let userId = session.user.id.uuidString
             await MainActor.run {
                 createLocalProfileIfNeeded(
-                    userId: session.user.id.uuidString,
+                    userId: userId,
                     email: email,
                     modelContext: modelContext
                 )
                 authState = .authenticated
+            }
+            Task {
+                try? await SupabaseService.shared.ensureRemoteProfile(userId: userId, email: email, displayName: "")
+                try? await SupabaseService.shared.ensureNotificationSettings(userId: userId)
             }
         } catch {
             print("[Auth] Sign up failed: \(error)")

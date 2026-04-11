@@ -25,12 +25,14 @@ struct HomeView: View {
     }
 
     private let quickPrompts = [
-        ("I'm feeling grateful", "heart.fill"),
-        ("I need strength today", "bolt.heart.fill"),
-        ("Help me find peace", "leaf.fill"),
-        ("I want to praise God", "hands.sparkles.fill"),
-        ("Going through something hard", "cloud.rain.fill"),
-        ("I'm celebrating!", "party.popper.fill"),
+        ("Fear", "bolt.shield.fill"),
+        ("Anger", "flame.fill"),
+        ("Loneliness", "person.fill.questionmark"),
+        ("Gratitude", "heart.fill"),
+        ("Temptation", "eye.slash.fill"),
+        ("Doubt", "questionmark.circle.fill"),
+        ("Joy", "sun.max.fill"),
+        ("Weariness", "moon.zzz.fill"),
     ]
 
     var body: some View {
@@ -73,7 +75,7 @@ struct HomeView: View {
                         ], spacing: 10) {
                             ForEach(quickPrompts, id: \.0) { prompt, icon in
                                 NavigationLink {
-                                    ChatView(initialMessage: prompt)
+                                    ChatView(initialMessage: "I'm dealing with \(prompt.lowercased())")
                                 } label: {
                                     HStack(spacing: 8) {
                                         Image(systemName: icon)
@@ -122,6 +124,7 @@ struct HomeView: View {
             .task {
                 await loadDailyVerse()
                 StreakManager.recordActivity(modelContext: modelContext)
+                await syncPremiumStatus()
             }
         }
     }
@@ -196,6 +199,20 @@ struct HomeView: View {
     }
 
     // MARK: - Actions
+
+    private func syncPremiumStatus() async {
+        guard let userId = SupabaseService.shared.currentUser?.id.uuidString,
+              let profile = profiles.first else { return }
+        do {
+            let remotePremium = try await SupabaseService.shared.fetchRemotePremiumStatus(userId: userId)
+            if profile.isPremium != remotePremium {
+                profile.isPremium = remotePremium
+                try? modelContext.save()
+            }
+        } catch {
+            print("Failed to sync premium status: \(error)")
+        }
+    }
 
     private func loadDailyVerse() async {
         isLoadingVerse = true

@@ -30,14 +30,14 @@ struct VerseCardView: View {
                 // Verse text
                 Text(verseText)
                     .font(.custom(template.fontName, size: fontSize))
-                    .lineSpacing(12)
+                    .lineSpacing(20)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(template.textColor)
-                    .padding(.horizontal, 80)
+                    .padding(.horizontal, 100)
 
                 // Reference
                 Text("— \(verseReference)")
-                    .font(.system(size: 28, weight: .semibold))
+                    .font(.system(size: 44, weight: .semibold))
                     .foregroundStyle(template.referenceColor)
 
                 Spacer()
@@ -59,11 +59,11 @@ struct VerseCardView: View {
     /// Auto-size font based on verse length
     private var fontSize: CGFloat {
         let length = verseText.count
-        if length < 80 { return 48 }
-        if length < 150 { return 40 }
-        if length < 250 { return 34 }
-        if length < 400 { return 28 }
-        return 24
+        if length < 80 { return 88 }
+        if length < 150 { return 72 }
+        if length < 250 { return 60 }
+        if length < 400 { return 48 }
+        return 40
     }
 }
 

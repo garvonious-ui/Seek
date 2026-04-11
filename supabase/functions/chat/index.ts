@@ -171,7 +171,7 @@ serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 1500,
+        max_tokens: 3000,
         system: buildSystemPrompt(translation ?? "NLT"),
         messages,
       }),
@@ -206,20 +206,41 @@ serve(async (req: Request) => {
 
     // Parse Claude's JSON response — strip markdown fences if present
     let cleanedMessage = assistantMessage.trim();
-    if (cleanedMessage.startsWith("```")) {
-      cleanedMessage = cleanedMessage.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+    // Strip any markdown code fences (```json ... ```, ``` ... ```, or multiple backtick styles)
+    cleanedMessage = cleanedMessage.replace(/^```\w*\s*\n?/, "").replace(/\n?\s*```\s*$/, "");
+    // If still not starting with {, try to extract JSON object
+    if (!cleanedMessage.startsWith("{")) {
+      const jsonStart = cleanedMessage.indexOf("{");
+      if (jsonStart !== -1) {
+        cleanedMessage = cleanedMessage.slice(jsonStart);
+      }
     }
 
     let parsed;
     try {
       parsed = JSON.parse(cleanedMessage);
     } catch {
-      parsed = {
-        message: assistantMessage,
-        verses: [],
-        prayer: "",
-        worshipSong: null,
-      };
+      // JSON parse failed (likely truncated response) — try to salvage partial JSON
+      // by closing any open structures
+      let salvaged = cleanedMessage;
+      // Count open braces/brackets to close them
+      const openBraces = (salvaged.match(/{/g) || []).length - (salvaged.match(/}/g) || []).length;
+      const openBrackets = (salvaged.match(/\[/g) || []).length - (salvaged.match(/]/g) || []).length;
+      // Trim trailing incomplete values (partial strings, etc.)
+      salvaged = salvaged.replace(/,\s*"[^"]*$/, "");
+      salvaged = salvaged.replace(/,\s*$/, "");
+      for (let i = 0; i < openBrackets; i++) salvaged += "]";
+      for (let i = 0; i < openBraces; i++) salvaged += "}";
+      try {
+        parsed = JSON.parse(salvaged);
+      } catch {
+        parsed = {
+          message: assistantMessage,
+          verses: [],
+          prayer: "",
+          worshipSong: null,
+        };
+      }
     }
 
     return new Response(
