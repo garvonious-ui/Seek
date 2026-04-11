@@ -186,3 +186,30 @@
 - All core features working: auth, chat with NLT/KJV, card creator, library, streaks, notifications, monetization
 - Remaining: Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, offline mode, final QA
 - 4 commits this session, both Edge Functions redeployed, TestFlight build uploaded
+
+## 2026-04-11 — Session 4 (Chat JSON Fix + Polish)
+
+### Bug fix
+- Chat was displaying raw JSON instead of parsed verse cards, prayer cards, etc.
+- Root cause: `max_tokens: 1500` in chat Edge Function — Claude's response (3-5 verses + prayer + song + action) exceeded the limit, truncating the JSON mid-response. `JSON.parse` failed, fallback put the raw JSON string into the `message` field, which rendered as a plain text bubble.
+- Fix (Edge Function): increased `max_tokens` from 1500 to 3000, improved markdown fence stripping to handle text before JSON, added truncated JSON salvage logic (closes open braces/brackets before giving up)
+- Fix (client-side): if `response.verses` is empty but `response.message` starts with `{`, re-parse it as `ChatResponse` — catches edge case where server fallback wraps valid JSON in the message field
+- Chat Edge Function redeployed
+
+### Previously uncommitted changes (from between sessions 3–4)
+- Verse card font sizes bumped significantly for 1080x1920 render (short verse: 48→88pt, reference: 28→44pt, more line spacing/padding)
+- Card creator preview font sizes updated to match new scale
+- Quick prompts on home screen changed from sentences to single-word emotions (Fear, Anger, Joy, Loneliness, etc.)
+- Premium status sync added on home screen launch (reads `is_premium` from Supabase)
+- AuthManager: `ensureRemoteProfile()` + `ensureNotificationSettings()` called after Apple Sign In and email auth
+- `skip_nonce_check` set to false in Supabase config (tighter Apple auth)
+
+### Decisions
+- 3000 max_tokens is sufficient headroom for full chat responses (3-5 verses + prayer + song + action + follow-up)
+- Client-side fallback re-parsing is a safety net — primary fix is server-side
+
+### Current Status
+- Phase 1 MVP: ~90% complete
+- All core features working: auth, chat with NLT/KJV, card creator, library, streaks, notifications, monetization
+- Remaining: Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, offline mode, final QA
+- TestFlight build 4 uploading

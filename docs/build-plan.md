@@ -118,6 +118,7 @@
 - [x] daily_verses table is empty — fixed: seed.sql has 365 verses across 20 themes
 - [x] Loading past conversations opens them read-only — fixed: input bar stays active, messages save to existing conversation
 - [x] Premium upgrade sheet not wired from rate limit card in chat — fixed: rate limit card triggers PremiumUpgradeView
+- [x] Chat displaying raw JSON instead of verse cards — fixed: max_tokens increased 1500→3000, added JSON salvage logic + client-side fallback
 
 ## Pending Data / Blockers
 - Apple Developer Program enrollment ($99/year) required for App Store + push notifications

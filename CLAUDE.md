@@ -49,6 +49,8 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - `xcodegen generate` resets the signing team — user must re-select in Xcode
 - Integer division in Swift: `250/255 = 0` not `0.98`. Use `250.0/255.0` for UIColor
 - Claude API may return JSON wrapped in markdown fences — always strip them server-side
+- Claude chat Edge Function `max_tokens` must be ≥3000 — full responses (3-5 verses + prayer + song + action) easily exceed 1500 tokens, causing truncated JSON that displays as raw text
+- After `xcodegen generate`, always verify the build number in Xcode matches project.yml — Xcode may cache the old value
 - Edge Functions with `verify_jwt = true` block the auth token from reaching the function code — use `--no-verify-jwt` and validate in-function
 - SwiftData @Model: new stored properties MUST have default values on the declaration (`var foo: String = "default"`), not just in the init parameter. Without declaration-level defaults, SwiftData can't perform lightweight migration and may wipe the local store.
 - NEVER nest Buttons in SwiftUI — the outer button swallows inner button taps. Use separate buttons side by side instead.
