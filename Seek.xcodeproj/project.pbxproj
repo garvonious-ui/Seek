@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0BC0AD6E62637EBD3D56C538 /* DailyVerseCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 529A6C69B9D04D4999458511 /* DailyVerseCache.swift */; };
 		0BD5F868B38038EB84B4DBA1 /* SeekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D0A7482B49100DFAE1CD8E /* SeekApp.swift */; };
 		15E4A8DA35FD6665689F0982 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D96E020A355A91F2A3F06E5A /* LibraryView.swift */; };
 		1731D56A7ECF9F8D67F036E0 /* BibleTranslation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B791B857162E203CDE7CB1A /* BibleTranslation.swift */; };
@@ -26,6 +27,7 @@
 		8DB1355BC79AFAFEA798CA98 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2414D0CBEED548A87A86B20C /* ProfileView.swift */; };
 		95FF8F374DCDB53F213A8BE5 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E7235F0C9B1BBBBF06BDF49C /* Supabase */; };
 		9EA7EB70324742D90E2ECE07 /* FavoriteVerse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18DA92189B90BBA039FA720B /* FavoriteVerse.swift */; };
+		A58CD6E853CAE3FD49B3E639 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BFD3C915A42C67679D076C4 /* NetworkMonitor.swift */; };
 		B2B71EDD9BAFB550DFF4B882 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3477F498DF685933489DA4D /* SupabaseService.swift */; };
 		B676FB639C47F71CD4AD0693 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E2FD2990F68632F4168020 /* ContentView.swift */; };
 		BEA7486CDD56706D7B337E27 /* kjv.json in Resources */ = {isa = PBXBuildFile; fileRef = 6138CC96248B4F0DB8A6D986 /* kjv.json */; };
@@ -50,21 +52,23 @@
 		0A69E39476DCE0152C599D42 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		18DA92189B90BBA039FA720B /* FavoriteVerse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteVerse.swift; sourceTree = "<group>"; };
 		2414D0CBEED548A87A86B20C /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
-		25D80CCDB51FA0F6E2DD2F9C /* Seek.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Seek.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		25D80CCDB51FA0F6E2DD2F9C /* Seek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Seek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EB5EB05F2F5117730354338 /* PremiumUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumUpgradeView.swift; sourceTree = "<group>"; };
 		30EB2963A0C15BE4EC87A90C /* SubscriptionManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManagementView.swift; sourceTree = "<group>"; };
 		3B791B857162E203CDE7CB1A /* BibleTranslation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleTranslation.swift; sourceTree = "<group>"; };
 		3DE237109EA51D36872CBCC5 /* CardTemplate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardTemplate.swift; sourceTree = "<group>"; };
 		450A4C8BCEB4ED5CFB3EA2B5 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		48EF3AEB98357E3DD79F9F14 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		529A6C69B9D04D4999458511 /* DailyVerseCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyVerseCache.swift; sourceTree = "<group>"; };
 		568EA48F819F652BFE346C3D /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
-		56FE18F2835B793752F588D9 /* SeekProducts.storekit */ = {isa = PBXFileReference; path = SeekProducts.storekit; sourceTree = "<group>"; };
+		56FE18F2835B793752F588D9 /* SeekProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SeekProducts.storekit; sourceTree = "<group>"; };
 		6138CC96248B4F0DB8A6D986 /* kjv.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = kjv.json; sourceTree = "<group>"; };
 		675EF979B9F03611C1BA0A7E /* WebContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContentView.swift; sourceTree = "<group>"; };
 		75C138E835CC868B78432878 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		7E401C5BA46EEA339C6D832A /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		937F10171702BCE24D38D097 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		94BAD92E98E45FF5ACB66B8F /* SavedPrayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPrayer.swift; sourceTree = "<group>"; };
+		9BFD3C915A42C67679D076C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		9CBA6A1FF77EC4B10D24DF6E /* BibleService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleService.swift; sourceTree = "<group>"; };
 		A134D8BB570ED20CC70491AC /* ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
 		A1E2FD2990F68632F4168020 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -108,6 +112,8 @@
 			children = (
 				937F10171702BCE24D38D097 /* AuthManager.swift */,
 				9CBA6A1FF77EC4B10D24DF6E /* BibleService.swift */,
+				529A6C69B9D04D4999458511 /* DailyVerseCache.swift */,
+				9BFD3C915A42C67679D076C4 /* NetworkMonitor.swift */,
 				450A4C8BCEB4ED5CFB3EA2B5 /* NotificationManager.swift */,
 				0A67C5DC56A82F78FDED7D58 /* StoreManager.swift */,
 				D6F0FF9F69872AF91291CA6A /* StreakManager.swift */,
@@ -288,11 +294,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-					7C2B59A2F6B0212930FD9483 = {
-						DevelopmentTeam = 6QU295KVS2;
-					};
-				};
 			};
 			buildConfigurationList = 4D3E49C9FBCDC05C4363F70B /* Build configuration list for PBXProject "Seek" */;
 			developmentRegion = en;
@@ -344,11 +345,13 @@
 				F61A7C562AA06A752068CB7F /* ChatMessage.swift in Sources */,
 				E72553080B1DFEA56666C636 /* ChatView.swift in Sources */,
 				B676FB639C47F71CD4AD0693 /* ContentView.swift in Sources */,
+				0BC0AD6E62637EBD3D56C538 /* DailyVerseCache.swift in Sources */,
 				8020A273254D6E6619481CF5 /* ErrorView.swift in Sources */,
 				9EA7EB70324742D90E2ECE07 /* FavoriteVerse.swift in Sources */,
 				887574577B03E7556151985F /* HomeView.swift in Sources */,
 				15E4A8DA35FD6665689F0982 /* LibraryView.swift in Sources */,
 				68DBE21F79D3DCC994F77262 /* LoadingView.swift in Sources */,
+				A58CD6E853CAE3FD49B3E639 /* NetworkMonitor.swift in Sources */,
 				E80134CE9E9923AF338F8CC8 /* NotificationManager.swift in Sources */,
 				D06C5229AC36B07F15C95C4E /* NotificationSettingsView.swift in Sources */,
 				E2CD307B44A4954E66EBC7EA /* OnboardingView.swift in Sources */,
@@ -378,7 +381,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Seek/Seek.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 6QU295KVS2;
+				DEVELOPMENT_TEAM = A3W539C4C3;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -425,7 +428,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -472,7 +475,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Seek/Seek.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 6QU295KVS2;
+				DEVELOPMENT_TEAM = A3W539C4C3;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -519,7 +522,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

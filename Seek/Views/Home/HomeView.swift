@@ -3,11 +3,13 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(AuthManager.self) private var authManager
+    @Environment(NetworkMonitor.self) private var networkMonitor
     @Environment(\.modelContext) private var modelContext
     @Query private var profiles: [UserProfile]
     @Query private var favoriteVerses: [FavoriteVerse]
     @State private var dailyVerse: DailyVerse?
     @State private var isLoadingVerse = false
+    @State private var isShowingCachedVerse = false
     @State private var showProfile = false
     @State private var customPrompt: String = ""
     @State private var chatTarget: ChatTarget?
@@ -57,12 +59,23 @@ struct HomeView: View {
                                 .foregroundStyle(Color(hex: "6B7280"))
                         }
                         Spacer()
-                        Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
-                            .font(.headline)
-                            .foregroundStyle(Color(hex: "CDA349"))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color(hex: "CDA349").opacity(0.12), in: Capsule())
+                        VStack(alignment: .trailing, spacing: 6) {
+                            Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
+                                .font(.headline)
+                                .foregroundStyle(Color(hex: "CDA349"))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color(hex: "CDA349").opacity(0.12), in: Capsule())
+
+                            if !networkMonitor.isConnected {
+                                Label("Offline", systemImage: "wifi.slash")
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(Color(hex: "6B7280"))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color(hex: "F3F4F6"), in: Capsule())
+                            }
+                        }
                     }
                     .padding(.horizontal)
 
@@ -166,6 +179,15 @@ struct HomeView: View {
                 StreakManager.recordActivity(modelContext: modelContext)
                 await syncPremiumStatus()
             }
+            // Re-fetch as soon as we come back online so the user doesn't have
+            // to manually pull-to-refresh after regaining signal.
+            .onChange(of: networkMonitor.isConnected) { _, isConnected in
+                guard isConnected, isShowingCachedVerse else { return }
+                Task {
+                    await loadDailyVerse()
+                    await syncPremiumStatus()
+                }
+            }
         }
     }
 
@@ -189,6 +211,14 @@ struct HomeView: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(Color(hex: "CDA349"))
                 Spacer()
+                if isShowingCachedVerse {
+                    Text("Saved copy")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color(hex: "6B7280"))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Color(hex: "F3F4F6"), in: Capsule())
+                }
                 if isLoadingVerse {
                     ProgressView()
                         .scaleEffect(0.7)
@@ -222,6 +252,8 @@ struct HomeView: View {
                     .foregroundStyle(Color(hex: "CDA349"))
                     .clipShape(Capsule())
             } else if !isLoadingVerse {
+                // No cached verse AND no live fetch — show the evergreen Psalm
+                // fallback so the card never renders empty on first offline launch.
                 Text("\"God is our refuge and strength, a very present help in trouble.\"")
                     .font(.custom("Georgia", size: 18))
                     .foregroundStyle(Color(hex: "1A1A1A"))
@@ -266,13 +298,33 @@ struct HomeView: View {
     }
 
     private func loadDailyVerse() async {
+        // Show the cached verse immediately so the card never renders empty,
+        // even while a fresh fetch is in flight. If we're online the fetch
+        // below will overwrite it; if we're offline it's all we've got.
+        if dailyVerse == nil, let cached = DailyVerseCache.load()?.verse {
+            dailyVerse = cached
+            isShowingCachedVerse = true
+        }
+
+        // Don't burn a network call when we know we're offline — fall through
+        // to whatever's already cached and skip straight to the finished state.
+        guard networkMonitor.isConnected else { return }
+
         isLoadingVerse = true
         defer { isLoadingVerse = false }
 
         do {
-            dailyVerse = try await SupabaseService.shared.fetchDailyVerse()
+            let verse = try await SupabaseService.shared.fetchDailyVerse()
+            dailyVerse = verse
+            isShowingCachedVerse = false
+            DailyVerseCache.save(verse)
         } catch {
             print("Failed to load daily verse: \(error)")
+            // Leave the cached verse (if any) in place and fall back to the
+            // "Saved copy" badge so the user knows why it's not today's pick.
+            if dailyVerse != nil {
+                isShowingCachedVerse = true
+            }
         }
     }
 
@@ -289,5 +341,6 @@ struct HomeView: View {
 #Preview {
     HomeView()
         .environment(AuthManager())
+        .environment(NetworkMonitor())
         .modelContainer(for: [UserProfile.self, FavoriteVerse.self])
 }

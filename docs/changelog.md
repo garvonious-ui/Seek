@@ -246,6 +246,44 @@
 - Build number bumped 4 → 5 in `project.yml` / `CURRENT_PROJECT_VERSION`
 - Code builds clean; user to archive + upload via Xcode Organizer (CLI archive blocked on Apple Developer account auth)
 
+## 2026-04-14 — Session 7 (Offline mode handling)
+
+### Built
+- **NetworkMonitor service** (`Seek/Services/NetworkMonitor.swift`): `@Observable` wrapper around `NWPathMonitor` that publishes `isConnected` and `isExpensive`. Starts with `isConnected = true` so the first paint doesn't flash offline while the monitor warms up. Injected at the app root via `.environment(networkMonitor)` in `SeekApp.swift`.
+- **DailyVerseCache** (`Seek/Services/DailyVerseCache.swift`): tiny single-slot `UserDefaults`-backed cache that persists the most recent successful `DailyVerse` fetch with its fetch timestamp. Not a history — one entry, overwritten on each successful fetch.
+- **HomeView offline handling**:
+  - New "Offline" pill below the streak capsule when `!networkMonitor.isConnected`.
+  - New "Saved copy" badge next to the Daily Verse header when the card is rendering the cached copy instead of a fresh fetch.
+  - `loadDailyVerse` shows any cached verse immediately, then only hits the network if connected. On failure it keeps the cached copy in place and flips the "Saved copy" badge on. On success it caches the new verse and clears the badge.
+  - `.onChange(of: networkMonitor.isConnected)` auto-refreshes the daily verse (and premium status) as soon as the device reconnects, so users don't have to pull-to-refresh after regaining signal.
+- **ChatView offline handling**:
+  - New offline banner above the input bar: "You're offline. Scripture chat will resume when you reconnect." Uses the same gray `F3F4F6` treatment as the existing rate-limit banner.
+  - Input placeholder switches to "Waiting for connection..." when offline; both the TextField and the send button are disabled.
+  - `isSendDisabled` now factors in `networkMonitor.isConnected` alongside empty text and in-flight loading.
+  - `canRegenerate` returns false when offline, so the Regenerate Scripture bar disappears the moment signal drops.
+  - `sendMessage` has an upfront guard that appends a plain offline error bubble if called without a connection (belt-and-suspenders for auto-submit from `initialMessage`).
+  - New `classifyChatError(_:)` helper replaces the inline rate-limit/generic branch in both `sendMessage` and `regenerateScripture`. It prefers a dedicated offline error when `NetworkMonitor` says we're offline OR when the thrown `NSError` is an `NSURLErrorDomain` in the usual "no connection" code set (`NSURLErrorNotConnectedToInternet`, `NSURLErrorNetworkConnectionLost`, `NSURLErrorTimedOut`, `NSURLErrorCannotConnectToHost`, `NSURLErrorCannotFindHost`, `NSURLErrorDNSLookupFailed`, `NSURLErrorInternationalRoamingOff`, `NSURLErrorDataNotAllowed`). Rate limit (`429`/`daily_limit`) still wins when we're online; generic "something went wrong" is the final fallback.
+- Previews for HomeView and ChatView updated to inject `NetworkMonitor()` alongside the existing AuthManager/ModelContainer.
+- Build number bumped 5 → 6 in `project.yml`.
+
+### Decisions
+- **Cache is a single slot**, not a history. The daily-verse endpoint returns a different verse per day, so "last one we successfully fetched" is the only meaningful offline state. Simpler than dated bucketing and avoids stale 7-day-old verses piling up in UserDefaults.
+- **Offline card keeps the evergreen Psalm 46:1 fallback** for the first-run-no-cache-no-network case. Without this the card would render empty on a brand new install launched in airplane mode.
+- **Chat hard-blocks sends when offline** rather than queueing them for later retry. Queue-and-resend introduces ordering bugs (user sends A while offline, comes online and types B, which runs first if B's round trip is faster) and the UX gain is thin — users just reconnect and retype. Revisit only if TestFlight feedback asks for it.
+- **Library/Cards/Favorites need zero offline work** — they're already SwiftData-backed and CardCreatorView is pure local render via ImageRenderer. Verified by grep; no placeholder code added.
+- **Sign-in offline story is the existing `error.localizedDescription`** from Supabase. Not polished here; a dedicated offline state on SignInView is a future session if beta testers complain.
+
+### Gotchas confirmed (not new)
+- **Stale SourceKit after file adds** — SourceKit flagged dozens of phantom "Cannot find type" errors on `NetworkMonitor`, `AuthManager`, `DailyVerse`, etc. even in files I hadn't touched. `xcodebuild` was clean on the first run. This is the gotcha from Session 6's changelog: always trust `xcodebuild`, not inline diagnostics.
+- The Network framework is in the iOS SDK — no new SPM dependency or `project.yml` change needed to import `Network` and use `NWPathMonitor`.
+
+### Current Status
+- Phase 1 MVP: ~92% complete
+- Offline mode is the last substantive code feature from the Phase 1 checklist. All core features work gracefully offline now: home shows cached daily verse + offline pill, chat blocks cleanly with a dedicated banner, library/cards/favorites untouched because they're already local-only.
+- Remaining (non-code or asset work): Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, AdMob (deferred), final QA, submission.
+- Build 6 compiles clean, needs archive + TestFlight upload via Xcode GUI (same pattern as Session 6 — CLI archive blocked on Apple Developer account auth).
+- To verify the offline paths manually: toggle Airplane Mode in simulator/device, expect the Offline pill on Home, "Saved copy" badge on Daily Verse after the first successful fetch, the offline banner + disabled input in Chat, and an auto-refresh when you turn Airplane Mode back off.
+
 ## 2026-04-13 — Session 5 (Chat 502 Fix + Password Reset)
 
 ### Bug fix: chat Edge Function returning 502 on every request

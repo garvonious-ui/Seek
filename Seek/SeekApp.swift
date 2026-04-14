@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct SeekApp: App {
     @State private var authManager = AuthManager()
+    @State private var networkMonitor = NetworkMonitor()
 
     var body: some Scene {
         WindowGroup {
@@ -27,6 +28,7 @@ struct SeekApp: App {
             }
             .preferredColorScheme(.light)
             .environment(authManager)
+            .environment(networkMonitor)
         }
         .modelContainer(for: [
             UserProfile.self,

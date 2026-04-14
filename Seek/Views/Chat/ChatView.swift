@@ -6,6 +6,7 @@ struct ChatView: View {
     var existingConversation: ChatConversation? = nil
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(NetworkMonitor.self) private var networkMonitor
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query private var favoriteVerses: [FavoriteVerse]
     @Query private var savedPrayers: [SavedPrayer]
@@ -89,6 +90,21 @@ struct ChatView: View {
                 .padding(12)
                 .background(Color(hex: "F59E0B").opacity(0.1))
                 .foregroundStyle(Color(hex: "F59E0B"))
+            }
+
+            // Offline banner — replaces the rate-limit banner's role when
+            // there's no network. Chat requires a live Claude call so we
+            // don't pretend otherwise.
+            if !networkMonitor.isConnected {
+                HStack(spacing: 8) {
+                    Image(systemName: "wifi.slash")
+                    Text("You're offline. Scripture chat will resume when you reconnect.")
+                        .font(.caption)
+                    Spacer()
+                }
+                .padding(12)
+                .background(Color(hex: "F3F4F6"))
+                .foregroundStyle(Color(hex: "6B7280"))
             }
 
             // Regenerate Scripture button — only visible right after an assistant response
@@ -445,25 +461,38 @@ struct ChatView: View {
 
     private var inputBar: some View {
         HStack(spacing: 12) {
-            TextField("What's on your heart?", text: $messageText, axis: .vertical)
+            TextField(
+                networkMonitor.isConnected ? "What's on your heart?" : "Waiting for connection...",
+                text: $messageText,
+                axis: .vertical
+            )
                 .textFieldStyle(.plain)
                 .lineLimit(1...4)
                 .padding(12)
                 .background(Color(hex: "F3F4F6"))
                 .clipShape(RoundedRectangle(cornerRadius: 20))
+                .disabled(!networkMonitor.isConnected)
 
             Button {
                 sendMessage()
             } label: {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 32))
-                    .foregroundStyle(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading ? .gray : Color(hex: "5B7B5E"))
+                    .foregroundStyle(isSendDisabled ? .gray : Color(hex: "5B7B5E"))
             }
-            .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
+            .disabled(isSendDisabled)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color.white.shadow(.drop(color: .black.opacity(0.05), radius: 4, y: -2)))
+    }
+
+    /// Whether the send button should be inert — empty text, in-flight request,
+    /// or no network to send over.
+    private var isSendDisabled: Bool {
+        messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || isLoading
+            || !networkMonitor.isConnected
     }
 
     // MARK: - Send Message
@@ -471,6 +500,14 @@ struct ChatView: View {
     private func sendMessage() {
         let text = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
+
+        // Block sends outright when offline. The input bar already disables
+        // the button, but belt-and-suspenders in case a stale state slips
+        // through (e.g. auto-submit from initialMessage when we're offline).
+        guard networkMonitor.isConnected else {
+            messages.append(DisplayMessage(kind: .error("You're offline. Reconnect and try again.")))
+            return
+        }
 
         // Truncate at 500 chars
         let truncated = String(text.prefix(500))
@@ -522,16 +559,43 @@ struct ChatView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    let errorString = error.localizedDescription
-
-                    // Check for rate limit
-                    if errorString.contains("429") || errorString.contains("daily_limit") {
-                        messages.append(DisplayMessage(kind: .rateLimit("You've used all your free scripture chats for today. Upgrade to Seek+ for 50 chats per day!")))
-                    } else {
-                        messages.append(DisplayMessage(kind: .error("Something went wrong finding scripture for you. Please try again.")))
-                    }
+                    messages.append(DisplayMessage(kind: classifyChatError(error)))
                 }
             }
+        }
+    }
+
+    /// Turns a thrown chat error into the appropriate display kind. Prefers
+    /// the explicit offline message when NetworkMonitor says we've lost
+    /// signal or the error code matches one of the usual "no connection"
+    /// suspects. Falls through to rate-limit handling and finally a generic
+    /// retry bubble.
+    private func classifyChatError(_ error: Error) -> DisplayMessage.Kind {
+        if !networkMonitor.isConnected || Self.isNetworkError(error) {
+            return .error("You're offline. Reconnect and try again.")
+        }
+        let description = error.localizedDescription
+        if description.contains("429") || description.contains("daily_limit") {
+            return .rateLimit("You've used all your free scripture chats for today. Upgrade to Seek+ for 50 chats per day!")
+        }
+        return .error("Something went wrong finding scripture for you. Please try again.")
+    }
+
+    private static func isNetworkError(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        guard nsError.domain == NSURLErrorDomain else { return false }
+        switch nsError.code {
+        case NSURLErrorNotConnectedToInternet,
+             NSURLErrorNetworkConnectionLost,
+             NSURLErrorTimedOut,
+             NSURLErrorCannotConnectToHost,
+             NSURLErrorCannotFindHost,
+             NSURLErrorDNSLookupFailed,
+             NSURLErrorInternationalRoamingOff,
+             NSURLErrorDataNotAllowed:
+            return true
+        default:
+            return false
         }
     }
 
@@ -593,7 +657,7 @@ struct ChatView: View {
     /// Only shown when the last assistant message is actual content (verses,
     /// prayer, song, action, follow-up) and we have a prompt to resend.
     private var canRegenerate: Bool {
-        guard !isLoading, lastUserPrompt != nil else { return false }
+        guard !isLoading, lastUserPrompt != nil, networkMonitor.isConnected else { return false }
         guard let last = messages.last else { return false }
         switch last.kind {
         case .verses, .prayer, .worshipSong, .action, .followUp:
@@ -673,12 +737,7 @@ struct ChatView: View {
             } catch {
                 await MainActor.run {
                     isLoading = false
-                    let errorString = error.localizedDescription
-                    if errorString.contains("429") || errorString.contains("daily_limit") {
-                        messages.append(DisplayMessage(kind: .rateLimit("You've used all your free scripture chats for today. Upgrade to Seek+ for 50 chats per day!")))
-                    } else {
-                        messages.append(DisplayMessage(kind: .error("Something went wrong finding scripture for you. Please try again.")))
-                    }
+                    messages.append(DisplayMessage(kind: classifyChatError(error)))
                 }
             }
         }
@@ -787,5 +846,6 @@ struct PrayerCardTarget: Identifiable {
     NavigationStack {
         ChatView()
     }
+    .environment(NetworkMonitor())
     .modelContainer(for: [ChatConversation.self, ChatMessage.self, UserProfile.self])
 }

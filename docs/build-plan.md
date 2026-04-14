@@ -95,7 +95,7 @@
 - [ ] Launch screen
 - [x] Loading states and skeleton screens
 - [x] Error handling (network, auth, API failures)
-- [ ] Offline mode handling (graceful degradation)
+- [x] Offline mode handling (graceful degradation)
 - [ ] App Store screenshots (6.7" and 6.1")
 - [ ] App Store description and metadata
 - [ ] Privacy nutrition labels
