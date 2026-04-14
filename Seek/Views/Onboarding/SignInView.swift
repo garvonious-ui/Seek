@@ -8,6 +8,7 @@ struct SignInView: View {
     @State private var password = ""
     @State private var isSignUp = false
     @State private var isLoading = false
+    @State private var showResetAlert = false
     var onAuthenticated: ((_ isNewUser: Bool) -> Void)?
 
     var body: some View {
@@ -62,6 +63,28 @@ struct SignInView: View {
                     .padding()
                     .background(Color(hex: "F3F4F6"))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if !isSignUp {
+                    HStack {
+                        Spacer()
+                        Button {
+                            guard !email.isEmpty else {
+                                authManager.errorMessage = "Enter your email address first."
+                                return
+                            }
+                            Task {
+                                await authManager.resetPassword(email: email)
+                                if authManager.resetPasswordSent {
+                                    showResetAlert = true
+                                }
+                            }
+                        } label: {
+                            Text("Forgot Password?")
+                                .font(.subheadline)
+                                .foregroundStyle(Color(hex: "5B7B5E"))
+                        }
+                    }
+                }
 
                 // Error message (above button so keyboard doesn't hide it)
                 if let error = authManager.errorMessage {
@@ -125,6 +148,13 @@ struct SignInView: View {
 
         }
         .padding(.horizontal, 24)
+        .alert("Reset Email Sent", isPresented: $showResetAlert) {
+            Button("OK", role: .cancel) {
+                authManager.resetPasswordSent = false
+            }
+        } message: {
+            Text("Check your email for a password reset link.")
+        }
         .onChange(of: authManager.authState) { _, newState in
             if newState == .authenticated {
                 onAuthenticated?(isSignUp)

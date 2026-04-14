@@ -8,6 +8,7 @@ struct ChatView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \UserProfile.createdAt) private var profiles: [UserProfile]
     @Query private var favoriteVerses: [FavoriteVerse]
+    @Query private var savedPrayers: [SavedPrayer]
     @State private var messageText = ""
     @State private var messages: [DisplayMessage] = []
     @State private var isLoading = false
@@ -15,9 +16,11 @@ struct ChatView: View {
     @State private var currentConversation: ChatConversation?
     @State private var rateLimitMessage: String?
     @State private var selectedVerse: VerseResult?
+    @State private var selectedPrayer: PrayerCardTarget?
     @State private var scrollToBottom = false
     @State private var hasLoadedInitialMessage = false
     @State private var showPremiumUpgrade = false
+    @State private var lastUserPrompt: String?
 
     private var profile: UserProfile? { profiles.first }
 
@@ -88,6 +91,11 @@ struct ChatView: View {
                 .foregroundStyle(Color(hex: "F59E0B"))
             }
 
+            // Regenerate Scripture button — only visible right after an assistant response
+            if canRegenerate {
+                regenerateBar
+            }
+
             // Input bar
             inputBar
         }
@@ -116,6 +124,9 @@ struct ChatView: View {
                 verseReference: verse.reference,
                 verseText: verse.text
             )
+        }
+        .sheet(item: $selectedPrayer) { target in
+            CardCreatorView(prayerText: target.text)
         }
         .sheet(isPresented: $showPremiumUpgrade) {
             PremiumUpgradeView()
@@ -181,13 +192,27 @@ struct ChatView: View {
 
     private func assistantIntro(_ text: String) -> some View {
         HStack {
-            Text(text)
+            // SwiftUI's `Text` only interprets markdown when built from a literal
+            // LocalizedStringKey — variables render raw. Parse to AttributedString so
+            // follow-up responses that contain **bold**, *italic*, etc. render properly.
+            Text(Self.renderMarkdown(text))
                 .foregroundStyle(Color(hex: "1A1A1A"))
                 .padding(12)
                 .background(Color(hex: "F3F4F6"))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             Spacer(minLength: 60)
         }
+    }
+
+    /// Parse markdown preserving newlines. Falls back to plain text on failure.
+    static func renderMarkdown(_ string: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace
+        )
+        if let attr = try? AttributedString(markdown: string, options: options) {
+            return attr
+        }
+        return AttributedString(string)
     }
 
     private func versesCard(_ verses: [VerseResult]) -> some View {
@@ -248,6 +273,29 @@ struct ChatView: View {
                 .font(.custom("Georgia", size: 15).italic())
                 .lineSpacing(4)
                 .foregroundStyle(Color(hex: "1A1A1A"))
+
+            HStack(spacing: 16) {
+                Spacer()
+                Button {
+                    togglePrayerFavorite(text)
+                } label: {
+                    let isFav = savedPrayers.contains { $0.text == text }
+                    Label("Favorite", systemImage: isFav ? "heart.fill" : "heart")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color(hex: "CDA349"))
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    selectedPrayer = PrayerCardTarget(text: text)
+                } label: {
+                    Label("Create Card", systemImage: "rectangle.on.rectangle")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color(hex: "5B7B5E"))
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.top, 2)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -428,6 +476,9 @@ struct ChatView: View {
         let truncated = String(text.prefix(500))
         messageText = ""
 
+        // Track last user prompt for regenerate-scripture support
+        lastUserPrompt = truncated
+
         // Add user message
         messages.append(DisplayMessage(kind: .user(truncated)))
 
@@ -466,66 +517,7 @@ struct ChatView: View {
 
                 await MainActor.run {
                     isLoading = false
-
-                    // Add intro message
-                    if !response.message.isEmpty {
-                        messages.append(DisplayMessage(kind: .intro(response.message)))
-                    }
-
-                    // Add verses
-                    if !response.verses.isEmpty {
-                        messages.append(DisplayMessage(kind: .verses(response.verses)))
-                    }
-
-                    // Add prayer
-                    if !response.prayer.isEmpty {
-                        messages.append(DisplayMessage(kind: .prayer(response.prayer)))
-                    }
-
-                    // Add worship song
-                    if let song = response.worshipSong {
-                        messages.append(DisplayMessage(kind: .worshipSong(song)))
-                    }
-
-                    // Add action
-                    if let action = response.action {
-                        messages.append(DisplayMessage(kind: .action(action)))
-                    }
-
-                    // Add follow-up
-                    if let followUp = response.followUp, !followUp.isEmpty {
-                        messages.append(DisplayMessage(kind: .followUp(followUp)))
-                    }
-
-                    // Update remaining chats
-                    if let remaining = response.remainingChats {
-                        if remaining <= 1 {
-                            rateLimitMessage = "You have \(remaining) chat\(remaining == 1 ? "" : "s") remaining today"
-                        } else {
-                            rateLimitMessage = nil
-                        }
-                    }
-
-                    // Save assistant response to SwiftData
-                    let responseJSON = try? JSONEncoder().encode(response)
-                    let assistantMsg = ChatMessage(
-                        role: "assistant",
-                        content: responseJSON.flatMap { String(data: $0, encoding: .utf8) } ?? response.message
-                    )
-                    assistantMsg.conversation = currentConversation
-                    modelContext.insert(assistantMsg)
-                    try? modelContext.save()
-
-                    // Update conversation history — include full response for follow-up context
-                    let fullContent = responseJSON.flatMap { String(data: $0, encoding: .utf8) } ?? response.message
-                    conversationHistory.append(["role": "assistant", "content": fullContent])
-
-                    // Update profile stats
-                    if let profile {
-                        profile.totalVersesExplored += response.verses.count
-                        profile.dailyChatsUsed += 1
-                        try? modelContext.save()
-                    }
+                    renderResponse(response)
                 }
             } catch {
                 await MainActor.run {
@@ -533,6 +525,155 @@ struct ChatView: View {
                     let errorString = error.localizedDescription
 
                     // Check for rate limit
+                    if errorString.contains("429") || errorString.contains("daily_limit") {
+                        messages.append(DisplayMessage(kind: .rateLimit("You've used all your free scripture chats for today. Upgrade to Seek+ for 50 chats per day!")))
+                    } else {
+                        messages.append(DisplayMessage(kind: .error("Something went wrong finding scripture for you. Please try again.")))
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Render Response
+
+    /// Appends a decoded ChatResponse to the display list, updates conversation
+    /// history, persists to SwiftData, and bumps profile stats. Shared by
+    /// `sendMessage` and `regenerateScripture`.
+    private func renderResponse(_ response: ChatResponse) {
+        if !response.message.isEmpty {
+            messages.append(DisplayMessage(kind: .intro(response.message)))
+        }
+        if !response.verses.isEmpty {
+            messages.append(DisplayMessage(kind: .verses(response.verses)))
+        }
+        if !response.prayer.isEmpty {
+            messages.append(DisplayMessage(kind: .prayer(response.prayer)))
+        }
+        if let song = response.worshipSong {
+            messages.append(DisplayMessage(kind: .worshipSong(song)))
+        }
+        if let action = response.action {
+            messages.append(DisplayMessage(kind: .action(action)))
+        }
+        if let followUp = response.followUp, !followUp.isEmpty {
+            messages.append(DisplayMessage(kind: .followUp(followUp)))
+        }
+
+        if let remaining = response.remainingChats {
+            if remaining <= 1 {
+                rateLimitMessage = "You have \(remaining) chat\(remaining == 1 ? "" : "s") remaining today"
+            } else {
+                rateLimitMessage = nil
+            }
+        }
+
+        // Persist to SwiftData
+        let responseJSON = try? JSONEncoder().encode(response)
+        let fullContent = responseJSON.flatMap { String(data: $0, encoding: .utf8) } ?? response.message
+        let assistantMsg = ChatMessage(role: "assistant", content: fullContent)
+        assistantMsg.conversation = currentConversation
+        modelContext.insert(assistantMsg)
+        try? modelContext.save()
+
+        // Mirror into conversation history for follow-up context
+        conversationHistory.append(["role": "assistant", "content": fullContent])
+
+        // Profile stats
+        if let profile {
+            profile.totalVersesExplored += response.verses.count
+            profile.dailyChatsUsed += 1
+            try? modelContext.save()
+        }
+    }
+
+    // MARK: - Regenerate Scripture
+
+    /// Whether the Regenerate button should be visible above the input bar.
+    /// Only shown when the last assistant message is actual content (verses,
+    /// prayer, song, action, follow-up) and we have a prompt to resend.
+    private var canRegenerate: Bool {
+        guard !isLoading, lastUserPrompt != nil else { return false }
+        guard let last = messages.last else { return false }
+        switch last.kind {
+        case .verses, .prayer, .worshipSong, .action, .followUp:
+            return true
+        case .user, .intro, .error, .rateLimit:
+            return false
+        }
+    }
+
+    private var regenerateBar: some View {
+        HStack {
+            Spacer()
+            Button(action: regenerateScripture) {
+                Label("Regenerate scripture", systemImage: "arrow.clockwise")
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color(hex: "5B7B5E").opacity(0.08))
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+                    .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            Spacer()
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func regenerateScripture() {
+        guard let prompt = lastUserPrompt, !isLoading else { return }
+
+        // Strip the most recent assistant-response display messages back to the
+        // user bubble so the new response replaces the old one visually.
+        while let last = messages.last {
+            switch last.kind {
+            case .user:
+                // Leave the user bubble in place and stop.
+                break
+            default:
+                messages.removeLast()
+                continue
+            }
+            break
+        }
+
+        // Also drop the previous assistant turn from conversationHistory so the
+        // model isn't still anchored to its earlier answer.
+        if let lastHist = conversationHistory.last, lastHist["role"] == "assistant" {
+            conversationHistory.removeLast()
+        }
+
+        // Send a regeneration hint via conversationHistory only — no new user
+        // bubble in the chat. The original user message remains visible.
+        let hint = "Please share different scriptures for my previous message on the same topic."
+        var historyForCall = conversationHistory
+        historyForCall.append(["role": "user", "content": hint])
+
+        isLoading = true
+        Task {
+            do {
+                var response = try await SupabaseService.shared.sendChatMessage(
+                    prompt,
+                    conversationHistory: historyForCall,
+                    translation: profile?.preferredTranslation ?? "NLT"
+                )
+
+                // Same client-side JSON salvage fallback as sendMessage.
+                if response.verses.isEmpty, response.message.trimmingCharacters(in: .whitespaces).hasPrefix("{"),
+                   let data = response.message.data(using: .utf8),
+                   let reparsed = try? JSONDecoder().decode(ChatResponse.self, from: data) {
+                    response = reparsed
+                }
+
+                await MainActor.run {
+                    isLoading = false
+                    renderResponse(response)
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    let errorString = error.localizedDescription
                     if errorString.contains("429") || errorString.contains("daily_limit") {
                         messages.append(DisplayMessage(kind: .rateLimit("You've used all your free scripture chats for today. Upgrade to Seek+ for 50 chats per day!")))
                     } else {
@@ -554,6 +695,23 @@ struct ChatView: View {
         try? modelContext.save()
     }
 
+    // MARK: - Favorite Prayer
+
+    private func togglePrayerFavorite(_ prayerText: String) {
+        if let existing = savedPrayers.first(where: { $0.text == prayerText }) {
+            modelContext.delete(existing)
+        } else {
+            modelContext.insert(
+                SavedPrayer(
+                    text: prayerText,
+                    source: "chat",
+                    contextNote: lastUserPrompt
+                )
+            )
+        }
+        try? modelContext.save()
+    }
+
     // MARK: - Load Existing Conversation
 
     private func loadConversationMessages(_ conversation: ChatConversation) {
@@ -563,6 +721,7 @@ struct ChatView: View {
             if msg.role == "user" {
                 messages.append(DisplayMessage(kind: .user(msg.content)))
                 conversationHistory.append(["role": "user", "content": msg.content])
+                lastUserPrompt = msg.content
             } else {
                 // Try to parse assistant JSON response
                 if let data = msg.content.data(using: .utf8),
@@ -614,6 +773,14 @@ struct DisplayMessage: Identifiable {
         case error(String)
         case rateLimit(String)
     }
+}
+
+// MARK: - Prayer Card Target
+
+/// Identifiable wrapper so .sheet(item:) can present CardCreatorView with a prayer payload.
+struct PrayerCardTarget: Identifiable {
+    let id = UUID()
+    let text: String
 }
 
 #Preview {

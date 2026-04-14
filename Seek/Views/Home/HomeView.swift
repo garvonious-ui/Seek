@@ -9,7 +9,14 @@ struct HomeView: View {
     @State private var dailyVerse: DailyVerse?
     @State private var isLoadingVerse = false
     @State private var showProfile = false
-    @State private var chatPrompt: String?
+    @State private var customPrompt: String = ""
+    @State private var chatTarget: ChatTarget?
+    @FocusState private var isCustomPromptFocused: Bool
+
+    /// Hashable wrapper so we can drive navigationDestination(item:) with a typed value.
+    struct ChatTarget: Hashable {
+        let message: String
+    }
 
     private var profile: UserProfile? { profiles.first }
 
@@ -74,8 +81,8 @@ struct HomeView: View {
                             GridItem(.flexible(), spacing: 10),
                         ], spacing: 10) {
                             ForEach(quickPrompts, id: \.0) { prompt, icon in
-                                NavigationLink {
-                                    ChatView(initialMessage: "I'm dealing with \(prompt.lowercased())")
+                                Button {
+                                    chatTarget = ChatTarget(message: "I'm dealing with \(prompt.lowercased())")
                                 } label: {
                                     HStack(spacing: 8) {
                                         Image(systemName: icon)
@@ -93,15 +100,45 @@ struct HomeView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                                     .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal)
+
+                        // Free-text input — opens a new chat with whatever the user types.
+                        HStack(spacing: 10) {
+                            TextField("Or type your own...", text: $customPrompt, axis: .vertical)
+                                .textFieldStyle(.plain)
+                                .lineLimit(1...3)
+                                .submitLabel(.send)
+                                .focused($isCustomPromptFocused)
+                                .onSubmit(submitCustomPrompt)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 12)
+                                .background(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .shadow(color: .black.opacity(0.04), radius: 4, y: 2)
+
+                            Button(action: submitCustomPrompt) {
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .font(.system(size: 32))
+                                    .foregroundStyle(
+                                        customPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                            ? Color(hex: "9CA3AF")
+                                            : Color(hex: "5B7B5E")
+                                    )
+                            }
+                            .disabled(customPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 4)
                     }
 
                     Spacer(minLength: 40)
                 }
                 .padding(.top)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Color(hex: "FAFAF6"))
             .navigationTitle("Seek")
             .toolbar {
@@ -118,6 +155,9 @@ struct HomeView: View {
             .sheet(isPresented: $showProfile) {
                 ProfileView()
             }
+            .navigationDestination(item: $chatTarget) { target in
+                ChatView(initialMessage: target.message)
+            }
             .refreshable {
                 await loadDailyVerse()
             }
@@ -127,6 +167,17 @@ struct HomeView: View {
                 await syncPremiumStatus()
             }
         }
+    }
+
+    // MARK: - Custom prompt submission
+
+    private func submitCustomPrompt() {
+        let trimmed = customPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        // Drop focus so the keyboard collapses before navigation pushes ChatView.
+        isCustomPromptFocused = false
+        chatTarget = ChatTarget(message: String(trimmed.prefix(500)))
+        customPrompt = ""
     }
 
     // MARK: - Daily Verse Card

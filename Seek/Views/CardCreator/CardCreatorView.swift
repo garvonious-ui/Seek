@@ -18,6 +18,18 @@ struct CardCreatorView: View {
 
     private var isPremium: Bool { profiles.first?.isPremium ?? false }
 
+    init(verseReference: String, verseText: String) {
+        self.verseReference = verseReference
+        self.verseText = verseText
+    }
+
+    /// Creates a card from a prayer instead of a scripture verse. Reuses the
+    /// verse-card templates with "A Prayer" as the reference line.
+    init(prayerText: String) {
+        self.verseReference = "A Prayer"
+        self.verseText = prayerText
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {

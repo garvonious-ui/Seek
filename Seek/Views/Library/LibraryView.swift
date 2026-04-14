@@ -116,64 +116,218 @@ struct CardsGridView: View {
 
 // MARK: - Favorites List
 
+enum FavoritesFilter: String, CaseIterable {
+    case all = "All"
+    case verses = "Verses"
+    case prayers = "Prayers"
+}
+
+/// Merged item type so verses and prayers can share one sorted list.
+enum FavoriteItem: Identifiable {
+    case verse(FavoriteVerse)
+    case prayer(SavedPrayer)
+
+    var id: String {
+        switch self {
+        case .verse(let v): return "v-\(v.id.uuidString)"
+        case .prayer(let p): return "p-\(p.id.uuidString)"
+        }
+    }
+
+    var savedAt: Date {
+        switch self {
+        case .verse(let v): return v.savedAt
+        case .prayer(let p): return p.savedAt
+        }
+    }
+}
+
 struct FavoritesListView: View {
-    @Query(sort: \FavoriteVerse.savedAt, order: .reverse) private var favorites: [FavoriteVerse]
+    @Query(sort: \FavoriteVerse.savedAt, order: .reverse) private var favoriteVerses: [FavoriteVerse]
+    @Query(sort: \SavedPrayer.savedAt, order: .reverse) private var savedPrayers: [SavedPrayer]
     @Environment(\.modelContext) private var modelContext
+    @State private var filter: FavoritesFilter = .all
+
+    /// Items to show given the current filter, merged and sorted newest-first.
+    private var items: [FavoriteItem] {
+        var combined: [FavoriteItem] = []
+        if filter == .all || filter == .verses {
+            combined.append(contentsOf: favoriteVerses.map(FavoriteItem.verse))
+        }
+        if filter == .all || filter == .prayers {
+            combined.append(contentsOf: savedPrayers.map(FavoriteItem.prayer))
+        }
+        return combined.sorted { $0.savedAt > $1.savedAt }
+    }
 
     var body: some View {
-        if favorites.isEmpty {
-            libraryEmptyState(
-                icon: "heart",
-                title: "No favorites yet",
-                subtitle: "Heart a verse to save it here"
-            )
-        } else {
-            List {
-                ForEach(favorites) { verse in
-                    NavigationLink {
-                        CardCreatorView(verseReference: verse.reference, verseText: verse.text)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(verse.reference)
-                                .font(.subheadline.bold())
-                                .foregroundStyle(Color(hex: "5B7B5E"))
-                            Text(verse.text)
-                                .font(.custom("Georgia", size: 14))
-                                .lineSpacing(3)
-                                .lineLimit(3)
-                                .foregroundStyle(Color(hex: "1A1A1A"))
-                            HStack {
-                                Text(verse.source == "daily_verse" ? "Daily Verse" : "Chat")
-                                    .font(.caption2)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color(hex: "5B7B5E").opacity(0.08))
-                                    .clipShape(Capsule())
-                                Spacer()
-                                Label("Create Card", systemImage: "rectangle.on.rectangle")
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(Color(hex: "5B7B5E"))
-                            }
-                        }
-                        .padding(.vertical, 4)
+        VStack(spacing: 0) {
+            // Filter chips
+            filterChips
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+
+            if items.isEmpty {
+                libraryEmptyState(
+                    icon: "heart",
+                    title: emptyTitle,
+                    subtitle: emptySubtitle
+                )
+            } else {
+                List {
+                    ForEach(items) { item in
+                        row(for: item)
                     }
-                    .contextMenu {
-                        Button {
-                            UIPasteboard.general.string = "\(verse.text)\n— \(verse.reference)"
-                        } label: {
-                            Label("Copy", systemImage: "doc.on.doc")
-                        }
-                    }
+                    .onDelete(perform: deleteItems)
                 }
-                .onDelete { indices in
-                    for index in indices {
-                        modelContext.delete(favorites[index])
+                .listStyle(.plain)
+            }
+        }
+    }
+
+    // MARK: - Filter Chips
+
+    private var filterChips: some View {
+        HStack(spacing: 8) {
+            ForEach(FavoritesFilter.allCases, id: \.self) { option in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        filter = option
                     }
-                    try? modelContext.save()
+                } label: {
+                    Text(option.rawValue)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(filter == option ? .white : Color(hex: "5B7B5E"))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 6)
+                        .background(
+                            filter == option
+                                ? Color(hex: "5B7B5E")
+                                : Color(hex: "5B7B5E").opacity(0.08)
+                        )
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+
+    private var emptyTitle: String {
+        switch filter {
+        case .all: return "No favorites yet"
+        case .verses: return "No favorite verses"
+        case .prayers: return "No saved prayers"
+        }
+    }
+
+    private var emptySubtitle: String {
+        switch filter {
+        case .all: return "Heart a verse or prayer from a scripture chat to save it here"
+        case .verses: return "Heart a verse to save it here"
+        case .prayers: return "Heart a prayer from a scripture chat to save it here"
+        }
+    }
+
+    // MARK: - Rows
+
+    @ViewBuilder
+    private func row(for item: FavoriteItem) -> some View {
+        switch item {
+        case .verse(let verse):
+            verseRow(verse)
+        case .prayer(let prayer):
+            prayerRow(prayer)
+        }
+    }
+
+    private func verseRow(_ verse: FavoriteVerse) -> some View {
+        NavigationLink {
+            CardCreatorView(verseReference: verse.reference, verseText: verse.text)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(verse.reference)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+                Text(verse.text)
+                    .font(.custom("Georgia", size: 14))
+                    .lineSpacing(3)
+                    .lineLimit(3)
+                    .foregroundStyle(Color(hex: "1A1A1A"))
+                HStack {
+                    Text(verse.source == "daily_verse" ? "Daily Verse" : "Verse")
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(hex: "5B7B5E").opacity(0.08))
+                        .clipShape(Capsule())
+                    Spacer()
+                    Label("Create Card", systemImage: "rectangle.on.rectangle")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color(hex: "5B7B5E"))
                 }
             }
-            .listStyle(.plain)
+            .padding(.vertical, 4)
         }
+        .contextMenu {
+            Button {
+                UIPasteboard.general.string = "\(verse.text)\n— \(verse.reference)"
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+        }
+    }
+
+    private func prayerRow(_ prayer: SavedPrayer) -> some View {
+        NavigationLink {
+            CardCreatorView(prayerText: prayer.text)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("A Prayer", systemImage: "hands.sparkles")
+                    .font(.subheadline.bold())
+                    .foregroundStyle(Color(hex: "CDA349"))
+                Text(prayer.text)
+                    .font(.custom("Georgia", size: 14).italic())
+                    .lineSpacing(3)
+                    .lineLimit(3)
+                    .foregroundStyle(Color(hex: "1A1A1A"))
+                HStack {
+                    Text("Prayer")
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color(hex: "CDA349").opacity(0.12))
+                        .clipShape(Capsule())
+                    Spacer()
+                    Label("Create Card", systemImage: "rectangle.on.rectangle")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(Color(hex: "5B7B5E"))
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .contextMenu {
+            Button {
+                UIPasteboard.general.string = prayer.text
+            } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+        }
+    }
+
+    // MARK: - Delete
+
+    private func deleteItems(at offsets: IndexSet) {
+        let current = items
+        for index in offsets {
+            switch current[index] {
+            case .verse(let verse):
+                modelContext.delete(verse)
+            case .prayer(let prayer):
+                modelContext.delete(prayer)
+            }
+        }
+        try? modelContext.save()
     }
 }
 

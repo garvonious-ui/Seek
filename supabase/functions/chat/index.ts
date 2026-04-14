@@ -2,7 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+const CLAUDE_MODEL = "claude-sonnet-4-6";
+const CLAUDE_MODEL_FALLBACK = "claude-sonnet-4-5-20241022";
 
 function buildSystemPrompt(translation: string): string {
   const t = ["KJV", "NLT"].includes(translation) ? translation : "NLT";
@@ -160,34 +161,52 @@ serve(async (req: Request) => {
       { role: "user", content: message.slice(0, 500) },
     ];
 
-    // Call Claude API
+    // Call Claude API with automatic fallback on model errors
     const claudeApiKey = Deno.env.get("ANTHROPIC_API_KEY")!;
-    const claudeResponse = await fetch(CLAUDE_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": claudeApiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 3000,
-        system: buildSystemPrompt(translation ?? "NLT"),
-        messages,
-      }),
-    });
+    const systemPrompt = buildSystemPrompt(translation ?? "NLT");
 
+    async function callClaude(model: string) {
+      return fetch(CLAUDE_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": claudeApiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 3000,
+          system: systemPrompt,
+          messages,
+        }),
+      });
+    }
+
+    let claudeResponse = await callClaude(CLAUDE_MODEL);
+
+    // If primary model fails (e.g. deprecated), try fallback
     if (!claudeResponse.ok) {
       const errBody = await claudeResponse.text();
-      console.error("Claude API error:", errBody);
-      return new Response(
-        JSON.stringify({
-          error: "ai_error",
-          message:
-            "Something went wrong finding scripture for you. Please try again.",
-        }),
-        { status: 502 },
-      );
+      console.error(`Claude API error (${CLAUDE_MODEL}, status ${claudeResponse.status}):`, errBody);
+
+      // Retry with fallback model on 4xx errors (not rate limits)
+      if (claudeResponse.status !== 429) {
+        console.log(`Retrying with fallback model: ${CLAUDE_MODEL_FALLBACK}`);
+        claudeResponse = await callClaude(CLAUDE_MODEL_FALLBACK);
+      }
+
+      if (!claudeResponse.ok) {
+        const fallbackErr = await claudeResponse.text();
+        console.error(`Claude API fallback error (status ${claudeResponse.status}):`, fallbackErr);
+        return new Response(
+          JSON.stringify({
+            error: "ai_error",
+            message:
+              "Something went wrong finding scripture for you. Please try again.",
+          }),
+          { status: 502 },
+        );
+      }
     }
 
     const claudeData = await claudeResponse.json();

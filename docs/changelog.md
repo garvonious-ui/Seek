@@ -213,3 +213,76 @@
 - All core features working: auth, chat with NLT/KJV, card creator, library, streaks, notifications, monetization
 - Remaining: Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, offline mode, final QA
 - TestFlight build 4 uploading
+
+## 2026-04-13 — Session 6 (Home input, prayer saving, regenerate, favorites filter, markdown fix)
+
+### Built
+- **Home free-text input**: new "Or type your own..." capsule input below the Quick Prompts grid on `HomeView`. Submitting pushes `ChatView` with the typed text as `initialMessage`. Home's quick-prompt tiles converted from inline `NavigationLink` to `Button`s driving one shared `navigationDestination(item:)` target so all Home → Chat nav flows through a single path.
+- **Keyboard dismissal fixes on Home input**: `@FocusState` binding on the TextField, `isCustomPromptFocused = false` on submit, and `.scrollDismissesKeyboard(.interactively)` on the Home ScrollView. Previously the keyboard could get stuck up after typing in the input and navigating around.
+- **Markdown rendering for assistant replies**: `ChatView.assistantIntro` now parses content through `AttributedString(markdown:, options: .inlineOnlyPreservingWhitespace)`, so `**bold**` / `*italic*` / newlines render properly. Root cause was `Text(variable)` — SwiftUI only interprets markdown from `LocalizedStringKey` literals. This mainly surfaced on conversational follow-ups like "write me a prayer from those verses" where Claude returned prose instead of the structured JSON schema.
+- **Save prayers as favorites**: new `SavedPrayer` SwiftData model (`Seek/Models/SavedPrayer.swift`), registered in the model container. `ChatView.prayerCard` now has Favorite + Create Card buttons mirroring the verse card UX. `togglePrayerFavorite` stores the current `lastUserPrompt` as `contextNote` so the saved prayer knows which question produced it.
+- **Prayer → Card flow**: new `CardCreatorView.init(prayerText:)` initializer reuses the existing verse-card templates with `"A Prayer"` as the reference line (no new template system — first-pass reuse).
+- **Favorites tab rebuild**: merged list of `FavoriteVerse` + `SavedPrayer` sorted newest-first via a `FavoriteItem` enum. New filter chips row (**All / Verses / Prayers**) styled as sage-green capsules above the list. Prayer rows use the gold "Prayer" chip to distinguish from verses. Swipe-to-delete routes to the correct model. Empty states change per filter.
+- **Regenerate scripture button**: new `regenerateBar` above the input in `ChatView`, only visible when `canRegenerate` is true (not loading, `lastUserPrompt` exists, last display message is actual content — verses/prayer/song/action/follow-up). Tap strips the trailing assistant messages back to the user bubble, drops the matching assistant entry from `conversationHistory`, and re-sends with a hint appended to history ("Please share different scriptures for my previous message on the same topic."). No duplicate user bubble appears.
+- Extracted `ChatView.renderResponse(_:)` helper so `sendMessage` and `regenerateScripture` share one append/persist/stats-bump code path.
+
+### Decisions
+- **Prayer cards reuse verse templates** for now — reference line shows "A Prayer". If prayer cards need distinct styling later, add a separate template subset.
+- **Markdown fix is a bandaid**, not an architectural fix. The real root cause is that the chat Edge Function has exactly one response schema (scripture-seek). Conversational follow-ups that don't fit that schema return markdown prose. Proper fix is a multi-mode chat (e.g. `{mode: "conversation", message: "..."}` vs `{mode: "scripture_seek", verses: [...]}`). Deferring to a future session.
+- **Regenerated responses append** to the conversation in SwiftData rather than replacing the prior one. When reopening a conversation via History, both responses render stacked. Chose append over replace because destroying data on a tap felt wrong.
+- **Regenerate costs a chat credit** — it's a real Claude API call. Didn't try to make it free because that would require server-side "regeneration token" tracking.
+- Regenerate hint goes into `conversationHistory` only, not into the visible `messages` list — user's original prompt stays as the anchor.
+
+### Gotchas discovered
+- **SwiftUI `Text(variable)` does not render markdown.** Only `Text(LocalizedStringKey("literal"))` and `Text(attributedString)` do. Fix is `Text(AttributedString(markdown: str, options: .inlineOnlyPreservingWhitespace))` — the `inlineOnlyPreservingWhitespace` option is critical to keep newlines intact for multi-paragraph content.
+- **TextField focus persists through NavigationStack push.** Without `@FocusState` + `scrollDismissesKeyboard`, the keyboard stayed up when navigating from Home → Chat and back. Three-layer fix: focus-state binding, explicit `false` on submit, and interactive scroll dismissal.
+- **SourceKit can go completely out of sync after `xcodegen generate`**, reporting dozens of phantom "Cannot find type" errors on unchanged code. They resolve after the next real build. `xcodebuild` is the source of truth, not the inline diagnostics panel.
+- **`xcodebuild archive` needs `-allowProvisioningUpdates`** for automatic signing to work. Even then, if Xcode's Accounts pane isn't signed in, the CLI sees "No Account for Team" — archive must then happen via Xcode GUI where keychain access is full.
+
+### Current Status
+- Phase 1 MVP: ~90% complete
+- All core features working: auth, chat with NLT/KJV + markdown fallback, card creator (verses + prayers), library with filtered favorites, streaks, notifications, monetization, regenerate scripture
+- Remaining: Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, offline mode, final QA
+- Build number bumped 4 → 5 in `project.yml` / `CURRENT_PROJECT_VERSION`
+- Code builds clean; user to archive + upload via Xcode Organizer (CLI archive blocked on Apple Developer account auth)
+
+## 2026-04-13 — Session 5 (Chat 502 Fix + Password Reset)
+
+### Bug fix: chat Edge Function returning 502 on every request
+- Root cause: model ID `claude-sonnet-4-20250514` had been deprecated by Anthropic. Every chat call failed because Claude API rejected the model name, the Edge Function caught the non-OK response, and returned 502 with "Something went wrong finding scripture for you."
+- Fix: updated model ID to `claude-sonnet-4-6` in `supabase/functions/chat/index.ts`
+- Diagnosed via Supabase edge-function logs (all chat POSTs returning 502, daily-verse fine) — confirmed the failure was downstream of Supabase itself
+
+### Resilience improvement: model fallback
+- Added `CLAUDE_MODEL_FALLBACK = "claude-sonnet-4-5-20241022"` constant
+- Refactored Claude API call into a `callClaude(model)` helper
+- If primary model returns a non-429 error, automatically retries with the fallback
+- 429 (rate limit) errors are NOT retried (don't spam on rate limits)
+- Improved error logging: `console.error` now includes model name and HTTP status code alongside the error body, so future deprecations are visible in Supabase logs immediately
+
+### Built: password reset flow
+- New `SupabaseService.resetPassword(email:)` — calls `client.auth.resetPasswordForEmail(email)`
+- New `AuthManager.resetPassword(email:)` — async wrapper with error handling, sets `resetPasswordSent` flag on success
+- `SignInView`: added "Forgot Password?" button below the password field, visible only when `!isSignUp`. Tap sends the reset email and shows a success alert ("Check your email for a password reset link"). Empty email shows inline error.
+- Supabase sends the reset email via its default recovery flow (browser-based password reset form)
+
+### Auth investigation (false alarm)
+- Test user reported "invalid login credentials" — diagnosed via auth logs (`POST /token` with `grant_type: "password"` returning `invalid_credentials` from their IP)
+- Queried `auth.users` to list existing accounts, confirmed user was typing the wrong email
+- No code change needed — user error
+
+### Decisions
+- Model fallback is a belt-and-suspenders approach: pin to the latest known-good model, but don't let a silent deprecation take down chat again
+- 429 errors should NOT trigger fallback (rate limits apply per key, not per model)
+- Reset password uses Supabase's default browser-based flow for now — no deep-link-into-app flow needed for launch
+
+### Gotchas discovered
+- **Anthropic deprecates model IDs silently from the client's perspective** — the Edge Function gets a 4xx from `api.anthropic.com` but the generic 502 we return hides the underlying cause. Always include model name + status code in error logs, and keep a fallback model pinned.
+
+### Current Status
+- Phase 1 MVP: ~90% complete
+- Chat is back online with `claude-sonnet-4-6` + automatic fallback
+- Password reset shipped — test users who forget passwords can now self-serve
+- All core features working: auth (Apple + email + reset), chat with NLT/KJV, card creator, library, streaks, notifications, monetization
+- Remaining: Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, offline mode, final QA
+- Build passing, needs TestFlight upload to get fix to test users

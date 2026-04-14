@@ -15,6 +15,7 @@ final class AuthManager {
 
     var authState: AuthState = .loading
     var errorMessage: String?
+    var resetPasswordSent = false
 
     // Stored property so @Observable can track changes and trigger SwiftUI re-renders.
     // Also persisted to UserDefaults so it survives app restarts.
@@ -176,6 +177,21 @@ final class AuthManager {
             print("[Auth] Sign up failed: \(error)")
             await MainActor.run {
                 errorMessage = "Sign up failed: \(error.localizedDescription)"
+            }
+        }
+    }
+
+    // MARK: - Reset Password
+
+    func resetPassword(email: String) async {
+        await MainActor.run { errorMessage = nil }
+        do {
+            try await SupabaseService.shared.resetPassword(email: email)
+            await MainActor.run { resetPasswordSent = true }
+        } catch {
+            print("[Auth] Reset password failed: \(error)")
+            await MainActor.run {
+                errorMessage = "Failed to send reset email: \(error.localizedDescription)"
             }
         }
     }

@@ -54,6 +54,7 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - Edge Functions with `verify_jwt = true` block the auth token from reaching the function code — use `--no-verify-jwt` and validate in-function
 - SwiftData @Model: new stored properties MUST have default values on the declaration (`var foo: String = "default"`), not just in the init parameter. Without declaration-level defaults, SwiftData can't perform lightweight migration and may wipe the local store.
 - NEVER nest Buttons in SwiftUI — the outer button swallows inner button taps. Use separate buttons side by side instead.
+- Anthropic silently deprecates model IDs — pin the chat Edge Function to a current model AND keep a `CLAUDE_MODEL_FALLBACK` constant with retry logic. Log `model + status + errBody` on every Claude API failure so future deprecations surface in Supabase logs instead of hiding behind a generic 502.
 
 ## Supabase Project
 - Ref: hxfiaowayrhuhzhhbaix

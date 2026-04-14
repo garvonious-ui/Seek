@@ -15,6 +15,7 @@
 - [x] Implement Sign in with Apple
 - [ ] Implement Google Sign-In (deferred — Apple + email covers launch)
 - [x] Implement email/password auth
+- [x] Password reset flow (email-based via Supabase)
 - [x] Build onboarding flow (4 screens)
 - [x] Save onboarding topic selections
 - [x] Handle auth state persistence and auto-login
@@ -119,6 +120,7 @@
 - [x] Loading past conversations opens them read-only — fixed: input bar stays active, messages save to existing conversation
 - [x] Premium upgrade sheet not wired from rate limit card in chat — fixed: rate limit card triggers PremiumUpgradeView
 - [x] Chat displaying raw JSON instead of verse cards — fixed: max_tokens increased 1500→3000, added JSON salvage logic + client-side fallback
+- [x] Chat returning 502 on every request — fixed: deprecated model `claude-sonnet-4-20250514` replaced with `claude-sonnet-4-6`, added model fallback logic
 
 ## Pending Data / Blockers
 - Apple Developer Program enrollment ($99/year) required for App Store + push notifications

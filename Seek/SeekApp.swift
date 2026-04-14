@@ -33,7 +33,8 @@ struct SeekApp: App {
             SavedCard.self,
             ChatConversation.self,
             ChatMessage.self,
-            FavoriteVerse.self
+            FavoriteVerse.self,
+            SavedPrayer.self
         ])
     }
 }
