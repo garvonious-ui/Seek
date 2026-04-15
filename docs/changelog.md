@@ -246,6 +246,38 @@
 - Build number bumped 4 → 5 in `project.yml` / `CURRENT_PROJECT_VERSION`
 - Code builds clean; user to archive + upload via Xcode Organizer (CLI archive blocked on Apple Developer account auth)
 
+## 2026-04-14 — Session 8 (Claude fallback model fix)
+
+### Bug fix: chat Edge Function fallback was pointing at a non-existent model
+- Triggered by an Anthropic email warning that `claude-sonnet-4` (the bare alias for the original Sonnet 4 from May 2025) is being retired June 15, 2026, with degraded availability starting May 14.
+- We don't use the bare alias — primary is `claude-sonnet-4-6` (Sonnet 4.6, current latest), which is unaffected. So the email itself didn't break anything for us.
+- BUT the audit it prompted exposed a real latent bug: the fallback `claude-sonnet-4-5-20241022` is **not a valid model ID**. The real Sonnet 4.5 ID is `claude-sonnet-4-5-20250929`. The `20241022` date string was a hallucination from Session 5 when the fallback was originally added. The fallback would have 4xx'd with "model not found" the first time it actually fired.
+- Fix: updated `CLAUDE_MODEL_FALLBACK` to the real `claude-sonnet-4-5-20250929` ID after cross-checking against `platform.claude.com/docs/en/about-claude/models/overview`.
+- Added an inline comment in `chat/index.ts` documenting why the fallback is what it is and warning future-me to always cross-check model IDs before pinning.
+- Edge Function redeployed (`supabase functions deploy chat --no-verify-jwt`).
+
+### Why Sonnet 4.5 as the fallback (not Opus 4.6 or Haiku 4.5)
+- **Opus 4.6** ($5/$25): would silently bill 5x more if the fallback ever fires. Overkill for scripture matching.
+- **Haiku 4.5** ($1/$5): cheaper but smaller (200k context, no adaptive thinking). The chat function emits a strict JSON schema with 3000-token responses; safer to keep the fallback in the same family with the same characteristics.
+- **Sonnet 4.5** ($3/$15): same price as primary, listed under "Legacy models" in the docs which means still supported but not bleeding edge. Same family, same prompt behavior, same context window. Ideal fallback semantics.
+
+### Decisions
+- Server-side fix only — no iOS rebuild, no TestFlight upload required. Live for everyone immediately.
+- Did not touch the primary model — `claude-sonnet-4-6` is current and the email targets a different older model entirely.
+- Added a new gotcha to CLAUDE.md: NEVER invent a Claude model ID, always verify against the official docs page. Twice now (Session 5 and Session 8) we've shipped invalid fallback IDs that would have 4xx'd on first use.
+
+### Anthropic deprecation deadlines (for future reference)
+- `claude-sonnet-4-20250514` (Sonnet 4 base) — retires June 15, 2026
+- `claude-opus-4-20250514` — retires June 15, 2026
+- `claude-3-haiku-20240307` — retires April 19, 2026
+- We use NONE of these. Current latest Sonnet is `claude-sonnet-4-6`, current latest Haiku is `claude-haiku-4-5-20251001`, current latest Opus is `claude-opus-4-6`.
+
+### Current Status
+- Phase 1 MVP: ~92% complete (unchanged from Session 7)
+- Chat is back on solid ground: primary on the latest Sonnet, fallback on a real Sonnet 4.5 ID that will actually work if the primary errors
+- Build 6 already on TestFlight from Session 7; no new client build needed for this fix
+- Remaining (non-code or asset work): Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, AdMob (deferred), final QA, submission
+
 ## 2026-04-14 — Session 7 (Offline mode handling)
 
 ### Built

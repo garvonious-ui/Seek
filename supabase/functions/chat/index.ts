@@ -2,8 +2,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
+// Primary: latest Sonnet (Sonnet 4.6). Fallback: Sonnet 4.5 — same family,
+// same price, listed under "Legacy models" but still supported. The previous
+// fallback ID `claude-sonnet-4-5-20241022` was a hallucination — that exact
+// date string never existed and the fallback would have 4xx'd if it ever
+// fired. Always cross-check against docs.anthropic.com before pinning.
 const CLAUDE_MODEL = "claude-sonnet-4-6";
-const CLAUDE_MODEL_FALLBACK = "claude-sonnet-4-5-20241022";
+const CLAUDE_MODEL_FALLBACK = "claude-sonnet-4-5-20250929";
 
 function buildSystemPrompt(translation: string): string {
   const t = ["KJV", "NLT"].includes(translation) ? translation : "NLT";
