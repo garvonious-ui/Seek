@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seek — Scripture for every moment</title>
+<meta name="description" content="Share what's on your heart. Seek surfaces the verses, prayer, and worship song that meet you there.">
+
+<!-- Social -->
+<meta property="og:title" content="Seek — Scripture for every moment">
+<meta property="og:description" content="Share what's on your heart. Seek surfaces the verses, prayer, and worship song that meet you there.">
+<meta property="og:image" content="assets/icon.png">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#FAFAF6">
+
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="apple-touch-icon" href="assets/icon.png">
+
+<style>
+:root {
+  --bg:        #FAFAF6;
+  --surface:   #FFFFFF;
+  --surface-2: #F3F4F6;
+  --gold:      #CDA349;
+  --gold-lt:   #EDD99A;
+  --sage:      #5B7B5E;
+  --sage-mid:  #8AAF8D;
+  --fg-1:      #1A1A1A;
+  --fg-2:      #6B7280;
+  --fg-3:      #9CA3AF;
+  --divider:   #E5E7EB;
+
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
+
+  --ui: -apple-system, "SF Pro Text", system-ui, Segoe UI, Roboto, sans-serif;
+  --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg-1);
+  font-family: var(--ui);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+
+/* =============== layout =============== */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+/* =============== nav =============== */
+.nav {
+  padding: 28px 0;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav .mark { height: 44px; }
+.nav .links { display: flex; gap: 28px; font-size: 14px; color: var(--fg-2); }
+.nav .links a:hover { color: var(--fg-1); }
+
+/* =============== hero =============== */
+.hero {
+  padding: 40px 0 120px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 80px;
+  align-items: center;
+}
+.hero h1 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(48px, 8vw, 96px);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+  margin: 0 0 24px;
+  color: var(--fg-1);
+}
+.hero .sub {
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--fg-2);
+  max-width: 44ch;
+  margin: 0 0 40px;
+}
+
+/* waitlist form */
+.waitlist {
+  display: flex;
+  gap: 10px;
+  max-width: 520px;
+  flex-wrap: wrap;
+}
+.waitlist input[type=email] {
+  flex: 1 1 260px;
+  height: 56px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface-2);
+  font: inherit;
+  font-size: 15px;
+  color: var(--fg-1);
+  outline: none;
+  transition: box-shadow .15s ease;
+}
+.waitlist input[type=email]:focus { box-shadow: 0 0 0 2px var(--sage-mid); }
+.waitlist input[type=email]::placeholder { color: var(--fg-3); }
+.waitlist button {
+  height: 56px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 24px;
+  background: var(--sage);
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, transform .05s ease;
+}
+.waitlist button:hover { background: var(--sage-mid); }
+.waitlist button:active { transform: translateY(1px); }
+.waitlist .success {
+  flex: 1 1 100%;
+  margin: 4px 4px 0;
+  font-size: 14px;
+  color: var(--sage);
+}
+.waitlist .note {
+  flex: 1 1 100%;
+  margin: 8px 4px 0;
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+/* =============== iPhone frame (reused across sections) =============== */
+.device {
+  justify-self: center;
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 9 / 19.5;
+  background: #111;
+  border-radius: 48px;
+  padding: 10px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.device::before {
+  content: "";
+  position: absolute;
+  top: 18px; left: 50%; transform: translateX(-50%);
+  width: 96px; height: 30px;
+  background: #111;
+  border-radius: 16px;
+  z-index: 2;
+}
+.device .screen {
+  width: 100%; height: 100%;
+  border-radius: 40px;
+  background: var(--bg);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.device .screen .scr-top {
+  padding: 62px 18px 8px;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.device .screen .scr-mark { height: 26px; width: auto; }
+.device .screen .scr-greet {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin: 22px 0 14px;
+}
+.device .screen .scr-greet h3 {
+  font-family: var(--ui);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: var(--fg-1);
+}
+.device .screen .scr-greet .scr-sub {
+  font-size: 12px;
+  color: var(--fg-2);
+  margin: 0;
+}
+.device .screen .scr-streak {
+  background: rgba(205,163,73,0.12);
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.device .screen .verse-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+}
+.device .screen .vc-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.device .screen .vc-text {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--fg-1);
+  margin: 0 0 6px;
+}
+.device .screen .vc-ref {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sage);
+}
+.device .screen .scr-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-2);
+  margin: 4px 0 8px;
+}
+.device .screen .prompts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.device .screen .prompt {
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--fg-1);
+  box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; gap: 6px;
+}
+.device .screen .prompt .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--sage);
+  flex-shrink: 0;
+}
+
+/* Tab bar pinned at bottom */
+.device .screen .tabbar {
+  flex-shrink: 0;
+  margin: 8px 12px 16px;
+  background: #fff;
+  border-radius: 28px;
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-around;
+  box-shadow: var(--shadow-sm);
+}
+.device .screen .tab {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--fg-3);
+  font-size: 10px;
+  font-weight: 600;
+}
+.device .screen .tab.active { color: var(--sage); }
+.device .screen .tab svg { width: 20px; height: 20px; }
+.device .screen .tab.active .tab-pill {
+  background: rgba(91,123,94,0.12);
+  border-radius: 999px;
+  padding: 4px 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+
+/* =============== 3-up "How it works" =============== */
+.how {
+  background: var(--surface);
+  padding: 96px 0;
+}
+.how .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+}
+.how h2 {
+  font-family: var(--serif);
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-align: center;
+  margin: 0 0 64px;
+  color: var(--fg-1);
+}
+.step .num {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  margin-bottom: 14px;
+}
+.step h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  margin: 0 0 10px;
+  color: var(--fg-1);
+}
+.step p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg-2);
+  margin: 0;
+}
+
+/* =============== AI spotlight =============== */
+.ai-spot {
+  padding: 120px 0;
+}
+.ai-spot .wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 80px;
+  align-items: center;
+}
+.ai-spot .label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+.ai-spot h2 {
+  font-family: var(--serif);
+  font-size: clamp(36px, 5vw, 56px);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  margin: 0 0 24px;
+  color: var(--fg-1);
+}
+.ai-spot .lede {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--fg-2);
+  margin: 0 0 28px;
+  max-width: 46ch;
+}
+.ai-spot ul {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: grid; gap: 12px;
+}
+.ai-spot li {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 15px;
+  color: var(--fg-1);
+}
+.ai-spot li::before {
+  content: "";
+  width: 6px; height: 6px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: var(--sage);
+  flex-shrink: 0;
+}
+
+/* Chat mock */
+.chat-mock {
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  display: grid;
+  gap: 10px;
+}
+.chat-mock .bubble {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.chat-mock .bubble.user {
+  justify-self: end;
+  background: var(--sage);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+.chat-mock .bubble.ai {
+  justify-self: start;
+  background: var(--surface-2);
+  color: var(--fg-1);
+  border-bottom-left-radius: 6px;
+  max-width: 92%;
+}
+.chat-mock .v-tile {
+  background: #fff;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.chat-mock .v-tile .vt-ref {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sage);
+  margin-bottom: 4px;
+}
+.chat-mock .v-tile .vt-text {
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-1);
+  margin: 0;
+}
+.chat-mock .p-tile {
+  background: rgba(205,163,73,0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.chat-mock .p-tile .pt-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.chat-mock .p-tile .pt-text {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg-1);
+  margin: 0;
+  font-style: italic;
+}
+.chat-mock .s-tile {
+  background: #111;
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; align-items: center; gap: 12px;
+}
+.chat-mock .s-tile .s-note { font-size: 20px; color: var(--gold); }
+.chat-mock .s-tile .s-title { font-size: 13px; font-weight: 700; margin: 0; }
+.chat-mock .s-tile .s-artist { font-size: 11px; color: var(--fg-3); margin: 0; }
+
+/* =============== verse cards showcase =============== */
+.showcase {
+  padding: 120px 0;
+  background: var(--surface);
+  text-align: center;
+}
+.showcase h2 {
+  font-family: var(--serif);
+  font-size: clamp(36px, 5vw, 48px);
+  font-weight: 400;
+  margin: 0 0 16px;
+  color: var(--fg-1);
+  letter-spacing: -0.01em;
+}
+.showcase .lede {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--fg-2);
+  max-width: 52ch;
+  margin: 0 auto 64px;
+}
+.showcase .cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+.showcase .vcard {
+  aspect-ratio: 9 / 16;
+  border-radius: 18px;
+  padding: 48px 28px;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.showcase .vcard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.showcase .vcard .vverse {
+  font-family: var(--serif);
+  font-size: 18px;
+  line-height: 1.45;
+  margin: 0 auto 24px;
+  max-width: 18ch;
+  text-align: center;
+}
+.showcase .vcard .vref {
+  font-family: var(--ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.showcase .vcard .watermark {
+  position: absolute;
+  bottom: 14px; left: 0; right: 0;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  opacity: 0.6;
+}
+/* Variant: Cream / minimal */
+.vcard.t-cream {
+  background: linear-gradient(180deg, #F3EFE4 0%, #E8DFC7 100%);
+  color: var(--fg-1);
+}
+.vcard.t-cream .vref { color: var(--fg-2); }
+.vcard.t-cream .watermark { color: var(--fg-3); }
+/* Variant: Sage / nature */
+.vcard.t-sage {
+  background: linear-gradient(180deg, #6F8E73 0%, #4A6A4E 100%);
+  color: #fff;
+}
+.vcard.t-sage .vref { color: #EDD99A; }
+.vcard.t-sage .watermark { color: rgba(255,255,255,0.7); }
+/* Variant: Gold wash */
+.vcard.t-gold {
+  background: linear-gradient(180deg, #E9D493 0%, #CDA349 100%);
+  color: #1A1A1A;
+}
+.vcard.t-gold .vref { color: #5B3A0F; opacity: 0.75; }
+.vcard.t-gold .watermark { color: rgba(26,26,26,0.5); }
+
+.showcase .share-hint {
+  margin-top: 56px;
+  font-size: 13px;
+  color: var(--fg-3);
+  letter-spacing: 0.04em;
+}
+
+/* =============== features strip =============== */
+.features {
+  padding: 120px 0;
+  background: var(--bg);
+}
+.features h2 {
+  font-family: var(--serif);
+  font-size: clamp(32px, 4.5vw, 44px);
+  font-weight: 400;
+  text-align: center;
+  margin: 0 0 56px;
+  color: var(--fg-1);
+  letter-spacing: -0.01em;
+}
+.features .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+.features .feat {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 36px 28px;
+  box-shadow: var(--shadow-sm);
+}
+.features .feat .icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: rgba(91,123,94,0.12);
+  color: var(--sage);
+  display: grid; place-items: center;
+  margin-bottom: 22px;
+}
+.features .feat h3 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  margin: 0 0 10px;
+  color: var(--fg-1);
+  letter-spacing: -0.005em;
+}
+.features .feat p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--fg-2);
+  margin: 0;
+}
+
+/* =============== secondary CTA =============== */
+.cta {
+  padding: 96px 0 120px;
+  text-align: center;
+}
+.cta h2 {
+  font-family: var(--serif);
+  font-size: clamp(36px, 5vw, 52px);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  margin: 0 0 16px;
+  color: var(--fg-1);
+}
+.cta p {
+  font-size: 17px;
+  color: var(--fg-2);
+  margin: 0 0 36px;
+}
+.cta form { justify-content: center; margin: 0 auto; }
+
+/* =============== footer =============== */
+.footer {
+  padding: 40px 0 56px;
+  display: flex; align-items: center; justify-content: space-between;
+  color: var(--fg-3);
+  font-size: 12px;
+  border-top: 1px solid var(--divider);
+}
+.footer .mark { height: 32px; }
+.footer .footer-links { display: flex; gap: 20px; }
+.footer a:hover { color: var(--fg-2); }
+
+/* =============== responsive =============== */
+@media (max-width: 880px) {
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 56px;
+    padding: 24px 0 80px;
+  }
+  .hero .sub { font-size: 18px; }
+  .nav .links { display: none; }
+  .nav .mark { height: 36px; }
+
+  .how { padding: 72px 0; }
+  .how .grid { grid-template-columns: 1fr; gap: 40px; }
+  .how h2 { margin-bottom: 40px; }
+
+  .ai-spot { padding: 80px 0; }
+  .ai-spot .wrap { grid-template-columns: 1fr; gap: 48px; }
+
+  .showcase { padding: 80px 0; }
+  .showcase .cards { grid-template-columns: 1fr; gap: 20px; max-width: 360px; }
+
+  .features { padding: 80px 0; }
+  .features .grid { grid-template-columns: 1fr; gap: 20px; }
+
+  .cta { padding: 72px 0 88px; }
+
+  .footer { flex-direction: column; gap: 18px; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container nav">
+    <img class="mark" src="assets/wordmark_dark.png" alt="Seek">
+    <nav class="links">
+      <a href="#how">How it works</a>
+      <a href="#ai">AI chat</a>
+      <a href="#cards">Verse cards</a>
+      <a href="#waitlist-cta">Join waitlist</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <section class="container hero">
+    <div>
+      <h1>Scripture for every moment.</h1>
+      <p class="sub">Share what's on your heart. Seek surfaces the verses, prayer, and worship song that meet you there.</p>
+
+      <form id="waitlist" class="waitlist" novalidate>
+        <input type="email" name="email" required placeholder="you@example.com" aria-label="Email address">
+        <button type="submit">Join the waitlist</button>
+        <div class="note">Early access on iOS. No spam — one email at launch.</div>
+      </form>
+    </div>
+
+    <div class="device" aria-hidden="true">
+      <div class="screen">
+        <div class="scr-top">
+          <img class="scr-mark" src="assets/wordmark_dark.png" alt="">
+          <div class="scr-greet">
+            <div>
+              <h3>Peace be with you</h3>
+              <p class="scr-sub">What's on your heart?</p>
+            </div>
+            <div class="scr-streak">🔥 9</div>
+          </div>
+          <div class="verse-card">
+            <div class="vc-label">Daily Verse</div>
+            <p class="vc-text">"I will guide you along the best pathway for your life. I will advise you and watch over you."</p>
+            <div class="vc-ref">Psalm 32:8</div>
+          </div>
+          <div class="scr-section-label">Seek scripture for…</div>
+          <div class="prompts">
+            <div class="prompt"><span class="dot"></span>Fear</div>
+            <div class="prompt"><span class="dot"></span>Anger</div>
+            <div class="prompt"><span class="dot"></span>Loneliness</div>
+            <div class="prompt"><span class="dot"></span>Gratitude</div>
+            <div class="prompt"><span class="dot"></span>Doubt</div>
+            <div class="prompt"><span class="dot"></span>Joy</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab active">
+            <div class="tab-pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+              <span>Home</span>
+            </div>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-12.1 6.9L3 20l1.1-5.9A8 8 0 1 1 21 12Z"/></svg>
+            <span>Chat</span>
+          </div>
+          <div class="tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+            <span>Library</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" class="how">
+    <div class="container">
+      <h2>How it works</h2>
+      <div class="grid">
+        <div class="step">
+          <div class="num">1. SHARE</div>
+          <h3>Say what's on your heart.</h3>
+          <p>Joy, gratitude, struggle, seeking. Whatever the moment — type it in your own words.</p>
+        </div>
+        <div class="step">
+          <div class="num">2. RECEIVE</div>
+          <h3>Scripture that meets you there.</h3>
+          <p>Three to five verses chosen for the moment, a short prayer, and a worship song to carry with you.</p>
+        </div>
+        <div class="step">
+          <div class="num">3. SAVE</div>
+          <h3>Keep what moves you.</h3>
+          <p>Create a beautiful card to share, favorite the verses you return to, and build a library of what's touched you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI SPOTLIGHT -->
+  <section id="ai" class="ai-spot">
+    <div class="container wrap">
+      <div>
+        <div class="label">AI-POWERED</div>
+        <h2>A conversation that meets you.</h2>
+        <p class="lede">Seek isn't keyword search. Type what you're actually feeling — grief, gratitude, doubt — and it responds with scripture that speaks to the moment, not just the word.</p>
+        <ul>
+          <li>Understands emotional context, not just topics</li>
+          <li>Three to five verses pulled for your specific moment</li>
+          <li>A short prayer written for what you're carrying</li>
+          <li>A worship song paired to the feeling</li>
+          <li>One small action step to carry with you</li>
+        </ul>
+      </div>
+
+      <div class="chat-mock" aria-hidden="true">
+        <div class="bubble user">I'm struggling to trust God right now.</div>
+        <div class="bubble ai">I hear you. It's hard to trust in seasons that don't feel fair. Here's scripture for this moment.</div>
+        <div class="v-tile">
+          <div class="vt-ref">Proverbs 3:5-6</div>
+          <p class="vt-text">"Trust in the Lord with all your heart; do not depend on your own understanding."</p>
+        </div>
+        <div class="v-tile">
+          <div class="vt-ref">Psalm 56:3</div>
+          <p class="vt-text">"When I am afraid, I will put my trust in you."</p>
+        </div>
+        <div class="p-tile">
+          <div class="pt-label">A prayer</div>
+          <p class="pt-text">Lord, I don't understand what you're doing — but I choose to trust you anyway. Hold my heart.</p>
+        </div>
+        <div class="s-tile">
+          <div class="s-note">♪</div>
+          <div>
+            <p class="s-title">Trust in You</p>
+            <p class="s-artist">Lauren Daigle</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VERSE CARD SHOWCASE (3 templates) -->
+  <section id="cards" class="showcase">
+    <div class="container">
+      <h2>Verses worth holding onto.</h2>
+      <p class="lede">Pick a template. Save it to Photos. Share it to Instagram, Pinterest, or send it in a text. Eighteen card styles, with more on the way.</p>
+
+      <div class="cards">
+        <div class="vcard t-cream">
+          <p class="vverse">"God is our refuge and strength, a very present help in trouble."</p>
+          <div class="vref">Psalm 46:1</div>
+          <div class="watermark">Seek</div>
+        </div>
+        <div class="vcard t-sage">
+          <p class="vverse">"For I know the plans I have for you — plans to give you hope and a future."</p>
+          <div class="vref">Jeremiah 29:11</div>
+          <div class="watermark">Seek</div>
+        </div>
+        <div class="vcard t-gold">
+          <p class="vverse">"Be still, and know that I am God."</p>
+          <div class="vref">Psalm 46:10</div>
+          <div class="watermark">Seek</div>
+        </div>
+      </div>
+
+      <p class="share-hint">9:16 ratio · Renders at 1080×1920 · Ready for Stories, Reels, and wallpapers</p>
+    </div>
+  </section>
+
+  <!-- FEATURES STRIP -->
+  <section class="features">
+    <div class="container">
+      <h2>More ways Seek meets you.</h2>
+      <div class="grid">
+        <div class="feat">
+          <div class="icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          </div>
+          <h3>A verse at sunrise.</h3>
+          <p>A fresh passage every morning, themed for the season you're in. Set your time, we'll meet you there.</p>
+        </div>
+        <div class="feat">
+          <div class="icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.5 3 4 5 4 8a4 4 0 0 1-8 0c0-1.5.5-3 1.5-4 .5 2 1.5 2.5 2.5 3 0-3-1.5-5 0-7Z"/></svg>
+          </div>
+          <h3>Build the habit.</h3>
+          <p>A seven-day streak unlocks the first milestone. A full year unlocks the last. One missed day has a grace period.</p>
+        </div>
+        <div class="feat">
+          <div class="icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <h3>A song for the moment.</h3>
+          <p>Each chat ends with a worship pick that fits the feeling — tap to open in Apple Music or Spotify.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECONDARY CTA -->
+  <section id="waitlist-cta" class="cta">
+    <div class="container">
+      <h2>Be first on iOS.</h2>
+      <p>Join the waitlist and we'll send one email when Seek launches. That's it.</p>
+
+      <form id="waitlist-2" class="waitlist" novalidate>
+        <input type="email" name="email" required placeholder="you@example.com" aria-label="Email address">
+        <button type="submit">Join the waitlist</button>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container footer">
+    <img class="mark" src="assets/wordmark_dark.png" alt="Seek">
+    <div class="footer-links">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="mailto:hello@seek-app.com">hello@seek-app.com</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Supabase anon key — safe to ship to the browser; INSERT is the only anon
+  // permission on the waitlist table (see RLS policy "anon_insert_waitlist").
+  const SUPABASE_URL = "https://hxfiaowayrhuhzhhbaix.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4Zmlhb3dheXJodWh6aGhiYWl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NzI2NDksImV4cCI6MjA5MTE0ODY0OX0.tsf-R505B_RJvO8qDI0WMlcLzyPD7xrZK8ll4SbFK2Y";
+
+  function wireWaitlist(form) {
+    const button = form.querySelector('button');
+    const emailInput = form.email;
+    const noteEl = form.querySelector('.note');
+
+    function setMessage(text, kind) {
+      let el = form.querySelector('.success');
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'success';
+        form.appendChild(el);
+      }
+      el.textContent = text;
+      el.style.color = kind === 'error' ? '#B45309' : '';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailInput.value.trim().toLowerCase();
+      if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(email)) {
+        emailInput.focus();
+        setMessage("Please enter a valid email address.", 'error');
+        return;
+      }
+
+      button.disabled = true;
+      emailInput.disabled = true;
+      const originalLabel = button.textContent;
+      button.textContent = "Joining…";
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({ email, source: 'landing' })
+        });
+
+        if (res.ok) {
+          if (noteEl) noteEl.remove();
+          setMessage("You're on the list. We'll email you when Seek launches.");
+          return;
+        }
+        if (res.status === 409) {
+          if (noteEl) noteEl.remove();
+          setMessage("You're already on the list. We'll be in touch at launch.");
+          return;
+        }
+        throw new Error(`HTTP ${res.status}`);
+      } catch (err) {
+        console.error('Waitlist submit failed:', err);
+        button.disabled = false;
+        emailInput.disabled = false;
+        button.textContent = originalLabel;
+        setMessage("Something went wrong — please try again in a moment.", 'error');
+      }
+    });
+  }
+
+  document.querySelectorAll('form.waitlist').forEach(wireWaitlist);
+</script>
+
+</body>
+</html>

@@ -18,6 +18,9 @@ supabase/.branches/
 .vscode/
 .idea/
 
+# Vercel
+landing/.vercel/
+
 # Claude Code
 .claude/plans/
 

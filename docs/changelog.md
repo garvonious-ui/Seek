@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-04-30 — Session 10 (Privacy + Terms + Vercel config)
+
+### Built
+- **`landing/privacy.html`** — full privacy policy. Plain-language, accurate to what the app actually does. Documents: account info from Supabase auth, preferences/streak/usage stats, push token; chat content is NOT stored on Seek's servers (verified by reading `supabase/functions/chat/index.ts` — only `chat_count` + `last_chat_at` are persisted to `usage_logs`); Anthropic processes prompts in transit per their API terms (no training); saved cards/favorites/prayers are device-only via SwiftData. Discloses no third-party analytics, no AdMob, no IDFA, no precise location, write-only Photos permission. Lists service providers (Supabase, Anthropic, Apple) with regions. Has explicit EEA/UK/CCPA rights section, retention, security, international transfers, children, change notice, contact.
+- **`landing/terms.html`** — full ToS. Sections: eligibility (13+), account, what Seek does + denominational neutrality, AI-generated content disclaimer + crisis disclaimer (988, Samaritans, findahelpline.com), acceptable use, subscriptions + 7-day free trial + Apple-only refunds, user content + no-train-on-prompts commitment, watermark rules, termination, "as is" disclaimer, liability cap (greater of fees-paid-12mo or USD $50), indemnification, Delaware governing law, change notice, contact.
+- Both pages share the landing visual system (cream `#FAFAF6` bg, sage `#5B7B5E` link color, serif headlines via Georgia, UI body via SF Pro), self-contained CSS, mobile responsive, nav bar to home, footer matching `index.html`. Max content width 760px so long-form reads cleanly.
+- **`landing/index.html` footer wired** — `href="#"` placeholders for Privacy/Terms now point at `privacy.html`/`terms.html`. Email link updated `hello@seek.app` → `hello@seek-app.com` for consistency with the legal pages.
+- **`landing/vercel.json`** — Vercel hosting config:
+  - `cleanUrls: true` so `/privacy` and `/terms` work without `.html` extensions. Critical: this matches what the iOS app already hardcodes at `Seek/Views/Profile/ProfileView.swift:126,131` (`https://seek-app.com/privacy`, `https://seek-app.com/terms`). When the domain is bought and pointed at Vercel, the in-app legal links will Just Work — no app rebuild required.
+  - `trailingSlash: false`, basic security headers (`X-Content-Type-Options`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` disabling FLoC + sensitive APIs), 1-year `Cache-Control: immutable` for `/assets/*`. No CSP — landing relies on inline `<style>` and inline JS for the Supabase POST; tightening later.
+- **`.gitignore`** — added `landing/.vercel/` so the project linkage created by `vercel` CLI doesn't get committed.
+
+### Decisions
+- **Vercel over GitHub Pages.** User asked for Vercel. Cleaner DX, free custom domain attachment later (Project Settings → Domains), preview deploys per branch, edge cache. The `cleanUrls: true` feature is the deciding factor — it lets `/privacy` and `/terms` resolve to `.html` files without needing `.html` in the URL, which exactly matches the URL shape the iOS app already ships with. GitHub Pages doesn't do clean URLs without a hack.
+- **Domain placeholder is `seek-app.com` everywhere.** User is buying the domain today. Privacy/Terms contact is `hello@seek-app.com`. The iOS app's hardcoded WebContentView URLs are `https://seek-app.com/privacy|terms`. Once the domain points at Vercel, all three (in-app links, footer mailto, legal pages contact) match without code changes.
+- **Privacy policy is written from a position of confidence, not boilerplate.** Concrete claims like "Seek's servers do not persist the contents of your chat messages" and "We do not use third-party analytics SDKs" are made because the codebase actually backs them up — verified by reading the chat Edge Function and grepping the Swift sources. App Store privacy nutrition labels can be filled in honestly using this doc as the source of truth.
+- **Crisis disclaimer is in the ToS callout block** in addition to whatever surfaces in chat. Belt-and-suspenders for the most safety-critical disclosure in the doc. Lists 988 (US), 116 123 (UK Samaritans), and `findahelpline.com` for everywhere else.
+- **Delaware governing law.** Default for US software ToS, low cost to operate, predictable courts. Easy to change later if user incorporates elsewhere — search-and-replace one section.
+- **Liability cap of greater-of-fees-paid-12mo or USD $50.** Standard for indie consumer apps. The $50 floor catches the free-tier user who pays nothing but still has a claim.
+- **No CSP in `vercel.json` for now.** A strict CSP would break the existing landing waitlist form (inline `<script>` posting to Supabase) and the inline `<style>` blocks. Logging this as a future hardening pass — at minimum can add `frame-ancestors 'none'` even with the inline-friendly setup.
+
+### Gotchas / things to know
+- **Chat content really is server-private.** Re-confirmed by reading `supabase/functions/chat/index.ts:127-229`: the function reads `chat_count` from `usage_logs`, forwards `message + conversationHistory` to Anthropic, and upserts `{user_id, log_date, chat_count, last_chat_at}` back to `usage_logs`. No user message bodies hit our database. Edge Function transient logs only capture upstream API errors, not request bodies. Worth re-verifying if anyone refactors `chat/index.ts` — the privacy policy is contractually committed to this.
+- **The iOS WebContentView is a `WKWebView` pointed at the live URL** (`Seek/Views/Profile/WebContentView.swift`), not a bundled HTML view. So once `seek-app.com` resolves, the legal pages will be fetched live every time — no app update needed for legal copy revisions.
+- **Vercel CLI 52 is already installed at `/opt/homebrew/bin/vercel`.** First deploy is interactive (`cd landing && vercel`) — opens a browser for OAuth login on first run, then prompts for project setup. Subsequent deploys are `vercel --prod` non-interactively. The `landing/.vercel/` directory created on first link is gitignored.
+
+### Deployed
+- Live at [landing-rouge-xi-28.vercel.app](https://landing-rouge-xi-28.vercel.app) (auto-alias) and a hash URL `landing-11yvfcsak-garvonious-uis-projects.vercel.app`. Project linked under scope `garvonious-uis-projects/landing`.
+- Verified live: `/`, `/privacy`, `/terms` all 200; security headers + asset cache headers from `vercel.json` applied as configured.
+- Vercel CLI auto-generated `landing/.gitignore` with `.vercel` on line 1, in addition to my root-level `landing/.vercel/` entry. Both ignore the project linkage; harmless redundancy.
+- Project name is currently `landing` (Vercel defaulted to the directory name). To rename to `seek` and regenerate prettier auto-aliases: Vercel dashboard → Project → Settings → General → Project Name. Cosmetic only — irrelevant once the custom domain attaches.
+- Future deploys: `cd landing && vercel --prod` (production) or `vercel` (preview). Linkage persists in `landing/.vercel/`.
+
+### Current Status
+- Phase 1 MVP: ~96% complete. Legal docs and hosting are both off the blocker list now.
+- Domain purchase is the user's next move. Once `seek-app.com` is bought and DNS-pointed at Vercel via Project → Settings → Domains, the in-app `WebContentView` URLs (`https://seek-app.com/privacy|terms`) resolve without any iOS code change. The hardcoded host already matches the contact email and footer copy across both legal pages.
+- Build number unchanged from Session 9 (still 6). No iOS rebuild needed for any of this.
+
 ## 2026-04-06 — Session 0 (Pre-Build)
 - Generated full build prompt with all specs
 - Defined tech stack: SwiftUI + Supabase + Claude API
@@ -245,6 +283,66 @@
 - Remaining: Professional app icon, launch screen, App Store screenshots/metadata, privacy labels, offline mode, final QA
 - Build number bumped 4 → 5 in `project.yml` / `CURRENT_PROJECT_VERSION`
 - Code builds clean; user to archive + upload via Xcode Organizer (CLI archive blocked on Apple Developer account auth)
+
+## 2026-04-17 — Session 9 (Design handoff, app icon, launch screen, marketing landing page)
+
+### Infra
+- Public GitHub repo created at [github.com/garvonious-ui/Seek](https://github.com/garvonious-ui/Seek); `main` pushed. Cleared to be public because the only "sensitive" string in the tree is the Supabase anon JWT (role: "anon"), which is designed to ship in client bundles and is protected by RLS policies. No service-role key, no Anthropic key, no secrets tracked.
+- Exported system Georgia family (4 weights) to `~/Downloads/Seek-Fonts/` for upload to Claude Design's brand system setup.
+
+### Design handoff
+- Ingested a Claude Design bundle (tarball from `api.anthropic.com/v1/design/h/...`) and a downloaded zip of its `exports/` folder. Both contained identical icon/wordmark PNGs; the zip's README was richer, with full implementation specs for launch screen, onboarding refinement, and a marketing landing page.
+- Key files used: `project/Seek App Icon.html` (icon source of truth), `project/Seek Logos.html` (wordmark Logo 01 spec), `exports/icon_1024.png`, `exports/wordmark_*.png`, full `colors_and_type.css` tokens.
+
+### App icon
+- Replaced the placeholder `AppIcon.png` at `Seek/Assets.xcassets/AppIcon.appiconset/AppIcon.png` with the Claude Design deliverable's `icon_1024.png`. Contents.json unchanged — project uses the modern single-file 1024 universal format, iOS 17+ generates all smaller sizes.
+- Design: cream `#FAFAF6` squircle (iOS standard 22.5% radius), dark Georgia upright "S" at 72% size, small gold `#CDA349` dot at top-right as accent.
+
+### Launch screen
+- Added `Wordmark.imageset` and `LaunchBackground.colorset` (= `#FAFAF6`) to the asset catalog.
+- New `Seek/Resources/LaunchScreen.storyboard` — LaunchBackground fill, wordmark ImageView centered (240pt wide × 120pt tall to match the 2:1 aspect of the regenerated PNG), "SCRIPTURE FOR EVERY MOMENT" UILabel below (+16pt gap, system medium 12pt, `#6B7280`, NSKern = 1.92 which matches CSS +0.16em at 12pt).
+- `project.yml` swap: `INFOPLIST_KEY_UILaunchScreen_Generation: YES` → `INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen`. `xcodegen generate` + `xcodebuild` on `iphonesimulator` confirmed `UILaunchStoryboardName = LaunchScreen` in built Info.plist and the `Assets.car` compiled with both new resources.
+
+### Wordmark regeneration (important correctness fix)
+- **The shipped `wordmark_dark.png` did not match the HTML spec.** The PNG rendered the gold dot as a tittle directly above the "k" (as if dotting an "i"), but `Seek Logos.html` Logo 01 placed it as a superscript after the "k" (`margin-left: 2px; transform: translateY(-0.72em)`). The user caught this on first visual review.
+- Regenerated the PNG with Python + Pillow + `/System/Library/Fonts/Supplemental/Georgia.ttf`: Georgia at 4× the 96pt base for crispness, letter-spacing `-0.015em` applied glyph-by-glyph via `font.getlength()` + manual x-advance, gold dot ellipse drawn at the computed baseline-offset position after "k". Output cropped with 20pt margin. Writes directly to `Seek/Assets.xcassets/Wordmark.imageset/wordmark_dark.png`, used by both the launch storyboard and the landing page.
+
+### HomeView wordmark swap
+- Replaced `.navigationTitle("Seek")` with `.navigationTitle("")` + `.toolbarTitleDisplayMode(.inline)` and inserted the `Image("Wordmark")` at the top of the ScrollView VStack (leading-aligned, 44pt tall, padded horizontally). The profile icon in `.topBarTrailing` still renders in the now-inline nav bar.
+
+### Marketing landing page
+- New `landing/index.html` — single self-contained static site, inline CSS, no build step. Assets at `landing/assets/wordmark_dark.png` + `icon.png` + `wordmark_sage.png`.
+- Sections: nav, hero (headline + subhead + waitlist form + full-Home-screen iPhone mock with tab bar), "How it works" 3-up, AI spotlight (bulleted features + full chat mock with user bubble → AI intro → verse tiles → prayer tile → worship song tile), 3-template verse card showcase (cream/sage/gold CSS gradients), "More ways Seek meets you" features strip (Daily Verse, Streaks, Worship songs), secondary waitlist CTA, footer.
+- Iterated twice: first pass had a sparse single-card verse section and a phone mock that only showed the top of Home. Fixed by bumping nav wordmark 28→44px, restructuring `.device .screen` as flex column with a pinned tab bar, and rebuilding the showcase as a 3-template grid.
+
+### Waitlist backend
+- Migration `create_waitlist_table`: `create extension citext; create table public.waitlist (id bigserial pk, email citext unique, source text default 'landing', created_at timestamptz default now())`.
+- RLS policy `anon_insert_waitlist`: allows anon + authenticated INSERT only, WITH CHECK validating email format (regex), length ≤ 254, and `source = 'landing'` (prevents clients from spoofing the source field). No SELECT/UPDATE/DELETE for anon — the list is write-only to the public.
+- Landing page JS auto-wires every `form.waitlist` — POSTs to `/rest/v1/waitlist` with the anon JWT (same key the iOS app ships), prefers `return=minimal`, handles 201 (success), 409 (already on list — treated as success for UX), everything else (format reject etc. → generic error + re-enable).
+- Smoke-tested via curl: valid → 201, duplicate → 409, malformed email → 401, tampered `source` → 401, anon SELECT → `[]`. Test row cleaned up.
+
+### Decisions
+- **Use Claude Design's PNG exports but verify against the HTML source.** The icon PNG was fine; the wordmark PNG diverged from the HTML spec. Rule going forward: when Claude Design ships both HTML source and PNG exports, treat the HTML as the source of truth and spot-check the PNGs before committing.
+- **Public GitHub repo.** Anon Supabase JWT is safe to publish (designed for client bundles, protected by RLS). No service role key, no Anthropic API key, no secrets tracked.
+- **Landing page is vanilla HTML/CSS, no framework.** Single file, deployable anywhere. One JS `<script>` for the Supabase POST. Zero build step.
+- **Waitlist list is write-only to the public.** Anon role gets INSERT only, no SELECT. Operator reads the list via Supabase dashboard (service role). This is the right default for any "public form" pattern in this stack.
+- **Landing `source` field is server-validated.** Without the CHECK constraint, a motivated browser user could POST `{source: "spam"}` and pollute segmentation. Locking `source = 'landing'` via RLS prevents that.
+- **iPhone mock on landing is pure CSS, not a real screenshot.** Faithful enough for a pre-launch marketing page; real screenshots go into App Store assets later.
+- **Duplicate email returns 409 but shows "you're already on the list" as a success-kind message** rather than an error. Minor privacy consideration (reveals email-is-registered state) but the right UX for a pre-launch waitlist.
+
+### Gotchas discovered
+- **iOS caches the launch storyboard aggressively.** Even after a new build deploys, the OS serves the prior splash assets. User saw the old "dot over k" wordmark on splash even after the corrected PNG had shipped. Fix: delete the app from the device, clean build folder in Xcode, re-deploy. This is a real documented iOS behavior, not an Xcode quirk. Add to CLAUDE.md.
+- **Claude Design PNG exports can diverge from the HTML source.** Treat the HTML+CSS as the source of truth, verify PNGs visually, and re-render from the HTML spec when they don't match. Add to CLAUDE.md.
+- **Supabase PostgREST returns 401 (not 400/403) for RLS WITH CHECK violations.** Our smoke test showed tampered source + malformed email both coming back as 401 from `/rest/v1/waitlist`. Worth knowing for future client error classification — don't assume 401 always means auth failure.
+- **PIL letter-spacing requires manual glyph-by-glyph x-advance.** `ImageDraw.text()` has no kern/tracking parameter. Applied CSS `letter-spacing` by iterating characters, measuring each with `font.getlength()`, and advancing x by `advance + kern_px` per character.
+
+### Current Status
+- Phase 1 MVP: ~95% complete.
+- App icon and launch screen are done and in the tree — biggest remaining items from Phase 1 Polish were these, now checked off.
+- Marketing landing page is built and the waitlist is live on Supabase. Needs a host and real Privacy/Terms URLs before it goes public.
+- Remaining code-adjacent work: none. Remaining asset/submission work: App Store screenshots, App Store description + metadata, privacy nutrition labels, final QA pass, submission.
+- Build number unchanged from Session 7 (still 6). Next TestFlight upload will pick up the new icon and launch screen — needs Xcode GUI archive (CLI archive still blocked on Apple Developer account auth).
+- **Validation needed next session**: user should delete Seek from their phone, clean build folder, reinstall fresh to verify the corrected wordmark shows on splash (iOS launch-screen cache).
 
 ## 2026-04-14 — Session 8 (Claude fallback model fix)
 

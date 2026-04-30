@@ -48,6 +48,13 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    Image("Wordmark")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 44)
+                        .padding(.horizontal)
+                        .accessibilityLabel("Seek")
+
                     // Greeting + streak
                     HStack(alignment: .top) {
                         VStack(alignment: .leading, spacing: 4) {
@@ -153,7 +160,8 @@ struct HomeView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Color(hex: "FAFAF6"))
-            .navigationTitle("Seek")
+            .navigationTitle("")
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

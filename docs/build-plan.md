@@ -91,8 +91,8 @@
 - [x] Premium template unlock logic
 
 ### Polish & Launch
-- [ ] App icon design (multiple sizes)
-- [ ] Launch screen
+- [x] App icon design (multiple sizes) — Claude Design deliverable: cream squircle, serif S, gold dot
+- [x] Launch screen — LaunchScreen.storyboard with wordmark + "SCRIPTURE FOR EVERY MOMENT" subtitle
 - [x] Loading states and skeleton screens
 - [x] Error handling (network, auth, API failures)
 - [x] Offline mode handling (graceful degradation)
@@ -102,6 +102,15 @@
 - [x] TestFlight beta distribution
 - [ ] Final QA pass
 - [ ] Submit to App Store
+
+### Pre-launch Marketing
+- [x] Public GitHub repo (github.com/garvonious-ui/Seek)
+- [x] Wordmark + app icon assets rendered from Claude Design spec
+- [x] Marketing landing page (`landing/index.html`) — hero, how-it-works, AI spotlight, verse card templates, features strip, waitlist CTA
+- [x] Supabase `waitlist` table (citext + RLS anon-insert-only + format CHECK)
+- [x] Landing waitlist forms wired to Supabase REST (smoke-tested: 201, 409, format reject, tampered source)
+- [ ] Host landing page on Vercel (config in `landing/vercel.json`; first deploy pending; custom domain to be attached after purchase)
+- [x] Privacy policy + Terms pages (`landing/privacy.html`, `landing/terms.html`) wired into footer of `index.html`
 
 ## Phase 2 — Expansion
 - [x] ~~ESV API integration~~ Multi-translation support (NLT default, KJV switchable) — done in Phase 1

@@ -11,6 +11,7 @@
 		0BD5F868B38038EB84B4DBA1 /* SeekApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D0A7482B49100DFAE1CD8E /* SeekApp.swift */; };
 		15E4A8DA35FD6665689F0982 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D96E020A355A91F2A3F06E5A /* LibraryView.swift */; };
 		1731D56A7ECF9F8D67F036E0 /* BibleTranslation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B791B857162E203CDE7CB1A /* BibleTranslation.swift */; };
+		1BC35B99EA607DC9ECED5A0C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1323B3E69FD0B3F582727ADA /* LaunchScreen.storyboard */; };
 		30FE45F422E25E888A5C473B /* WebContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675EF979B9F03611C1BA0A7E /* WebContentView.swift */; };
 		32B23A70411A456E5E618634 /* SubscriptionManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EB2963A0C15BE4EC87A90C /* SubscriptionManagementView.swift */; };
 		420115F8CA1F04537744619D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D7415D95463F6BC217019DA7 /* Assets.xcassets */; };
@@ -50,6 +51,7 @@
 		0A4F124F5B12CA08A707EC8F /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
 		0A67C5DC56A82F78FDED7D58 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		0A69E39476DCE0152C599D42 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		1323B3E69FD0B3F582727ADA /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
 		18DA92189B90BBA039FA720B /* FavoriteVerse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteVerse.swift; sourceTree = "<group>"; };
 		2414D0CBEED548A87A86B20C /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		25D80CCDB51FA0F6E2DD2F9C /* Seek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Seek.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -259,6 +261,7 @@
 			isa = PBXGroup;
 			children = (
 				6138CC96248B4F0DB8A6D986 /* kjv.json */,
+				1323B3E69FD0B3F582727ADA /* LaunchScreen.storyboard */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -323,6 +326,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				420115F8CA1F04537744619D /* Assets.xcassets in Resources */,
+				1BC35B99EA607DC9ECED5A0C /* LaunchScreen.storyboard in Resources */,
 				F496D6EC7B175CE18BBB6B33 /* SeekProducts.storekit in Resources */,
 				BEA7486CDD56706D7B337E27 /* kjv.json in Resources */,
 			);
@@ -451,7 +455,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save verse cards to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
@@ -539,7 +543,7 @@
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save verse cards to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
