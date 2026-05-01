@@ -5,17 +5,17 @@ struct DonationView: View {
 
     /// Fixed-amount Stripe Payment Links. Each URL is a separate link in
     /// Stripe pinned to one price — no quantity field shown to the donor,
-    /// they tap and pay exactly that amount.
+    /// they tap and pay exactly that amount. Six amounts fill a clean 2x3
+    /// grid so no single tier (e.g. $500) reads as visually heavier than
+    /// the others.
     private let presets: [(amount: Int, url: URL)] = [
         (10,  URL(string: "https://buy.stripe.com/5kQaEQ8mU1g13WqaUF0Ba06")!),
         (25,  URL(string: "https://buy.stripe.com/28E5kw6eM5wh3WqgeZ0Ba04")!),
         (50,  URL(string: "https://buy.stripe.com/14A9AMcDa9Mx1Oi2o90Ba03")!),
         (100, URL(string: "https://buy.stripe.com/5kQ6oA1Yw0bXcsWd2N0Ba02")!),
+        (250, URL(string: "https://buy.stripe.com/eVq4gsgTq9Mx1OiaUF0Ba07")!),
+        (500, URL(string: "https://buy.stripe.com/5kQ6oA5aI7Ep1Oi8Mx0Ba01")!),
     ]
-
-    /// Larger gift tier — full-width button below the preset grid.
-    private let championAmount = 500
-    private let championURL = URL(string: "https://buy.stripe.com/5kQ6oA5aI7Ep1Oi8Mx0Ba01")!
 
     /// Fallback for power users who want to give a custom amount. Opens the
     /// original $1 + adjustable-quantity link, where donors can type any
@@ -55,8 +55,6 @@ struct DonationView: View {
                             presetButton(amount: preset.amount, url: preset.url)
                         }
                     }
-
-                    presetButton(amount: championAmount, url: championURL)
 
                     Button {
                         openURL(customURL)
