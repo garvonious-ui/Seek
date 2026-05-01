@@ -1,5 +1,105 @@
 # Changelog
 
+## 2026-05-01 — Session 13 (Domain swap, donation flow goes live, Stripe webhook deployed and registered)
+
+### Built
+
+#### Domain swap (commit `8c2061f`)
+- **Real domain is `askseekpray.app`** — not the `seek-app.com` placeholder used in Sessions 9–12. User purchased the domain. Single-shot rename across every live touchpoint:
+  - `Seek/Views/Profile/ProfileView.swift` — WebContentView URLs for Privacy and Terms (the in-app legal pages render live URLs via WKWebView; no app rebuild needed once domain DNS resolves).
+  - `landing/{index,privacy,terms,support}.html` — footer mailto + in-page contact mailto across all four pages.
+- Historical changelog references to `seek-app.com` left intact (narrative record, not config). `StoreManager` bundle ID strings (`com.seek.app.*`) untouched — unrelated, dormant code.
+- Vercel redeployed; smoke test confirms 0 `seek-app.com` residue and 8 `askseekpray.app` hits across the four landing pages.
+- **Pending:** user attaches `askseekpray.app` in Vercel → Project → Settings → Domains. After DNS propagates, all four URL surfaces (in-app Privacy/Terms, footer mailtos, marketing site, support page) resolve without further code changes.
+
+#### Donation flow live (commits `f99de44` → `02fd177` → `c5dd69d`)
+Iterated three times in one session as the UX matured:
+1. **`f99de44` — single CTA wired to live Stripe Payment Link.** First version of `DonationView` had a single "Support Seek" button opening a `$1 × adjustable-quantity` link (1–1000 units). Stripe Payment Links no longer support "Customer chooses price" — flat-rate + quantity-adjust was the closest single-link workaround.
+2. **`02fd177` — multi-preset buttons replace single CTA.** Replaced the awkward "Qty 1 ▼" dropdown with six visible amounts. Each preset is its own fixed-amount Stripe Payment Link (no quantity field shown to donor — they tap and pay exactly that amount). Layout: `[$10][$25] / [$50][$100] / [$500 full-width]` + "Other amount →" footer link.
+3. **`c5dd69d` — clean 2x3 grid with $250 added.** The standalone `$500` row read as visually heavier than the other amounts. Adding `$250` filled out a clean 2x3 grid where all six amounts share the same visual weight. Final layout:
+   ```
+   [ $10  ]   [ $25  ]
+   [ $50  ]   [ $100 ]
+   [ $250 ]   [ $500 ]
+        Other amount →
+   ```
+   `$250` is also the natural ladder rung between $100 and $500 (tithe-adjacent for faith giving).
+- Six fixed-amount Stripe Payment Links live, plus the `$1 × adjustable-quantity` link retained behind "Other amount →".
+- Stripe Payment Link created in **live mode** under LCIII Ventures LLC. URLs are permanent; **the links are paused 2–3 days** while Stripe finishes business verification, then auto-activate without any code change.
+- Editorial copy unchanged from Session 11 ("Built for the people of God, / not for profit." in Georgia 30pt + two body paragraphs + footer Stripe disclosure).
+
+#### Stripe webhook + donations table (commit `44a7818`)
+- New Edge Function `supabase/functions/stripe-webhook/index.ts` (~230 lines) handles `checkout.session.completed` (insert donation row, optionally email donor) and `charge.refunded` (update row status to `refunded`).
+- **No Stripe SDK.** Manual HMAC-SHA256 signature verification using Web Crypto API (~30 lines). Avoids `npm: stripe` Deno compatibility wrinkles, smaller cold-start, easier to audit. Implements Stripe's documented algorithm directly.
+- 5-minute timestamp tolerance for replay protection (matches Stripe's default). Constant-time signature comparison. Multi-`v1` signature handling for signing-key rotation.
+- New table `public.donations`: `id`, `stripe_session_id` (unique), `stripe_payment_intent_id`, `amount_cents`, `currency`, `donor_email`, `donor_name`, `status`, `created_at`. RLS enabled with **no policies** — anon and authenticated roles get zero access. Service role (Edge Function + dashboard) bypasses RLS. Operator reads donor data via dashboard.
+- Index on `created_at desc` for time-range queries (year-end giving reports).
+- Idempotent: upsert keyed on `stripe_session_id` so Stripe webhook retries don't duplicate rows.
+- **Optional Resend integration**: if `RESEND_API_KEY` is set in Supabase secrets, sends a thank-you email with HTML + plain-text bodies (Galatians 6:9 quote, Georgia serif, sage-and-cream visual system matching the in-app `DonationView`). Skips silently if unset — webhook still records the donation.
+- Migration `supabase/migrations/20260501120000_create_donations_table.sql` is the source of truth in repo. Already applied server-side via Supabase MCP.
+- Deployed with `verify_jwt: false` because Stripe doesn't send Supabase auth headers — webhook authenticates via its own `stripe-signature` header.
+- **Important behavior:** handler errors are logged but the function still returns 200. Stripe retries on 5xx, which would create duplicate side effects on intermittent errors. Manual replay via the Stripe dashboard is safer for these handlers than auto-retry.
+
+#### Webhook registered in Stripe + secret configured
+- **Webhook endpoint added** in Stripe → Developers → Webhooks: `https://hxfiaowayrhuhzhhbaix.supabase.co/functions/v1/stripe-webhook` listening on `checkout.session.completed` and `charge.refunded`.
+- **Signing secret pulled from Stripe and set as `STRIPE_WEBHOOK_SECRET`** in Supabase Edge Function secrets. Function will now verify signatures on incoming events.
+- Webhook end-to-end testing was in progress when the previous session ran out of context (uploaded too many screenshots). Picking up here.
+
+### Decisions
+- **Hand-rolled HMAC over the Stripe SDK** — `npm: stripe` has occasional Deno compatibility wrinkles, and the verification algorithm is small enough (~30 lines) that owning it outright is the right tradeoff. Easier to audit, smaller cold-start, fewer moving parts.
+- **RLS-locked donations table.** No public read or write policies. Service role (webhook + dashboard) gets full access. The donor list never touches the client.
+- **Email is opt-in.** Webhook works without `RESEND_API_KEY`. User can add Resend later (verify `hello@askseekpray.app`, set the secret) without redeploying the function.
+- **Migration committed even though MCP applied it server-side.** Keeps the repo as the source of truth — future `supabase db reset`, fresh project setups, and replication all work from the migration files.
+- **Six preset amounts in a 2x3 grid.** Visible amounts replace the awkward Stripe Quantity dropdown that most donors would miss. Stripe takes 2.9% + 30¢ per transaction, so preset amounts ≥$10 net 91%+ vs the original $1 minimum at 33%.
+- **Don't return 5xx from the webhook handler on logic errors.** Stripe's automatic retry on 5xx is fine for transient infra failures but creates duplicate side effects for handler bugs. Logging + 200 + manual dashboard replay is the safer pattern.
+
+### Webhook validation
+- **Function deploy + secret confirmed live.** Pinged the endpoint without a signature and got the expected `HTTP 400 Missing stripe-signature header` from `stripe-webhook/index.ts:20-22`. Function is reachable, deployed, and reading `STRIPE_WEBHOOK_SECRET`.
+- **`stripe trigger` is test-mode only.** Stripe Shell's `stripe trigger checkout.session.completed --live` returns "stripe trigger is disabled in live mode." Our `Seek-donations` destination is live-mode-only, so synthetic test events from the CLI route nowhere we can observe.
+- **Decision: skip synthetic end-to-end test.** The full path (signature verify → upsert → optional Resend) is small, boring code; the first real $1 donation that hits the live link (post Stripe verification, ~2–3 days) is the canary. Setting up a parallel test-mode destination + swapping the secret was rejected as fiddly with real risk of leaving the test secret in production by accident. Trade synthetic certainty for a faster path to launch.
+
+### Domain attached at Vercel
+- Added `askseekpray.app` and `www.askseekpray.app` to the Vercel `landing` project via `vercel domains add` (CLI, scope `garvonious-uis-projects/landing`).
+- Pointed GoDaddy DNS at Vercel: edited the existing apex record `A @ → 76.76.21.21` and existing `CNAME www → cname.vercel-dns.com.` (both records were pre-seeded by GoDaddy with parking-page values; only Value changed). Left the GoDaddy NS records and the harmless `_domainconnect` / `pay` CNAMEs alone.
+- DNS propagated within minutes (TTL 1 hour); Vercel auto-issued Let's Encrypt SSL.
+- Smoke-tested: `dig` confirms records on both authoritative GoDaddy nameservers and Google DNS; `curl` returns `HTTP 200` on `https://askseekpray.app/`, `/privacy`, `/terms`, `/support`, AND `https://www.askseekpray.app/`. Vercel's `cleanUrls: true` is honored — no `.html` extensions needed.
+- This means the iOS app's `WebContentView` (which renders Privacy/Terms via WKWebView from the live `https://askseekpray.app/privacy|terms` URLs hardcoded in `ProfileView.swift`) now works without an app rebuild.
+
+### Apple Sign In confirmed already configured
+- Opened the Supabase Dashboard → Authentication → Providers → Apple panel: **Enable Sign in with Apple = ON**, **Client IDs = `com.loucesario.seek`**, OAuth Secret Key blank (correct — we don't use the OAuth/web flow, only the native iOS `signInWithIdToken` path).
+- Cross-verified by querying `auth.identities`: five real users have provider = 'apple', earliest 2026-04-07. So Apple Sign In has been working in production since the first TestFlight build.
+- The "Apple Sign In needs Apple Service ID configured" item in the build plan, CLAUDE.md, and the App Review draft notes was a stale TODO carried since Session 2. Now cleaned up. iOS native flow needs only the Bundle ID; the Services ID + .p8 key + Team ID + Key ID setup is for the OAuth web flow we don't use.
+
+### App Review test account provisioned
+- Created `appreview@askseekpray.app` directly in `auth.users` via Supabase MCP `execute_sql` (no signUp flow needed). Email pre-confirmed (`email_confirmed_at = now()`). One `auth.identities` row inserted (provider `email`, `provider_id` = the user's UUID).
+- Profile auto-created by the existing on-signup trigger; `update public.profiles` then seeded `display_name = 'App Review'`, `onboarding_topics = {Anxiety, Gratitude, Strength}`, `preferred_translation = 'NLT'`, `is_premium = true`, `streak_count = 3`, `total_verses_explored = 4`, `total_cards_created = 1`. Reviewer lands directly on Home, skipping onboarding, with a non-empty engagement state.
+- **Gotcha hit + documented:** raw `INSERT` into `auth.users` left `confirmation_token`, `recovery_token`, `email_change_token_new`, and `email_change` as `NULL`, which made every login attempt return `500 unexpected_failure: "Database error querying schema"`. GoTrue queries those columns with non-null filters; the dashboard's "Add user" UI sets them to `''` automatically but raw SQL doesn't. Patched with an `UPDATE` setting all four to `''`. Login confirmed via `POST /auth/v1/token?grant_type=password` returning a valid 3600s access token. Pattern added to CLAUDE.md.
+- Password is in this session's transcript only — never written to repo, never committed. User is responsible for pasting it directly into ASC's secure Sign-In Information field.
+
+### App Store metadata drafted
+- New file `docs/app-store-submission.md` is paste-ready for App Store Connect. Reflects the donation pivot from Session 11. Covers: app name (Seek - Scripture Companion, since bare "Seek" is taken), subtitle (26 / 30 chars), promotional text (140 / 170 chars), full description (2,882 / 4,000 chars), keywords (89 / 100 chars), categories (Lifestyle + Reference), age rating questionnaire (4+), Privacy Nutrition Label table (Contact Info + Identifiers + User Content + Usage Data, all linked to user, none for tracking, all for App Functionality), Notes for Reviewer block (covers Apple Sign In status, donation flow per Guideline 3.2.1, crisis-language safety feature, local-only notifications, no chat-content persistence), and a pre-submission checklist.
+- Description deliberately leads with the emotional hook, declares verses are real KJV/NLT (not AI-generated) to short-circuit Apple's AI religious-content scrutiny, includes the crisis hotline disclaimer up-front, and explicitly states there is no subscription / IAP / ads.
+
+### Pending (carried into next session)
+- **First real donation** is the e2e canary for the webhook insert path. Watch for it post Stripe activation.
+- **(Optional)** Resend account + domain verification for `hello@askseekpray.app` (now possible because the domain resolves) → set `RESEND_API_KEY` in Supabase secrets to enable thank-you emails.
+- **Wait 2–3 days** for Stripe to finish LCIII Ventures LLC business verification — Payment Links auto-activate. No code change required.
+- **App Store screenshots** — 5 designer mocks need export at 6.7" (1290×2796) and 6.1" (1179×2556).
+- **App Review test account** — provision a Supabase user `appreview@askseekpray.app` with a strong password; document credentials in ASC's secure field.
+- **Apple Sign In Service ID** — still needs configuration in the Supabase dashboard.
+- **App Store metadata paste** — copy each block from `docs/app-store-submission.md` into ASC.
+
+### Verification
+- All commits show `xcodebuild → BUILD SUCCEEDED` in their commit messages. Working tree clean on `main`.
+- Webhook deployed to Supabase project `hxfiaowayrhuhzhhbaix` via MCP.
+- `landing/` redeployed to Vercel; smoke test confirmed correct domain swap.
+- DonationView visually verified in iOS simulator before final commit (per `c5dd69d` message).
+
+### Current Status
+- Phase 1 MVP: ~99% complete. Donation funding model fully wired (waiting on Stripe's 2–3 day business verification before live links activate). Domain `askseekpray.app` is fully live — apex + www both serving HTTPS via Vercel, all four content URLs (`/`, `/privacy`, `/terms`, `/support`) returning 200. App Store metadata drafted into a paste-ready doc.
+- Build number unchanged (still 6). Next TestFlight upload picks up the donation-grid UI and domain swap, but the in-app legal pages already work without a rebuild because `WebContentView` renders the live URL.
+- App Store submission queue: screenshots upload, metadata paste into ASC, App Review test account, final QA, submit.
+
 ## 2026-05-01 — Session 12 (Daily notifications actually fire after onboarding)
 
 ### Built

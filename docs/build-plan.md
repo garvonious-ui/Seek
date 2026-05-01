@@ -116,7 +116,7 @@
 - [x] Marketing landing page (`landing/index.html`) — hero, how-it-works, AI spotlight, verse card templates, features strip, waitlist CTA
 - [x] Supabase `waitlist` table (citext + RLS anon-insert-only + format CHECK)
 - [x] Landing waitlist forms wired to Supabase REST (smoke-tested: 201, 409, format reject, tampered source)
-- [ ] Host landing page on Vercel (config in `landing/vercel.json`; first deploy pending; custom domain to be attached after purchase)
+- [x] Host landing page on Vercel — deployed Session 9, custom domain `askseekpray.app` attached Session 13 (apex A record + www CNAME at GoDaddy → Vercel auto-issued SSL)
 - [x] Privacy policy + Terms pages (`landing/privacy.html`, `landing/terms.html`) wired into footer of `index.html`
 
 ## Phase 2 — Expansion
@@ -131,7 +131,7 @@
 
 ## Known Bugs
 - [x] Profile auto-create trigger not firing for Apple Sign In users — fixed: ensureRemoteProfile() called after Apple Sign In
-- [ ] Apple Sign In needs Apple Service ID configured in Supabase dashboard
+- [x] ~~Apple Sign In needs Apple Service ID configured in Supabase dashboard~~ — was a stale TODO; native iOS `signInWithIdToken` flow only needs the Bundle ID in Supabase's Apple provider (already set to `com.loucesario.seek` since at least Session 1b). Verified Session 13 — five real Apple Sign In users since 2026-04-07 in `auth.identities` (provider=apple).
 - [x] daily_verses table is empty — fixed: seed.sql has 365 verses across 20 themes
 - [x] Loading past conversations opens them read-only — fixed: input bar stays active, messages save to existing conversation
 - [x] Premium upgrade sheet not wired from rate limit card in chat — fixed: rate limit card triggers PremiumUpgradeView
