@@ -3,7 +3,24 @@ import SwiftUI
 struct DonationView: View {
     @Environment(\.openURL) private var openURL
 
-    private let donationURL = URL(string: "https://buy.stripe.com/00w4gsfPm5whgJcbYJ0Ba00")!
+    /// Fixed-amount Stripe Payment Links. Each URL is a separate link in
+    /// Stripe pinned to one price — no quantity field shown to the donor,
+    /// they tap and pay exactly that amount.
+    private let presets: [(amount: Int, url: URL)] = [
+        (10,  URL(string: "https://buy.stripe.com/5kQaEQ8mU1g13WqaUF0Ba06")!),
+        (25,  URL(string: "https://buy.stripe.com/28E5kw6eM5wh3WqgeZ0Ba04")!),
+        (50,  URL(string: "https://buy.stripe.com/14A9AMcDa9Mx1Oi2o90Ba03")!),
+        (100, URL(string: "https://buy.stripe.com/5kQ6oA1Yw0bXcsWd2N0Ba02")!),
+    ]
+
+    /// Larger gift tier — full-width button below the preset grid.
+    private let championAmount = 500
+    private let championURL = URL(string: "https://buy.stripe.com/5kQ6oA5aI7Ep1Oi8Mx0Ba01")!
+
+    /// Fallback for power users who want to give a custom amount. Opens the
+    /// original $1 + adjustable-quantity link, where donors can type any
+    /// number between 1 and 1000 (= $1 to $1000).
+    private let customURL = URL(string: "https://buy.stripe.com/00w4gsfPm5whgJcbYJ0Ba00")!
 
     var body: some View {
         ScrollView {
@@ -29,19 +46,27 @@ struct DonationView: View {
                 .font(.body)
                 .lineSpacing(3)
 
-                Button {
-                    openURL(donationURL)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "heart")
-                        Text("Support Seek")
+                VStack(spacing: 12) {
+                    LazyVGrid(columns: [
+                        GridItem(.flexible(), spacing: 12),
+                        GridItem(.flexible(), spacing: 12),
+                    ], spacing: 12) {
+                        ForEach(presets, id: \.amount) { preset in
+                            presetButton(amount: preset.amount, url: preset.url)
+                        }
                     }
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color(hex: "5B7B5E"))
-                    .foregroundStyle(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 24))
+
+                    presetButton(amount: championAmount, url: championURL)
+
+                    Button {
+                        openURL(customURL)
+                    } label: {
+                        Text("Other amount →")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Color(hex: "5B7B5E"))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
                 }
                 .padding(.top, 8)
 
@@ -57,6 +82,20 @@ struct DonationView: View {
         .background(Color(hex: "FAFAF6"))
         .navigationTitle("Support Seek")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func presetButton(amount: Int, url: URL) -> some View {
+        Button {
+            openURL(url)
+        } label: {
+            Text("$\(amount)")
+                .font(.title3.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color(hex: "5B7B5E"))
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
     }
 }
 
