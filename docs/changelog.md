@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-05-01 — Session 14 (App submitted to App Store)
+
+### Built
+
+#### Donation nudge card in chat
+- New `DisplayMessage.Kind.donationNudge` case in `ChatView`. Appears once per session after the user's 3rd chat of the day — a soft inline card ("Keep Seek free") with a "Support Seek →" button that opens `DonationView` as a sheet. Same sage-green tonal style as the action card. Does not interrupt the chat flow — scrolls in below the response like any other card.
+- `hasShownDonationNudge: Bool` @State flag ensures it fires at most once per ChatView lifetime. Triggered at the bottom of `renderResponse` after the profile stats bump.
+
+#### Build 7
+- Bumped `CURRENT_PROJECT_VERSION` 6 → 7 in `project.yml`.
+- Stripped alpha channel from `AppIcon.png` (was RGBA — Apple rejects transparent large icons at upload time). Fixed with Pillow `.convert("RGB")`.
+- Added `INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO` to `project.yml` — auto-clears the "Missing Compliance" prompt in ASC on future uploads without requiring manual questionnaire answers.
+- `xcodegen generate` + `xcodebuild` → BUILD SUCCEEDED.
+- Archived and uploaded via Xcode Organizer. Build 7 live on TestFlight.
+
+#### App Store submission
+- Walked through full ASC submission flow: screenshots (iPhone 6.7" + 6.1", iPad Pro 13"), age rating (4+), privacy nutrition labels (Name + Email → App Functionality + Linked; User ID → App Functionality + Linked; Product Interaction → App Functionality + Linked; no tracking), pricing ($0.00 free), content rights (yes — KJV public domain + Anthropic API), all metadata pasted from `docs/app-store-submission.md`.
+- Build 7 attached. **Submitted for Review.**
+
+### Decisions
+- **Donation nudge fires at 3 chats, once per session.** Low enough to catch engaged users on the same day, high enough that it doesn't feel like a nag on first use. Session-scoped (not persisted) so it can appear again on the next launch.
+- **Alpha channel stripped at source** rather than adding `ASSETCATALOG_COMPILER_SKIP_APP_STORE_DEPLOYMENT`. Stripping at source is cleaner — the PNG on disk is correct rather than relying on a build flag to paper over it.
+- **`ITSAppUsesNonExemptEncryption = NO`** is the standard declaration for HTTPS-only apps and is the right long-term fix over manually answering the compliance questionnaire each upload.
+
+### Pending
+- **Stripe activation** — LCIII Ventures LLC business verification, ~2-3 days. Payment Links auto-activate, no code change needed.
+- **App Review verdict** — typically 1-3 days. Watch for 3.2.1 follow-up on the Stripe donation flow (reviewer notes address it).
+- **First real donation** — canary for the webhook insert path.
+- **Build 8** — pick up `ITSAppUsesNonExemptEncryption` key (already in project.yml, takes effect on next archive).
+
 ## 2026-05-01 — Session 13 (Domain swap, donation flow goes live, Stripe webhook deployed and registered)
 
 ### Built

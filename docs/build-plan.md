@@ -103,12 +103,12 @@
 - [x] Loading states and skeleton screens
 - [x] Error handling (network, auth, API failures)
 - [x] Offline mode handling (graceful degradation)
-- [ ] App Store screenshots (6.7" and 6.1")
-- [ ] App Store description and metadata
-- [ ] Privacy nutrition labels
+- [x] App Store screenshots (6.7" 1290×2796, 6.1" 1179×2556, iPad Pro 13" 2064×2752 — all uploaded to ASC Session 14)
+- [x] App Store description and metadata
+- [x] Privacy nutrition labels
 - [x] TestFlight beta distribution
-- [ ] Final QA pass
-- [ ] Submit to App Store
+- [x] Final QA pass
+- [x] Submit to App Store
 
 ### Pre-launch Marketing
 - [x] Public GitHub repo (github.com/garvonious-ui/Seek)

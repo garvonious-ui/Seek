@@ -21,6 +21,8 @@ struct ChatView: View {
     @State private var scrollToBottom = false
     @State private var hasLoadedInitialMessage = false
     @State private var lastUserPrompt: String?
+    @State private var hasShownDonationNudge = false
+    @State private var showDonationSheet = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -54,6 +56,8 @@ struct ChatView: View {
                                 errorBubble(text)
                             case .rateLimit(let text):
                                 rateLimitCard(text)
+                            case .donationNudge:
+                                donationNudgeCard
                             }
                         }
 
@@ -71,6 +75,7 @@ struct ChatView: View {
                     }
                     .padding()
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .onChange(of: messages.count) {
                     withAnimation {
                         proxy.scrollTo("bottom", anchor: .bottom)
@@ -142,6 +147,11 @@ struct ChatView: View {
         }
         .sheet(item: $selectedPrayer) { target in
             CardCreatorView(prayerText: target.text)
+        }
+        .sheet(isPresented: $showDonationSheet) {
+            NavigationStack {
+                DonationView()
+            }
         }
     }
 
@@ -432,6 +442,35 @@ struct ChatView: View {
         }
     }
 
+    private var donationNudgeCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "heart.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+                Text("Keep Seek free")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color(hex: "1A1A1A"))
+            }
+            Text("Seek is free for everyone, supported by people who find it useful. If it's met you today, consider a small gift.")
+                .font(.caption)
+                .foregroundStyle(Color(hex: "6B7280"))
+                .lineSpacing(2)
+            Button {
+                showDonationSheet = true
+            } label: {
+                Text("Support Seek →")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(hex: "5B7B5E").opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
     private func rateLimitCard(_ text: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "clock")
@@ -641,6 +680,12 @@ struct ChatView: View {
             profile.totalVersesExplored += response.verses.count
             profile.dailyChatsUsed += 1
             try? modelContext.save()
+
+            // Show donation nudge once per session after the 3rd chat
+            if !hasShownDonationNudge, profile.dailyChatsUsed >= 3 {
+                messages.append(DisplayMessage(kind: .donationNudge))
+                hasShownDonationNudge = true
+            }
         }
     }
 
@@ -655,7 +700,7 @@ struct ChatView: View {
         switch last.kind {
         case .verses, .prayer, .worshipSong, .action, .followUp:
             return true
-        case .user, .intro, .error, .rateLimit:
+        case .user, .intro, .error, .rateLimit, .donationNudge:
             return false
         }
     }
@@ -824,6 +869,7 @@ struct DisplayMessage: Identifiable {
         case followUp(String)
         case error(String)
         case rateLimit(String)
+        case donationNudge
     }
 }
 
