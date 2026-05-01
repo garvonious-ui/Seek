@@ -89,6 +89,9 @@ struct HomeView: View {
                     // Daily Verse Card
                     dailyVerseCard
 
+                    // Share with a friend
+                    shareWithFriend
+
                     // Quick Prompts
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Seek scripture for...")
@@ -185,7 +188,6 @@ struct HomeView: View {
             .task {
                 await loadDailyVerse()
                 StreakManager.recordActivity(modelContext: modelContext)
-                await syncPremiumStatus()
             }
             // Re-fetch as soon as we come back online so the user doesn't have
             // to manually pull-to-refresh after regaining signal.
@@ -193,7 +195,6 @@ struct HomeView: View {
                 guard isConnected, isShowingCachedVerse else { return }
                 Task {
                     await loadDailyVerse()
-                    await syncPremiumStatus()
                 }
             }
         }
@@ -289,21 +290,27 @@ struct HomeView: View {
         .padding(.horizontal)
     }
 
-    // MARK: - Actions
+    // MARK: - Share with a friend
 
-    private func syncPremiumStatus() async {
-        guard let userId = SupabaseService.shared.currentUser?.id.uuidString,
-              let profile = profiles.first else { return }
-        do {
-            let remotePremium = try await SupabaseService.shared.fetchRemotePremiumStatus(userId: userId)
-            if profile.isPremium != remotePremium {
-                profile.isPremium = remotePremium
-                try? modelContext.save()
+    private var shareWithFriend: some View {
+        ShareLink(
+            item: URL(string: "https://apps.apple.com/app/seek")!,
+            message: Text("I've been using Seek to find scripture for what's on my heart. It's quiet, beautiful, and free. I think you'd love it.")
+        ) {
+            HStack(spacing: 8) {
+                Image(systemName: "heart.text.square")
+                Text("Share Seek with a friend")
             }
-        } catch {
-            print("Failed to sync premium status: \(error)")
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(Color(hex: "5B7B5E"))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(Color(hex: "5B7B5E").opacity(0.08), in: Capsule())
         }
+        .padding(.horizontal)
     }
+
+    // MARK: - Actions
 
     private func loadDailyVerse() async {
         // Show the cached verse immediately so the card never renders empty,

@@ -132,7 +132,7 @@ serve(async (req: Request) => {
 
     const chatCount = usage?.chat_count ?? 0;
 
-    const maxChats = profile?.is_premium ? 50 : 5;
+    const maxChats = 50;
 
     if (chatCount >= maxChats) {
       const tomorrow = new Date();
@@ -142,9 +142,8 @@ serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           error: "daily_limit_reached",
-          message: `You've used your ${maxChats} ${profile?.is_premium ? "premium" : "free"} scripture chats for today.`,
+          message: `You've used your ${maxChats} scripture chats for today.`,
           resetsAt: tomorrow.toISOString(),
-          upgradeURL: "seek://upgrade",
         }),
         { status: 429 },
       );

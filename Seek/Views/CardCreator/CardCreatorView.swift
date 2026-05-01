@@ -16,8 +16,6 @@ struct CardCreatorView: View {
     @State private var showSavedToast = false
     @State private var showPermissionAlert = false
 
-    private var isPremium: Bool { profiles.first?.isPremium ?? false }
-
     init(verseReference: String, verseText: String) {
         self.verseReference = verseReference
         self.verseText = verseText
@@ -145,16 +143,12 @@ struct CardCreatorView: View {
                 HStack(spacing: 10) {
                     ForEach(CardTemplate.all) { tmpl in
                         Button {
-                            if tmpl.isPremium && !isPremium {
-                                // TODO: Show premium upgrade
-                            } else {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedTemplate = tmpl
-                                }
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedTemplate = tmpl
                             }
                         } label: {
                             VStack(spacing: 4) {
-                                VerseCardThumbnail(template: tmpl, isPremium: isPremium)
+                                VerseCardThumbnail(template: tmpl)
                                     .overlay {
                                         if tmpl.id == selectedTemplate.id {
                                             RoundedRectangle(cornerRadius: 8)

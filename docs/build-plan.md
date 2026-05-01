@@ -80,15 +80,12 @@
 - [x] Share app action
 - [x] Privacy policy and terms of service screens
 
-### Monetization
-- [x] Configure StoreKit 2 products (monthly + annual)
-- [x] Build premium upgrade screen (feature comparison)
-- [x] Implement receipt validation Edge Function
-- [x] Premium status sync (local + Supabase)
-- [x] Free trial (7 days) implementation
-- [x] Restore purchases flow
-- [ ] Ad removal for premium users
-- [x] Premium template unlock logic
+### Monetization — replaced with optional donations (Session 11, 2026-05-01)
+- [x] ~~Configure StoreKit 2 products~~ Code retained but unwired; chat rate limit now flat 50/day for everyone
+- [x] ~~Build premium upgrade screen~~ Hidden in ProfileView; sheet presentation removed from ChatView
+- [x] ~~Premium template unlock logic~~ All templates unlocked for everyone
+- [x] DonationView.swift — editorial in-app page with Stripe Payment Link CTA (URL is a placeholder pending Stripe dashboard setup)
+- [x] Apple compliance: no IAP for donations (App Review Guideline 3.2.1) — external `openURL` to Stripe
 
 ### Polish & Launch
 - [x] App icon design (multiple sizes) — Claude Design deliverable: cream squircle, serif S, gold dot

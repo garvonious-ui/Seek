@@ -1,5 +1,64 @@
 # Changelog
 
+## 2026-05-01 — Session 11 (Subscription removed, donations added, share-with-a-friend)
+
+### Strategic shift
+- Pivoted off the paid-subscription model entirely. App is now free to all signed-in users with a flat 50 chats/day limit (the previous premium tier ceiling). Optional donations replace paid tier; users can support Seek from inside the app via an external Stripe Payment Link. Decision: "we built this for the people of God, not for profit." Apple rule: for-profit apps cannot use IAP for donations (App Review Guideline 3.2.1) — external Safari-open is the only compliant path.
+- User's dad requested a "share with a friend" entry — added on Home screen + enhanced existing ProfileView ShareLink with a prepopulated message that gets pulled into iMessage when the user picks Messages from the share sheet.
+- Scope = "hide for now, keep code." StoreKit, the `.storekit` config, `is_premium` columns, `verify-receipt` Edge Function, `PremiumUpgradeView`, `SubscriptionManagementView`, `StoreManager` all stay in tree but are unreferenced. Reversible if the model ever changes back. Saved ~60 min vs. a full delete.
+
+### Built
+
+#### Server (priority 1 — already live in production)
+- `supabase/functions/chat/index.ts:135` — `const maxChats = profile?.is_premium ? 50 : 5;` → `const maxChats = 50;`. Also removed `upgradeURL: "seek://upgrade"` from the 429 payload (no upgrade flow exists anymore) and dropped the `"premium"`/`"free"` qualifier from the rate-limit error message.
+- Deployed via `supabase functions deploy chat --no-verify-jwt --project-ref hxfiaowayrhuhzhhbaix`. **Live for every existing TestFlight user without an iOS rebuild** — they got the lift to 50/day the moment the function deployed.
+
+#### iOS (priority 2 — one rebuild)
+- `Seek/Views/Profile/ProfileView.swift` — deleted `@State showPremiumUpgrade`, the entire "Seek+ Member" badge section, both branches of the conditional Upgrade-vs-Manage block, the `.sheet(isPresented:)` modifier. Replaced with a single `NavigationLink` to `DonationView` labeled "Support Seek" with a sage heart icon. Existing `ShareLink` on this screen (was vanilla URL-only) enhanced with `message:` parameter so iMessage gets prepopulated text.
+- `Seek/Views/Chat/ChatView.swift` — same removals (state, sheet). `rateLimitCard` simplified: kept the clock icon and the existing rate-limit text from the server, dropped the "Upgrade to Seek+" button, added "Resets at midnight, your local time."
+- `Seek/Views/CardCreator/CardCreatorView.swift` — removed `isPremium` computed property and the gating branch in the template picker. All 18 templates now selectable by all users. `VerseCardThumbnail` call updated.
+- `Seek/CardTemplates/VerseCardView.swift` — `VerseCardThumbnail` lost its `isPremium` parameter and the lock-overlay block. (The `isPremium` flag remains on the `CardTemplate` struct itself for now — dead but harmless. Removing it would touch 18 template definitions for no behavioral gain.)
+- `Seek/Views/Home/HomeView.swift` — removed `syncPremiumStatus()` and both call sites in `.task` and `.onChange`. The Supabase service still has `fetchRemotePremiumStatus()` exposed; left dormant. Added a new private `shareWithFriend` view: a sage capsule reading "Share Seek with a friend" with a heart-text-square icon, sitting between the Daily Verse card and the Quick Prompts grid. Uses `ShareLink` with `message:Text("I've been using Seek to find scripture for what's on my heart. It's quiet, beautiful, and free. I think you'd love it.")` — iMessage on iOS 17+ prepopulates with that text + the App Store URL as a rich card.
+- **NEW:** `Seek/Views/Profile/DonationView.swift` — native editorial view, ~75 lines. Sage `heart.fill` icon, Georgia 30pt headline ("Built for the people of God, / not for profit."), two body paragraphs, sage CTA button ("Support Seek") that opens an external donation URL via `@Environment(\.openURL)`, footer note about Stripe and tax-deductibility. `donationURL` is a placeholder `https://donate.stripe.com/PLACEHOLDER` — the user creates the Payment Link in the Stripe dashboard and pastes the real URL before App Store submission.
+
+#### Marketing pages (priority 5 — redeployed to Vercel)
+- `landing/terms.html` — section 7 rewritten from "Subscriptions and free trial" to "Pricing and donations." One paragraph stating the app is free, optional donations are processed by Stripe, voluntary, not refundable through Seek, not tax-deductible.
+- `landing/support.html` — entire "Subscription & billing" section (4 questions about manage/cancel/refund/restore) replaced with a 3-question "Donations" section ("Is Seek free?", "How do I support Seek?", "How much does Seek cost to run?"). The "Privacy & data" quick-recap line stripped of the "bill subscriptions" wording. Meta description updated.
+- `landing/privacy.html` — short-version callout no longer mentions billing; data collection list dropped the "Premium subscription status and expiration" line; "How we use your information" stripped subscription-receipt validation; "Service providers" table dropped "in-app purchases and receipt validation" from Apple's row and added a new Stripe row for donation processing; "Your choices and rights" dropped the "Manage your subscription" item; added a paragraph clarifying we do not collect payment information (Stripe handles cards directly).
+- Redeployed to Vercel production. Verified `/`, `/privacy`, `/terms`, `/support` all 200; smoke-tested grep for residual subscription/premium copy → only the intentional negative statements remain ("There is no subscription, no in-app purchase").
+
+### Decisions
+- **Stripe Payment Link** chosen as the donation provider over Buy Me a Coffee / Ko-fi. Lower fee (2.9% + 30¢ vs ~5%+), cleanest donor UX (card field, done). User creates the Payment Link in Stripe dashboard (~10 min, one-time setup) and pastes the URL into `DonationView.donationURL`.
+- **Hide-don't-delete** for the IAP code. `StoreManager`, `PremiumUpgradeView`, `SubscriptionManagementView`, `SeekProducts.storekit`, `verify-receipt` Edge Function, `is_premium` and `premium_expires_at` columns, `UserProfile.isPremium` SwiftData property — all retained, all unreferenced. Per CLAUDE.md gotcha, removing `@Model` properties without a migration plan can wipe local stores; leaving `isPremium` stored-but-unread is the safe path. The `.storekit` config also stays for now; it's not active until the IAP product is created in App Store Connect (and we won't be creating it).
+- **"Resets at midnight, your local time."** added to the rate-limit card. Without the upgrade button there's nothing to do but wait — telling the user when the limit resets is the polite move.
+- **Share-with-a-friend uses `ShareLink(item:URL, message:Text)`** rather than `MFMessageComposeViewController`. SwiftUI's `ShareLink` with a `message:` parameter on iOS 17+ does prepopulate iMessage's typing area with the configured text, plus the URL as a rich preview card. No UIKit/MessageUI bridge needed. Note: this routes through the iOS share sheet so users can also pick Mail/AirDrop/WhatsApp — wider audience than iMessage-only. The ProfileView's existing ShareLink at line 118 (was URL-only, no prepopulated message) is also enhanced with the same `message:` parameter as a free win.
+- **Stripe gets disclosed in the privacy policy as a service provider.** Even though we never see card details, donations going through Stripe means a fourth processor handles user data. Disclosed in the providers table with a description that makes it explicit Seek does not see card numbers.
+
+### Apple compliance
+- App Review Guideline 3.2.1 prohibits IAP donations from for-profit apps. Our model: external `openURL` to Stripe in Safari, never StoreKit. Compliant.
+- Don't create the auto-renewing IAP product in App Store Connect. If one was added during earlier setup, mark it Removed from Sale before submission.
+- Privacy Nutrition Label set drops "Purchase History" — we no longer collect it. Updated draft accordingly.
+- App Store description draft (drafted Session 10b, not yet pasted into ASC) needs the SEEK PREMIUM block replaced with a "WHY IT'S FREE" / donation-callout block. Will edit during the actual ASC paste-in step.
+
+### Verification
+- `xcodebuild -project Seek.xcodeproj -scheme Seek -sdk iphonesimulator build` → **BUILD SUCCEEDED**. As anticipated by the CLAUDE.md "Stale SourceKit after file adds" gotcha, dozens of phantom "Cannot find type" errors fired during edits and all evaporated at compile time. xcodebuild is the source of truth.
+- Edge Function deployed and chat is live with the 50-cap behavior in production.
+- Vercel landing redeployed; all four routes 200; copy verified no live "subscription" or "premium" residue except for the new negative statement ("There is no subscription").
+- Build number unchanged (still 6 in `project.yml`). Will need a TestFlight upload for iOS users to see the UI changes — server-side rate-limit lift is already live for everyone.
+
+### Plan reference
+- Approved plan saved at `~/.claude/plans/instead-of-doing-a-purring-music.md` if anyone wants the full pre-build trace.
+
+### Current Status
+- Phase 1 MVP: ~98% complete. Subscription model removed cleanly, donations wired, share-with-a-friend live on Home.
+- The user-action queue has shrunk:
+  - Buy `seek-app.com` (today)
+  - Set up Stripe Payment Link, paste URL into `DonationView.donationURL`
+  - Attach domain in Vercel after purchase
+  - Configure Apple Service ID in Supabase (still open)
+  - Create Supabase test account for App Review
+  - Upload screenshots + paste updated metadata into ASC, submit
+
 ## 2026-04-30 — Session 10 (Privacy + Terms + Vercel config)
 
 ### Built
@@ -33,9 +92,19 @@
 - Project name is currently `landing` (Vercel defaulted to the directory name). To rename to `seek` and regenerate prettier auto-aliases: Vercel dashboard → Project → Settings → General → Project Name. Cosmetic only — irrelevant once the custom domain attaches.
 - Future deploys: `cd landing && vercel --prod` (production) or `vercel` (preview). Linkage persists in `landing/.vercel/`.
 
+### Added: support page (post-deploy)
+- **`landing/support.html`** — required by Apple as the App Store listing's Support URL. Sections: contact card (hello@seek-app.com, 2-business-day reply), Account & sign-in (forgot password, Apple Sign-In troubleshooting, delete-account walkthrough — Apple specifically requires this be discoverable from the support URL), Subscription & billing (manage via iOS Subscriptions, refunds via reportaproblem.apple.com, Restore Purchases, Free/Premium tier breakdown), Using Seek (rate limit explanation, translation switching, notification troubleshooting, Photos permission, "is my chat content sent off device" answer mirroring the privacy policy, offline behavior), Privacy quick recap, crisis callout reused from terms.html.
+- Nav and footer in `index.html`, `privacy.html`, `terms.html` updated to include Support link.
+- Redeployed to production. Verified: `/support` returns 200, `/support.html` 308-redirects to `/support` (cleanUrls working as designed). All other routes still 200.
+
+### App Store metadata drafted (Session 10b deliverable)
+- Subtitle, promotional text, full description (~1,800 chars of 4,000 budget), keywords (`bible,prayer,christian,faith,devotional,verse,worship,kjv,nlt,journal,meditation,gospel,psalm` — 93 chars), categories (Lifestyle primary, Reference secondary), age rating questionnaire answers (4+ rating expected), full Privacy Nutrition Label mapping (Email + User ID + User Content + Usage Data + Purchase History, all "Linked to user," all "App Functionality" purpose, none used for tracking), Notes for Reviewer template with sign-in test account requirement.
+- These are NOT yet entered in App Store Connect — that's a manual paste step the user does before submission.
+
 ### Current Status
-- Phase 1 MVP: ~96% complete. Legal docs and hosting are both off the blocker list now.
-- Domain purchase is the user's next move. Once `seek-app.com` is bought and DNS-pointed at Vercel via Project → Settings → Domains, the in-app `WebContentView` URLs (`https://seek-app.com/privacy|terms`) resolve without any iOS code change. The hardcoded host already matches the contact email and footer copy across both legal pages.
+- Phase 1 MVP: ~97% complete. Legal docs, hosting, support page, and App Store metadata copy are all done.
+- Domain purchase is the only remaining external dependency. Once `seek-app.com` is bought and DNS-pointed at Vercel via Project → Settings → Domains, all four URLs (in-app Privacy/Terms via WebContentView, marketing landing, legal pages, support page) resolve without any iOS code change.
+- App Store submission still needs: domain live, Supabase test account for App Review, App Store screenshots uploaded (the user has 5 designer-quality 6.7" mocks ready), then paste the metadata + nutrition labels into ASC.
 - Build number unchanged from Session 9 (still 6). No iOS rebuild needed for any of this.
 
 ## 2026-04-06 — Session 0 (Pre-Build)

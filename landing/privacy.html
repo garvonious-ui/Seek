@@ -150,6 +150,7 @@ footer {
     </a>
     <div class="links">
       <a href="index.html">Home</a>
+      <a href="support.html">Support</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
     </div>
@@ -163,7 +164,7 @@ footer {
   <p class="lede">Seek is built around a quiet kind of trust — you tell it what's on your heart, it points to scripture. This page explains, in plain language, what data Seek handles, why, and how to remove it.</p>
 
   <div class="callout">
-    <strong>The short version.</strong> We collect the minimum needed to sign you in, sync your streak across devices, and bill subscriptions. Your chat messages are sent to an AI provider to find verses, but Seek does not store the messages on its own servers. You can delete your account from inside the app, which removes your profile data permanently.
+    <strong>The short version.</strong> We collect the minimum needed to sign you in and sync your streak across devices. Your chat messages are sent to an AI provider to find verses, but Seek does not store the messages on its own servers. We do not run ads, analytics, or third-party trackers, and we do not collect payment information — Seek is free, with optional donations processed by Stripe. You can delete your account from inside the app, which removes your profile data permanently.
   </div>
 
   <h2>1. Who we are</h2>
@@ -188,8 +189,9 @@ footer {
     <li>Your push notification device token (only if you enable notifications)</li>
     <li>Streak count, longest streak, last active date</li>
     <li>Aggregate counts (verses explored, cards created, daily chats used) for in-app stats and rate limiting</li>
-    <li>Premium subscription status and expiration, validated against Apple</li>
   </ul>
+
+  <p>Seek is offered free of charge. We do not collect or store payment information. If you choose to make an optional donation, the payment flow opens externally in Safari and is processed by Stripe, who handles your card details directly under their privacy policy. Seek receives only confirmation that a donation occurred and the amount — no card numbers, no billing address.</p>
 
   <h3>Chat content</h3>
   <p>When you use scripture chat, the message you send and the previous turns of that conversation are forwarded to our AI provider (Anthropic) so it can return relevant verses, a prayer, and a worship song suggestion. Important details:</p>
@@ -214,11 +216,10 @@ footer {
   <h2>3. How we use your information</h2>
   <ul>
     <li>Sign you in and keep you signed in</li>
-    <li>Sync your streak, premium status, and preferences across devices</li>
+    <li>Sync your streak and preferences across devices</li>
     <li>Send daily verse and streak notifications you've opted into</li>
     <li>Process scripture chat requests through our AI provider</li>
-    <li>Enforce free-tier and premium-tier daily chat limits</li>
-    <li>Validate your subscription receipt with Apple</li>
+    <li>Enforce the daily chat limit (50 chats per user per day)</li>
     <li>Diagnose errors (server logs do not include message contents)</li>
   </ul>
 
@@ -242,8 +243,13 @@ footer {
       </tr>
       <tr>
         <td>Apple</td>
-        <td>Sign in with Apple, push delivery (APNs), in-app purchases and receipt validation, the App Store listing</td>
+        <td>Sign in with Apple, push delivery (APNs), the App Store listing</td>
         <td>United States and your region</td>
+      </tr>
+      <tr>
+        <td>Stripe</td>
+        <td>Processes optional donations made from inside the app. Card details go directly to Stripe; Seek does not see them.</td>
+        <td>United States</td>
       </tr>
     </tbody>
   </table>
@@ -265,7 +271,6 @@ footer {
     <li><strong>Edit or delete your data:</strong> Profile &rarr; Delete Account inside the app permanently removes your profile, sync data, and usage logs from our servers.</li>
     <li><strong>Sign out:</strong> Profile &rarr; Sign Out clears your session on the device.</li>
     <li><strong>Turn off notifications:</strong> Profile &rarr; Notifications, or in iOS Settings.</li>
-    <li><strong>Manage your subscription:</strong> Through the App Store; we do not store your payment details.</li>
   </ul>
 
   <p class="fg-2">If you are a resident of the EEA, UK, or California, you have additional rights under your local privacy laws — including the right to access, correct, port, restrict, or object to processing of your personal data. Contact us at the email below to exercise any of these rights and we will respond within the time required by your jurisdiction.</p>
@@ -298,6 +303,7 @@ footer {
       <img class="mark" src="assets/wordmark_dark.png" alt="Seek">
     </a>
     <div class="footer-links">
+      <a href="support.html">Support</a>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
       <a href="mailto:hello@seek-app.com">hello@seek-app.com</a>

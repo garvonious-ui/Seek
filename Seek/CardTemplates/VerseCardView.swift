@@ -71,7 +71,6 @@ struct VerseCardView: View {
 
 struct VerseCardThumbnail: View {
     let template: CardTemplate
-    let isPremium: Bool
 
     var body: some View {
         ZStack {
@@ -93,14 +92,6 @@ struct VerseCardThumbnail: View {
                 Text("1:1")
                     .font(.system(size: 8))
                     .foregroundStyle(template.referenceColor)
-            }
-
-            // Premium lock overlay
-            if template.isPremium && !isPremium {
-                Color.black.opacity(0.3)
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.white)
             }
         }
         .frame(width: 56, height: 80)

@@ -8,7 +8,6 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var profiles: [UserProfile]
     @State private var showDeleteConfirmation = false
-    @State private var showPremiumUpgrade = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -35,22 +34,6 @@ struct ProfileView: View {
                         }
                     }
                     .padding(.vertical, 8)
-                }
-
-                // Premium badge
-                if profile?.isPremium == true {
-                    Section {
-                        HStack {
-                            Image(systemName: "star.circle.fill")
-                                .foregroundStyle(Color(hex: "CDA349"))
-                            Text("Seek+ Member")
-                                .font(.subheadline.weight(.semibold))
-                            Spacer()
-                            Text("Active")
-                                .font(.caption)
-                                .foregroundStyle(.green)
-                        }
-                    }
                 }
 
                 // Stats
@@ -87,36 +70,25 @@ struct ProfileView: View {
                         Label("Notifications", systemImage: "bell")
                     }
 
-                    if profile?.isPremium != true {
-                        Button {
-                            showPremiumUpgrade = true
-                        } label: {
-                            HStack {
-                                Label("Upgrade to Seek+", systemImage: "star")
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundStyle(Color(hex: "9CA3AF"))
-                            }
-                            .foregroundStyle(Color(hex: "CDA349"))
-                        }
-                    } else {
-                        NavigationLink {
-                            SubscriptionManagementView()
-                        } label: {
-                            Label("Manage Subscription", systemImage: "star")
-                        }
+                    NavigationLink {
+                        DonationView()
+                    } label: {
+                        Label("Support Seek", systemImage: "heart")
+                            .foregroundStyle(Color(hex: "5B7B5E"))
                     }
 
                     Button {
                         requestReview()
                     } label: {
-                        Label("Rate Seek", systemImage: "heart")
+                        Label("Rate Seek", systemImage: "star")
                             .foregroundStyle(Color(hex: "1A1A1A"))
                     }
 
-                    ShareLink(item: URL(string: "https://apps.apple.com/app/seek")!) {
-                        Label("Share App", systemImage: "square.and.arrow.up")
+                    ShareLink(
+                        item: URL(string: "https://apps.apple.com/app/seek")!,
+                        message: Text("I've been using Seek to find scripture for what's on my heart. It's quiet, beautiful, and free. I think you'd love it.")
+                    ) {
+                        Label("Share Seek", systemImage: "square.and.arrow.up")
                     }
                 }
 
@@ -171,9 +143,6 @@ struct ProfileView: View {
                 }
             } message: {
                 Text("This will permanently delete your account and all data. This cannot be undone.")
-            }
-            .sheet(isPresented: $showPremiumUpgrade) {
-                PremiumUpgradeView()
             }
         }
     }

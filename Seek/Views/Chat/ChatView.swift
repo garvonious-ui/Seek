@@ -20,7 +20,6 @@ struct ChatView: View {
     @State private var selectedPrayer: PrayerCardTarget?
     @State private var scrollToBottom = false
     @State private var hasLoadedInitialMessage = false
-    @State private var showPremiumUpgrade = false
     @State private var lastUserPrompt: String?
 
     private var profile: UserProfile? { profiles.first }
@@ -143,9 +142,6 @@ struct ChatView: View {
         }
         .sheet(item: $selectedPrayer) { target in
             CardCreatorView(prayerText: target.text)
-        }
-        .sheet(isPresented: $showPremiumUpgrade) {
-            PremiumUpgradeView()
         }
     }
 
@@ -444,12 +440,9 @@ struct ChatView: View {
             Text(text)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
-            Button("Upgrade to Seek+") {
-                showPremiumUpgrade = true
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(Color(hex: "CDA349"))
-            .controlSize(.small)
+            Text("Resets at midnight, your local time.")
+                .font(.caption)
+                .foregroundStyle(Color(hex: "6B7280"))
         }
         .padding(16)
         .frame(maxWidth: .infinity)
