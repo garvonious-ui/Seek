@@ -95,12 +95,12 @@ struct ProfileView: View {
                 // Legal
                 Section {
                     NavigationLink {
-                        WebContentView(title: "Privacy Policy", urlString: "https://seek-app.com/privacy")
+                        WebContentView(title: "Privacy Policy", urlString: "https://askseekpray.app/privacy")
                     } label: {
                         Label("Privacy Policy", systemImage: "lock.shield")
                     }
                     NavigationLink {
-                        WebContentView(title: "Terms of Service", urlString: "https://seek-app.com/terms")
+                        WebContentView(title: "Terms of Service", urlString: "https://askseekpray.app/terms")
                     } label: {
                         Label("Terms of Service", systemImage: "doc.text")
                     }
