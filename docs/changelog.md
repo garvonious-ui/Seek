@@ -1,5 +1,49 @@
 # Changelog
 
+## 2026-05-01 — Session 12 (Daily notifications actually fire after onboarding)
+
+### Built
+- **Wired onboarding to NotificationManager.** `OnboardingView.requestNotificationPermission()` was calling `UNUserNotificationCenter.current().requestAuthorization` directly with an empty completion handler — bypassing `NotificationManager` and never scheduling anything. Replaced with a new `enableDailyNotifications()` async function that calls `NotificationManager.shared.requestPermission()` and, on grant, schedules `scheduleDailyVerseReminder(at: 7, minute: 0)` and `scheduleStreakNudge(at: 19, minute: 0)`. So a user who taps "Enable Notifications" during onboarding will actually receive daily reminders without ever visiting the settings screen.
+- **Persist notification preferences to Supabase.** New `SupabaseService.updateNotificationPreferences(userId:dailyVerseEnabled:dailyVerseTime:streakNudgeEnabled:streakNudgeTime:timezone:)` method using the existing `[String: AnyJSON]` upsert pattern (matches `ensureRemoteProfile` and friends). Called from two paths: (a) onboarding writes the defaults once on permission grant, (b) `NotificationSettingsView` writes on every toggle/time change. Reinstall now restores the user's last-saved schedule once we wire a load-on-mount in a future session.
+
+### Decisions
+- **Local notifications only for now (Phase A).** APNs server-side push (Phase B) would let the verse text appear in the notification body, but it requires Apple Developer Program enrollment, an APNs Authentication Key, an AppDelegate adapter, the `aps-environment` entitlement, a `send-daily-push` Edge Function, and a pg_cron schedule. For the user's stated goal — "have a daily notification for users" — local notifications fully satisfy it. Daily verse fires at 7am with body "Start your day with God's word. Tap to see today's verse." Tap → app opens to home → user reads the verse.
+- **Phase B is logged in build-plan.md** as deferred. When ready, it builds on top of Phase A — local notifications stay as a fallback for users who decline remote push.
+- **Notification permission flow stays unchanged in NotificationSettingsView.** Already correctly calls `NotificationManager.shared.requestPermission()` (which handles `registerForRemoteNotifications` for the future Phase B). Just wasn't reachable from onboarding.
+
+### Audit findings (for the record)
+Pre-implementation audit revealed the build plan over-claimed:
+- ✗ No `aps-environment` entitlement → no real APNs token can be issued
+- ✗ No AppDelegate → `didRegisterForRemoteNotificationsWithDeviceToken` callback has nowhere to land; `NotificationManager.handleDeviceToken` is unreachable
+- ✗ No `send-daily-push` Edge Function (existing `daily-verse` returns JSON, doesn't push)
+- ✗ No pg_cron migration scheduling daily push
+- ✗ No APNs key in Supabase secrets
+- ⚠ Onboarding called UN directly with empty completion (now fixed)
+- ⚠ `NotificationSettingsView` preferences were local-only @State (now persisted to Supabase)
+- ✓ `NotificationManager.scheduleDailyVerseReminder/scheduleStreakNudge` correctly schedule local repeating triggers
+- ✓ Tap deep linking works (`.openDailyVerse` / `.openHome` notifications posted)
+- ✓ `notification_settings` schema is correct with proper RLS
+
+The build-plan checkboxes for the missing Phase-B items are now correctly marked `[ ]` and grouped under a deferred sub-section.
+
+### Verification
+- `xcodebuild -project Seek.xcodeproj -scheme Seek -sdk iphonesimulator build` → **BUILD SUCCEEDED**.
+- Phantom SourceKit "Cannot find type" diagnostics fired during edits, all evaporated at compile time. CLAUDE.md gotcha confirmed yet again.
+
+### Manual smoke test (next TestFlight build)
+1. Fresh install → onboarding → tap "Enable Notifications" → grant permission.
+2. Open Profile → Notifications. Confirm both toggles read ON, daily verse 7:00am, streak 7:00pm.
+3. Verify Supabase `notification_settings` row exists with the correct values for the signed-in user.
+4. Adjust the daily verse time to a few minutes from now → wait → notification fires with title "Your Daily Verse" and body "Start your day with God's word. Tap to see today's verse."
+5. Tap notification → app opens to Home tab.
+6. Repeat steps 2-3 after sign-out + sign-in to confirm Supabase round-trip.
+
+### Current Status
+- Phase 1 MVP: ~98% complete (unchanged headline; local notifications are now actually firing for new users).
+- Push notification path is "lit" for daily reminders.
+- Remaining Phase-B work (APNs server push for verse-text-in-body) is logged but deferred behind Apple Developer Program + APNs key.
+- Build number unchanged (still 6). Next TestFlight upload picks up the onboarding wiring.
+
 ## 2026-05-01 — Session 11 (Subscription removed, donations added, share-with-a-friend)
 
 ### Strategic shift

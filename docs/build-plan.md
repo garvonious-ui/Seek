@@ -65,12 +65,22 @@
 - [ ] Weekly summary card generation
 
 ### Push Notifications
-- [x] Request notification permission (onboarding + settings)
-- [x] Store APNs device token in Supabase notification_settings
-- [x] Deploy daily verse push Edge Function + pg_cron schedule
-- [x] Deploy streak nudge Edge Function + pg_cron schedule
-- [x] Notification preferences UI in settings
-- [x] Handle notification tap deep links
+
+**Phase A — Local notifications (DONE Session 12, 2026-05-01).** Daily verse + streak reminders fire from `UNCalendarNotificationTrigger` on-device. No APNs key, AppDelegate, or Edge Function required.
+- [x] Request notification permission (onboarding wired to `NotificationManager.requestPermission()`; settings has its own re-request button)
+- [x] Schedule daily verse + streak nudge automatically on permission grant in onboarding (defaults: 7am / 7pm)
+- [x] Notification preferences UI in settings — toggles + time pickers
+- [x] Persist preferences to Supabase `notification_settings` (survives reinstall, syncs across devices)
+- [x] Handle notification tap deep links (`.openDailyVerse` / `.openHome` posted via NotificationCenter)
+
+**Phase B — APNs server-side push (deferred — needs Apple Developer Program + APNs key).** Would replace generic body ("Tap to see today's verse") with the actual verse text in the notification.
+- [ ] Add `aps-environment` entitlement to Seek.entitlements
+- [ ] Declare Push Notifications capability in project.yml
+- [ ] Add `UIApplicationDelegateAdaptor` AppDelegate to capture `didRegisterForRemoteNotificationsWithDeviceToken`
+- [ ] Generate APNs Authentication Key in Apple Developer portal; upload to Supabase secrets
+- [ ] Build `send-daily-push` Edge Function (APNs HTTP/2 with JWT auth)
+- [ ] pg_cron migration to invoke daily push hourly (find users in their local time window)
+- [ ] Test on physical device (simulator can't receive APNs)
 
 ### Profile & Settings
 - [x] Profile screen with stats

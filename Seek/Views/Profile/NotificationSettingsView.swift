@@ -48,11 +48,13 @@ struct NotificationSettingsView: View {
             }
             .onChange(of: dailyVerseEnabled) { _, enabled in
                 updateDailyVerseNotification(enabled: enabled)
+                Task { await persistPreferences() }
             }
             .onChange(of: dailyVerseTime) { _, _ in
                 if dailyVerseEnabled {
                     updateDailyVerseNotification(enabled: true)
                 }
+                Task { await persistPreferences() }
             }
 
             Section("Streak Reminder") {
@@ -65,11 +67,13 @@ struct NotificationSettingsView: View {
             }
             .onChange(of: streakNudgeEnabled) { _, enabled in
                 updateStreakNudge(enabled: enabled)
+                Task { await persistPreferences() }
             }
             .onChange(of: streakNudgeTime) { _, _ in
                 if streakNudgeEnabled {
                     updateStreakNudge(enabled: true)
                 }
+                Task { await persistPreferences() }
             }
 
             Section(footer: Text("Daily verse arrives each morning. Streak nudge reminds you in the evening if you haven't opened Seek today.")) {
@@ -112,6 +116,24 @@ struct NotificationSettingsView: View {
         } else {
             notificationManager.cancelNotification(identifier: "streak_nudge")
         }
+    }
+
+    /// Mirrors current preferences to Supabase so reinstall restores them.
+    /// Local UNCalendar scheduling drives actual delivery; this row is the
+    /// source of truth for "what should be scheduled."
+    private func persistPreferences() async {
+        guard let userId = SupabaseService.shared.currentUser?.id.uuidString else { return }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        formatter.timeZone = TimeZone.current
+        try? await SupabaseService.shared.updateNotificationPreferences(
+            userId: userId,
+            dailyVerseEnabled: dailyVerseEnabled,
+            dailyVerseTime: formatter.string(from: dailyVerseTime),
+            streakNudgeEnabled: streakNudgeEnabled,
+            streakNudgeTime: formatter.string(from: streakNudgeTime),
+            timezone: TimeZone.current.identifier
+        )
     }
 }
 

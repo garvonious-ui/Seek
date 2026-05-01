@@ -167,8 +167,10 @@ struct OnboardingView: View {
 
             VStack(spacing: 12) {
                 Button {
-                    requestNotificationPermission()
-                    finishOnboarding()
+                    Task {
+                        await enableDailyNotifications()
+                        await MainActor.run { finishOnboarding() }
+                    }
                 } label: {
                     Text("Enable Notifications")
                         .fontWeight(.semibold)
@@ -221,8 +223,32 @@ struct OnboardingView: View {
         )
     }
 
-    private func requestNotificationPermission() {
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in }
+    /// Asks iOS for notification permission. On grant, schedules a 7am daily
+    /// verse reminder and a 7pm streak nudge — these fire locally via
+    /// UNCalendarNotificationTrigger and do not require APNs. The user can
+    /// adjust times or disable individual notifications later in Settings →
+    /// Notifications.
+    private func enableDailyNotifications() async {
+        let granted = await NotificationManager.shared.requestPermission()
+        guard granted else { return }
+        NotificationManager.shared.scheduleDailyVerseReminder(at: 7, minute: 0)
+        NotificationManager.shared.scheduleStreakNudge(at: 19, minute: 0)
+        await persistDefaultNotificationPreferences()
+    }
+
+    /// Mirrors the default notification times to Supabase so they survive
+    /// reinstall and sync across devices. Fails silently — the local schedule
+    /// is what actually drives notification delivery.
+    private func persistDefaultNotificationPreferences() async {
+        guard let userId = SupabaseService.shared.currentUser?.id.uuidString else { return }
+        try? await SupabaseService.shared.updateNotificationPreferences(
+            userId: userId,
+            dailyVerseEnabled: true,
+            dailyVerseTime: "07:00:00",
+            streakNudgeEnabled: true,
+            streakNudgeTime: "19:00:00",
+            timezone: TimeZone.current.identifier
+        )
     }
 }
 

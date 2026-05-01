@@ -154,6 +154,30 @@ class SupabaseService {
             .upsert(["id": AnyJSON.string(userId)])
             .execute()
     }
+
+    /// Persists the user's notification preferences to the server so they
+    /// survive reinstall and sync across devices. Local UNCalendar scheduling
+    /// is what actually drives delivery; this row is the source of truth for
+    /// "what should be scheduled."
+    func updateNotificationPreferences(
+        userId: String,
+        dailyVerseEnabled: Bool,
+        dailyVerseTime: String,
+        streakNudgeEnabled: Bool,
+        streakNudgeTime: String,
+        timezone: String
+    ) async throws {
+        try await client.from("notification_settings")
+            .upsert([
+                "id": AnyJSON.string(userId),
+                "daily_verse_enabled": AnyJSON.bool(dailyVerseEnabled),
+                "daily_verse_time": AnyJSON.string(dailyVerseTime),
+                "streak_nudge_enabled": AnyJSON.bool(streakNudgeEnabled),
+                "streak_nudge_time": AnyJSON.string(streakNudgeTime),
+                "timezone": AnyJSON.string(timezone),
+            ])
+            .execute()
+    }
 }
 
 // MARK: - Auth Errors
