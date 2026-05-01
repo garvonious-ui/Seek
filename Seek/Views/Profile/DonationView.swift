@@ -3,7 +3,7 @@ import SwiftUI
 struct DonationView: View {
     @Environment(\.openURL) private var openURL
 
-    private let donationURL = URL(string: "https://donate.stripe.com/PLACEHOLDER")!
+    private let donationURL = URL(string: "https://buy.stripe.com/00w4gsfPm5whgJcbYJ0Ba00")!
 
     var body: some View {
         ScrollView {
