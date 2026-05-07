@@ -1,6 +1,6 @@
 # App Store Submission — Paste-Ready
 
-Drafted Session 13 (2026-05-01). Reflects the donation pivot (Session 11) and domain swap to `askseekpray.app` (Session 13). Every field below is sized to its App Store Connect character limit; copy block-by-block into ASC.
+Drafted Session 13 (2026-05-01). Updated Session 16 (2026-05-07) to remove donation language after App Review rejected Build 7 on Guideline 3.1.1. Every field below is sized to its App Store Connect character limit; copy block-by-block into ASC.
 
 ---
 
@@ -42,10 +42,10 @@ All three resolve once `askseekpray.app` DNS is attached in Vercel. The HTML pag
 
 ## Promotional Text (170 chars max)
 
-This field can be edited *without* a new build review — useful for launch-day adjustments. Currently 140 chars.
+This field can be edited *without* a new build review — useful for launch-day adjustments. Currently 137 chars.
 
 ```
-Free for everyone, supported by donations. Tell Seek what is on your heart and receive scripture, prayer, and worship matched to the moment.
+Tell Seek what is on your heart and receive scripture, prayer, and worship matched to the moment. Free, no ads, no subscription.
 ```
 
 ---
@@ -75,9 +75,7 @@ Daily reminders — Optional morning verse and evening streak nudge. Time picker
 
 WHY IT IS FREE
 
-Seek runs on real costs — servers, AI, the infrastructure that gets verses to your phone in a moment. It is funded entirely by people who find it useful.
-
-There is no subscription, no ads, no in-app purchase. If Seek has met you somewhere, even once, you can tap "Support Seek" in your profile and give what feels right. Donations are processed by Stripe, are voluntary, and are not tax-deductible.
+Seek is free for everyone. There is no subscription, no in-app purchase, no ads, no upsell, no premium tier. Built for the people of God, not for profit.
 
 A NOTE ON AI
 
@@ -98,7 +96,7 @@ Seek does not promote any particular church, doctrine, or interpretation. The ve
 Built with love for the people of God.
 ```
 
-*Characters: 2,882 / 4,000. Headroom is intentional — Apple's preview cuts off at ~700 chars on most devices, so the lead 2 paragraphs do most of the work.*
+*Characters: ~2,610 / 4,000. Headroom is intentional — Apple's preview cuts off at ~700 chars on most devices, so the lead 2 paragraphs do most of the work.*
 
 ---
 
@@ -123,14 +121,14 @@ Welcome to Seek.
 
 Tell us what is on your heart and we will find scripture for the moment. Three to five verses, a short prayer, a worship song, an action step. Tap any verse to share it as a beautiful card.
 
-Free for everyone. Supported by optional donations. Built for the people of God.
+Free for everyone. No subscription, no ads. Built for the people of God.
 ```
 
 ---
 
 ## Privacy Nutrition Labels
 
-Apple's questionnaire is structured by data category. The answers below reflect the **current** app state (post-donation pivot, no IAP, local notifications only).
+Apple's questionnaire is structured by data category. The answers below reflect the **current** app state (no IAP, no donations, local notifications only).
 
 ### Data Used to Track You
 **Answer:** None. Seek does not use any data for tracking across apps or websites.
@@ -150,7 +148,7 @@ Apple's questionnaire is structured by data category. The answers below reflect 
 **Answer:** None.
 
 ### Drops vs. earlier draft
-- **Purchase History — REMOVED.** App no longer offers in-app purchases. Donations are external (Stripe via Safari) and are not Apple's "Purchase History" data type.
+- **Purchase History — NOT collected.** App has no in-app purchases, no donations, and no payment surfaces.
 - **Diagnostics — NOT collected.** No crash analytics, no perf monitoring, no third-party SDKs.
 
 ---
@@ -194,18 +192,27 @@ A test account is required because all features sit behind authentication.
 ### Notes for Reviewer (paste-ready)
 
 ```
-Thank you for reviewing Seek.
+Thank you for reviewing Seek. This is Build 8, addressing the four items from the Build 7 rejection of 2026-05-04.
+
+CHANGES SINCE BUILD 7
+- 2.1(a) Apple Sign In: refactored the Apple Sign In handler to flip authentication state and onboarding completion atomically inside a single MainActor.run block, eliminating an .onChange-driven navigation race that we believe broke under iOS 26.4.2.
+- 5.1.1(v) Forced login: added "Continue without an account" on the sign-in screen. Guests reach Home and the Daily Verse without an account; chat and library remain account-based with sign-in CTAs.
+- 2.1 China mainland: removed China mainland from this app's distribution territories.
+- 3.1.1 Donations: removed entirely. There is no donation surface anywhere in the app.
 
 SIGN-IN
-- Apple Sign In is fully active. You may use it if your Apple ID is convenient. The email/password test account above is provided as a backup.
+- Apple Sign In is fully active. You may use it if your Apple ID is convenient, or use the email/password test account above. The "Continue without an account" path is also available for verifying guest behavior.
 
 WHAT THE APP DOES
 - User shares an emotion or moment in the chat ("anxious," "grateful," "lonely," etc.). The app calls a Supabase Edge Function which proxies to Anthropic's Claude API. Claude returns 3-5 Bible verses with brief context, a short prayer, an action step, and a worship song recommendation.
 - All scripture text is real KJV or NLT (NLT default; KJV switchable in Settings). Anthropic generates the empathetic intro, prayer, action, and song suggestion — never the verse text itself.
 - User can tap any verse to open a card creator with 18 pre-designed templates and save or share the result.
 
-DONATIONS (NOT IN-APP PURCHASES)
-- Seek is free for everyone. The "Support Seek" screen in Profile opens an external Stripe payment link in Safari (not StoreKit). Per App Review Guideline 3.2.1, this complies because Seek is operated by an LLC providing a free service, with donations going to keep the app running. There is no subscription, no in-app purchase, and no premium tier.
+GUEST MODE
+- The sign-in screen has a "Continue without an account" option directly below the email form. Guests land on Home and can read the daily verse, share the app with friends, and view the Privacy Policy and Terms of Service. Chat and Library are gated behind sign-in CTAs because both depend on rate limits, conversation history, or saved content (account-based features).
+
+NO MONETIZATION
+- Seek is free with no subscription, no in-app purchase, no ads, and no premium tier. The optional donation surface that appeared in Build 7 has been removed in full.
 
 CRISIS LANGUAGE
 - If a user types crisis-indicating language ("I want to hurt myself," etc.), Claude is instructed to surface grounding scripture AND mental-health hotline numbers (988 in the US, 116 123 in the UK, findahelpline.com globally). This is a deliberate safety feature.
@@ -235,7 +242,7 @@ If you have any questions, please reach hello@askseekpray.app.
 | Field | Value |
 | --- | --- |
 | Version | 1.0.0 |
-| Build | 6 (already on TestFlight from Session 7) |
+| Build | 8 (resubmission build, replaces rejected Build 7) |
 | Copyright | © 2026 LCIII Ventures LLC |
 | Trade Representative Contact (Korea) | Skip unless distributing in South Korea |
 
@@ -252,16 +259,19 @@ If you have any questions, please reach hello@askseekpray.app.
 
 ## Pre-submission Checklist
 
-- [ ] Vercel: attach `askseekpray.app` to the landing project so all four URLs (`/`, `/privacy`, `/terms`, `/support`) resolve before submission
-- [ ] Stripe: confirm Payment Links are no longer paused (LCIII Ventures business verification, ~2-3 days from Session 13)
-- [ ] Supabase: create `appreview@askseekpray.app` test account with verified state, document password in ASC's secure field (not in this repo)
-- [ ] Supabase: configure Apple Sign In Service ID (still open from Session 2)
-- [ ] App Store Connect: paste every block above into the corresponding ASC field
-- [ ] App Store Connect: upload screenshots (6.7" 1290×2796 + 6.1" 1179×2556 — see Session 9 for the 5 designer mocks)
-- [ ] App Store Connect: complete the Privacy Nutrition Label questionnaire matching the table above
-- [ ] App Store Connect: complete the Age Rating questionnaire matching the table above
-- [ ] Final QA pass on TestFlight build 6 against the launch checklist (in build-plan.md)
-- [ ] Submit for review
+- [x] Vercel: `askseekpray.app` attached, all four URLs resolve (Session 13)
+- [x] Supabase: `appreview@askseekpray.app` test account provisioned (Session 13)
+- [x] Apple Sign In: confirmed working server-side (Session 13 — five real production users)
+- [x] App Store Connect: pasted blocks, screenshots uploaded, age rating + privacy labels complete (Session 14)
+- [x] Submitted (Build 7 — rejected 2026-05-04)
+- [ ] **Build 8 — resubmission**
+  - [ ] App Store Connect: remove China mainland from Pricing & Availability
+  - [ ] App Store Connect: update Promotional Text, Description ("WHY IT IS FREE" block), and What's New from this doc
+  - [ ] App Store Connect: confirm Privacy Nutrition Labels still match (Purchase History should be unchecked)
+  - [ ] Xcode: archive Build 8 (verify Build = 8, not cached as 7)
+  - [ ] TestFlight: smoke test on iOS 26.4.2 device (guest flow + Apple Sign In)
+  - [ ] App Store Connect: attach Build 8 to the version, paste updated reviewer notes, reply to App Review with response from changelog Session 16
+  - [ ] Click Resubmit to App Review
 
 ---
 
