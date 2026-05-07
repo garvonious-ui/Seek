@@ -13,34 +13,27 @@ serve(async (req: Request) => {
       });
     }
 
-    // Validate auth
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization" }), {
-        status: 401,
-      });
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify JWT and get user
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-      });
+    // Auth is OPTIONAL — guests (App Review 5.1.1(v)) browse without an
+    // account and still need to see the daily verse. If we get a real user
+    // JWT we look up their preferred translation; otherwise default to NLT.
+    let translation = "NLT";
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("preferred_translation")
+          .eq("id", user.id)
+          .single();
+        translation = profile?.preferred_translation ?? "NLT";
+      }
     }
-
-    // Get user's preferred translation
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("preferred_translation")
-      .eq("id", user.id)
-      .single();
-    const translation = profile?.preferred_translation ?? "NLT";
 
     // Get a daily verse that hasn't been used recently (within 90 days)
     const ninetyDaysAgo = new Date();

@@ -136,6 +136,7 @@ footer {
 .footer a:hover { color: var(--fg-2); text-decoration: none; }
 
 @media (max-width: 640px) {
+  .container { padding: 0 40px; }
   .nav .links { display: none; }
   .footer { flex-direction: column; gap: 16px; align-items: flex-start; }
 }
@@ -164,7 +165,7 @@ footer {
   <p class="lede">Seek is built around a quiet kind of trust — you tell it what's on your heart, it points to scripture. This page explains, in plain language, what data Seek handles, why, and how to remove it.</p>
 
   <div class="callout">
-    <strong>The short version.</strong> We collect the minimum needed to sign you in and sync your streak across devices. Your chat messages are sent to an AI provider to find verses, but Seek does not store the messages on its own servers. We do not run ads, analytics, or third-party trackers, and we do not collect payment information — Seek is free, with optional donations processed by Stripe. You can delete your account from inside the app, which removes your profile data permanently.
+    <strong>The short version.</strong> We collect the minimum needed to sign you in and sync your streak across devices. Your chat messages are sent to an AI provider to find verses, but Seek does not store the messages on its own servers. We do not run ads, analytics, or third-party trackers, and Seek is free with no in-app purchases. You can delete your account from inside the app, which removes your profile data permanently.
   </div>
 
   <h2>1. Who we are</h2>
@@ -191,7 +192,7 @@ footer {
     <li>Aggregate counts (verses explored, cards created, daily chats used) for in-app stats and rate limiting</li>
   </ul>
 
-  <p>Seek is offered free of charge. We do not collect or store payment information. If you choose to make an optional donation, the payment flow opens externally in Safari and is processed by Stripe, who handles your card details directly under their privacy policy. Seek receives only confirmation that a donation occurred and the amount — no card numbers, no billing address.</p>
+  <p>Seek is offered free of charge. There are no subscriptions or in-app purchases, and we do not collect or store payment information.</p>
 
   <h3>Chat content</h3>
   <p>When you use scripture chat, the message you send and the previous turns of that conversation are forwarded to our AI provider (Anthropic) so it can return relevant verses, a prayer, and a worship song suggestion. Important details:</p>
@@ -245,11 +246,6 @@ footer {
         <td>Apple</td>
         <td>Sign in with Apple, push delivery (APNs), the App Store listing</td>
         <td>United States and your region</td>
-      </tr>
-      <tr>
-        <td>Stripe</td>
-        <td>Processes optional donations made from inside the app. Card details go directly to Stripe; Seek does not see them.</td>
-        <td>United States</td>
       </tr>
     </tbody>
   </table>

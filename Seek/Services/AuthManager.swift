@@ -25,9 +25,30 @@ final class AuthManager {
         }
     }
 
-    /// Whether to show onboarding (not signed in OR hasn't completed onboarding)
+    // Guest mode — App Review 5.1.1(v) requires non-account features (Daily
+    // Verse, scripture browsing) to be reachable without sign-in. When set,
+    // the app routes to ContentView with chat/library/save gated behind
+    // inline sign-in CTAs. Cleared on successful auth, sign-out, or delete.
+    var hasOptedForGuest: Bool = UserDefaults.standard.bool(forKey: "hasOptedForGuest") {
+        didSet {
+            UserDefaults.standard.set(hasOptedForGuest, forKey: "hasOptedForGuest")
+        }
+    }
+
+    /// True when the user is browsing without an account.
+    var isGuest: Bool { authState == .unauthenticated && hasOptedForGuest }
+
+    /// Whether to show onboarding (not signed in AND not guest, OR signed in but haven't finished onboarding)
     var shouldShowOnboarding: Bool {
-        authState == .unauthenticated || (authState == .authenticated && !hasCompletedOnboarding)
+        (authState == .unauthenticated && !hasOptedForGuest)
+            || (authState == .authenticated && !hasCompletedOnboarding)
+    }
+
+    /// Mark the user as a guest. They land on ContentView with non-account
+    /// features (Daily Verse, share, card creator from daily verse) available
+    /// and chat/library gated behind inline sign-in.
+    func continueAsGuest() {
+        hasOptedForGuest = true
     }
 
     private var currentNonce: String?
@@ -58,9 +79,12 @@ final class AuthManager {
                     switch event {
                     case .signedIn:
                         self?.authState = .authenticated
+                        // Successful auth supersedes any prior guest opt-in.
+                        self?.hasOptedForGuest = false
                     case .signedOut:
                         self?.authState = .unauthenticated
                         self?.hasCompletedOnboarding = false
+                        self?.hasOptedForGuest = false
                     default:
                         break
                     }
@@ -81,11 +105,15 @@ final class AuthManager {
     func handleAppleSignIn(result: Result<ASAuthorization, Error>, modelContext: ModelContext) async {
         switch result {
         case .success(let authorization):
+            print("[Auth] Apple Sign In: got authorization, exchanging with Supabase…")
             guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
                   let identityTokenData = appleIDCredential.identityToken,
                   let idToken = String(data: identityTokenData, encoding: .utf8),
                   let nonce = currentNonce else {
-                errorMessage = "Failed to get Apple ID credentials."
+                print("[Auth] Apple Sign In: missing credential fields")
+                await MainActor.run {
+                    errorMessage = "Failed to get Apple ID credentials."
+                }
                 return
             }
 
@@ -97,6 +125,11 @@ final class AuthManager {
                 let userId = session.user.id.uuidString
                 let email = session.user.email ?? ""
                 let displayName = appleIDCredential.fullName?.givenName ?? ""
+                print("[Auth] Apple Sign In: Supabase OK, userId=\(userId)")
+                // Atomic transition: flip auth state AND complete onboarding in the
+                // same MainActor block. Apple Sign In always skips the rest of
+                // onboarding (per Session 2 design), so coupling these avoids the
+                // .onChange-driven navigation chain that broke under iOS 26.4.
                 await MainActor.run {
                     createLocalProfileIfNeeded(
                         userId: userId,
@@ -105,7 +138,9 @@ final class AuthManager {
                         modelContext: modelContext
                     )
                     authState = .authenticated
+                    hasCompletedOnboarding = true
                     errorMessage = nil
+                    print("[Auth] Apple Sign In: authState=.authenticated, onboarding complete")
                 }
                 // Ensure remote profile + notification settings exist
                 Task {
@@ -113,13 +148,22 @@ final class AuthManager {
                     try? await SupabaseService.shared.ensureNotificationSettings(userId: userId)
                 }
             } catch {
-                errorMessage = "Sign in failed: \(error.localizedDescription)"
+                print("[Auth] Apple Sign In: Supabase exchange failed: \(error)")
+                await MainActor.run {
+                    errorMessage = "Sign in failed: \(error.localizedDescription)"
+                }
             }
 
         case .failure(let error):
             // User cancelled — don't show error
-            if (error as? ASAuthorizationError)?.code == .canceled { return }
-            errorMessage = "Apple Sign In failed: \(error.localizedDescription)"
+            if (error as? ASAuthorizationError)?.code == .canceled {
+                print("[Auth] Apple Sign In: user cancelled")
+                return
+            }
+            print("[Auth] Apple Sign In: failed: \(error)")
+            await MainActor.run {
+                errorMessage = "Apple Sign In failed: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -133,6 +177,7 @@ final class AuthManager {
                 password: password
             )
             let userId = session.user.id.uuidString
+            // Returning user — skip rest of onboarding atomically with auth flip.
             await MainActor.run {
                 createLocalProfileIfNeeded(
                     userId: userId,
@@ -140,6 +185,7 @@ final class AuthManager {
                     modelContext: modelContext
                 )
                 authState = .authenticated
+                hasCompletedOnboarding = true
             }
             Task {
                 try? await SupabaseService.shared.ensureRemoteProfile(userId: userId, email: email, displayName: "")

@@ -146,6 +146,19 @@ struct SignInView: View {
                     .foregroundStyle(Color(hex: "6B7280"))
             }
 
+            // Guest mode — App Review 5.1.1(v) requires non-account features
+            // (Daily Verse, scripture browsing) to be reachable without
+            // sign-in. Tapping flips AuthManager.hasOptedForGuest, which
+            // triggers SeekApp to route to ContentView.
+            Button {
+                authManager.continueAsGuest()
+            } label: {
+                Text("Continue without an account")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+                    .padding(.vertical, 8)
+            }
+
         }
         .padding(.horizontal, 24)
         .alert("Reset Email Sent", isPresented: $showResetAlert) {

@@ -8,10 +8,89 @@ struct ProfileView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var profiles: [UserProfile]
     @State private var showDeleteConfirmation = false
+    @State private var showSignIn = false
 
     private var profile: UserProfile? { profiles.first }
 
     var body: some View {
+        if authManager.isGuest {
+            guestProfile
+        } else {
+            authenticatedProfile
+        }
+    }
+
+    // MARK: - Guest Profile
+    //
+    // Shown when the user is browsing without signing in. Single sign-in CTA
+    // plus the same legal links as the full profile so guests still have a
+    // path to read Privacy / Terms.
+
+    private var guestProfile: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Spacer()
+                Image(systemName: "person.crop.circle.badge.plus")
+                    .font(.system(size: 64))
+                    .foregroundStyle(Color(hex: "5B7B5E").opacity(0.6))
+                Text("You're browsing as a guest")
+                    .font(.title3.bold())
+                    .foregroundStyle(Color(hex: "1A1A1A"))
+                Text("Sign in to chat with scripture, save your favorites, and track your daily streak.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(hex: "6B7280"))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+                Button {
+                    showSignIn = true
+                } label: {
+                    Text("Sign In")
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: 220)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Color(hex: "5B7B5E"))
+                .controlSize(.large)
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    NavigationLink {
+                        WebContentView(title: "Privacy Policy", urlString: "https://askseekpray.app/privacy")
+                    } label: {
+                        Text("Privacy Policy")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "6B7280"))
+                    }
+                    NavigationLink {
+                        WebContentView(title: "Terms of Service", urlString: "https://askseekpray.app/terms")
+                    } label: {
+                        Text("Terms of Service")
+                            .font(.caption)
+                            .foregroundStyle(Color(hex: "6B7280"))
+                    }
+                }
+                .padding(.bottom, 16)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(hex: "FAFAF6"))
+            .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showSignIn) {
+                GuestSignInSheet(isPresented: $showSignIn)
+            }
+        }
+    }
+
+    // MARK: - Authenticated Profile
+
+    private var authenticatedProfile: some View {
         NavigationStack {
             List {
                 // Profile header
@@ -68,13 +147,6 @@ struct ProfileView: View {
                         NotificationSettingsView()
                     } label: {
                         Label("Notifications", systemImage: "bell")
-                    }
-
-                    NavigationLink {
-                        DonationView()
-                    } label: {
-                        Label("Support Seek", systemImage: "heart")
-                            .foregroundStyle(Color(hex: "5B7B5E"))
                     }
 
                     Button {

@@ -16,7 +16,11 @@ struct SeekApp: App {
                         .background(Color(hex: "FAFAF6"))
 
                 case .unauthenticated:
-                    OnboardingView()
+                    if authManager.hasOptedForGuest {
+                        ContentView()
+                    } else {
+                        OnboardingView()
+                    }
 
                 case .authenticated:
                     if authManager.shouldShowOnboarding {

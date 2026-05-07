@@ -11,6 +11,7 @@ struct ChatView: View {
     @Query private var favoriteVerses: [FavoriteVerse]
     @Query private var savedPrayers: [SavedPrayer]
     @State private var messageText = ""
+    @FocusState private var isInputFocused: Bool
     @State private var messages: [DisplayMessage] = []
     @State private var isLoading = false
     @State private var conversationHistory: [[String: String]] = []
@@ -18,11 +19,9 @@ struct ChatView: View {
     @State private var rateLimitMessage: String?
     @State private var selectedVerse: VerseResult?
     @State private var selectedPrayer: PrayerCardTarget?
-    @State private var scrollToBottom = false
+    @State private var anchorMessageID: String?
     @State private var hasLoadedInitialMessage = false
     @State private var lastUserPrompt: String?
-    @State private var hasShownDonationNudge = false
-    @State private var showDonationSheet = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -37,28 +36,33 @@ struct ChatView: View {
                         }
 
                         ForEach(messages) { msg in
-                            switch msg.kind {
-                            case .user(let text):
-                                userBubble(text)
-                            case .intro(let text):
-                                assistantIntro(text)
-                            case .verses(let verses):
-                                versesCard(verses)
-                            case .prayer(let text):
-                                prayerCard(text)
-                            case .worshipSong(let song):
-                                worshipSongCard(song)
-                            case .action(let action):
-                                actionCard(action)
-                            case .followUp(let text):
-                                followUpBubble(text)
-                            case .error(let text):
-                                errorBubble(text)
-                            case .rateLimit(let text):
-                                rateLimitCard(text)
-                            case .donationNudge:
-                                donationNudgeCard
+                            Group {
+                                switch msg.kind {
+                                case .user(let text):
+                                    userBubble(text)
+                                case .intro(let text):
+                                    assistantIntro(text)
+                                case .verses(let verses):
+                                    versesCard(verses)
+                                case .prayer(let text):
+                                    prayerCard(text)
+                                case .worshipSong(let song):
+                                    worshipSongCard(song)
+                                case .action(let action):
+                                    actionCard(action)
+                                case .followUp(let text):
+                                    followUpBubble(text)
+                                case .error(let text):
+                                    errorBubble(text)
+                                case .rateLimit(let text):
+                                    rateLimitCard(text)
+                                }
                             }
+                            .id("msg-\(msg.id.uuidString)")
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .top)),
+                                removal: .opacity
+                            ))
                         }
 
                         if isLoading {
@@ -76,9 +80,20 @@ struct ChatView: View {
                     .padding()
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .onChange(of: messages.count) {
-                    withAnimation {
-                        proxy.scrollTo("bottom", anchor: .bottom)
+                .onChange(of: anchorMessageID) { _, newID in
+                    // Fresh send/regenerate: park the user's message at the top
+                    // of the viewport so the response flows downward into view.
+                    guard let newID else { return }
+                    withAnimation(.easeOut(duration: 0.45)) {
+                        proxy.scrollTo(newID, anchor: .top)
+                    }
+                }
+                .onChange(of: messages.count) { _, _ in
+                    // History load (anchor not set) — keep latest activity visible.
+                    if anchorMessageID == nil {
+                        withAnimation {
+                            proxy.scrollTo("bottom", anchor: .bottom)
+                        }
                     }
                 }
             }
@@ -147,11 +162,6 @@ struct ChatView: View {
         }
         .sheet(item: $selectedPrayer) { target in
             CardCreatorView(prayerText: target.text)
-        }
-        .sheet(isPresented: $showDonationSheet) {
-            NavigationStack {
-                DonationView()
-            }
         }
     }
 
@@ -442,35 +452,6 @@ struct ChatView: View {
         }
     }
 
-    private var donationNudgeCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Image(systemName: "heart.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(Color(hex: "5B7B5E"))
-                Text("Keep Seek free")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Color(hex: "1A1A1A"))
-            }
-            Text("Seek is free for everyone, supported by people who find it useful. If it's met you today, consider a small gift.")
-                .font(.caption)
-                .foregroundStyle(Color(hex: "6B7280"))
-                .lineSpacing(2)
-            Button {
-                showDonationSheet = true
-            } label: {
-                Text("Support Seek →")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(Color(hex: "5B7B5E"))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(hex: "5B7B5E").opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
     private func rateLimitCard(_ text: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "clock")
@@ -504,6 +485,7 @@ struct ChatView: View {
                 .background(Color(hex: "F3F4F6"))
                 .clipShape(RoundedRectangle(cornerRadius: 20))
                 .disabled(!networkMonitor.isConnected)
+                .focused($isInputFocused)
 
             Button {
                 sendMessage()
@@ -517,6 +499,17 @@ struct ChatView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color.white.shadow(.drop(color: .black.opacity(0.05), radius: 4, y: -2)))
+        .toolbar {
+            // Keyboard accessory — gives the user an explicit way to collapse
+            // the keyboard. `.scrollDismissesKeyboard(.interactively)` already
+            // handles drag-to-dismiss, but most users don't discover it.
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { isInputFocused = false }
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+                    .fontWeight(.medium)
+            }
+        }
     }
 
     /// Whether the send button should be inert — empty text, in-flight request,
@@ -544,12 +537,19 @@ struct ChatView: View {
         // Truncate at 500 chars
         let truncated = String(text.prefix(500))
         messageText = ""
+        isInputFocused = false
 
         // Track last user prompt for regenerate-scripture support
         lastUserPrompt = truncated
 
-        // Add user message
-        messages.append(DisplayMessage(kind: .user(truncated)))
+        // Add user message and anchor the chat to it — the response cards
+        // will flow downward from the user's prompt instead of scrolling
+        // past it to the bottom.
+        let userBubbleMsg = DisplayMessage(kind: .user(truncated))
+        withAnimation(.easeOut(duration: 0.3)) {
+            messages.append(userBubbleMsg)
+        }
+        anchorMessageID = "msg-\(userBubbleMsg.id.uuidString)"
 
         // Create conversation if first message
         if currentConversation == nil {
@@ -569,7 +569,7 @@ struct ChatView: View {
 
         // Call API
         isLoading = true
-        Task {
+        Task { @MainActor in
             do {
                 var response = try await SupabaseService.shared.sendChatMessage(
                     truncated,
@@ -584,13 +584,11 @@ struct ChatView: View {
                     response = reparsed
                 }
 
-                await MainActor.run {
-                    isLoading = false
-                    renderResponse(response)
-                }
+                isLoading = false
+                await renderResponse(response)
             } catch {
-                await MainActor.run {
-                    isLoading = false
+                isLoading = false
+                withAnimation(.easeOut(duration: 0.3)) {
                     messages.append(DisplayMessage(kind: classifyChatError(error)))
                 }
             }
@@ -635,25 +633,46 @@ struct ChatView: View {
 
     /// Appends a decoded ChatResponse to the display list, updates conversation
     /// history, persists to SwiftData, and bumps profile stats. Shared by
-    /// `sendMessage` and `regenerateScripture`.
-    private func renderResponse(_ response: ChatResponse) {
+    /// `sendMessage` and `regenerateScripture`. Cards stream in with a small
+    /// stagger so the response feels like it's arriving rather than dumping.
+    @MainActor
+    private func renderResponse(_ response: ChatResponse) async {
+        let stagger: Duration = .milliseconds(140)
+
         if !response.message.isEmpty {
-            messages.append(DisplayMessage(kind: .intro(response.message)))
+            withAnimation(.easeOut(duration: 0.3)) {
+                messages.append(DisplayMessage(kind: .intro(response.message)))
+            }
+            try? await Task.sleep(for: stagger)
         }
         if !response.verses.isEmpty {
-            messages.append(DisplayMessage(kind: .verses(response.verses)))
+            withAnimation(.easeOut(duration: 0.3)) {
+                messages.append(DisplayMessage(kind: .verses(response.verses)))
+            }
+            try? await Task.sleep(for: stagger)
         }
         if !response.prayer.isEmpty {
-            messages.append(DisplayMessage(kind: .prayer(response.prayer)))
+            withAnimation(.easeOut(duration: 0.3)) {
+                messages.append(DisplayMessage(kind: .prayer(response.prayer)))
+            }
+            try? await Task.sleep(for: stagger)
         }
         if let song = response.worshipSong {
-            messages.append(DisplayMessage(kind: .worshipSong(song)))
+            withAnimation(.easeOut(duration: 0.3)) {
+                messages.append(DisplayMessage(kind: .worshipSong(song)))
+            }
+            try? await Task.sleep(for: stagger)
         }
         if let action = response.action {
-            messages.append(DisplayMessage(kind: .action(action)))
+            withAnimation(.easeOut(duration: 0.3)) {
+                messages.append(DisplayMessage(kind: .action(action)))
+            }
+            try? await Task.sleep(for: stagger)
         }
         if let followUp = response.followUp, !followUp.isEmpty {
-            messages.append(DisplayMessage(kind: .followUp(followUp)))
+            withAnimation(.easeOut(duration: 0.3)) {
+                messages.append(DisplayMessage(kind: .followUp(followUp)))
+            }
         }
 
         if let remaining = response.remainingChats {
@@ -672,20 +691,12 @@ struct ChatView: View {
         modelContext.insert(assistantMsg)
         try? modelContext.save()
 
-        // Mirror into conversation history for follow-up context
         conversationHistory.append(["role": "assistant", "content": fullContent])
 
-        // Profile stats
         if let profile {
             profile.totalVersesExplored += response.verses.count
             profile.dailyChatsUsed += 1
             try? modelContext.save()
-
-            // Show donation nudge once per session after the 3rd chat
-            if !hasShownDonationNudge, profile.dailyChatsUsed >= 3 {
-                messages.append(DisplayMessage(kind: .donationNudge))
-                hasShownDonationNudge = true
-            }
         }
     }
 
@@ -700,7 +711,7 @@ struct ChatView: View {
         switch last.kind {
         case .verses, .prayer, .worshipSong, .action, .followUp:
             return true
-        case .user, .intro, .error, .rateLimit, .donationNudge:
+        case .user, .intro, .error, .rateLimit:
             return false
         }
     }
@@ -728,16 +739,24 @@ struct ChatView: View {
 
         // Strip the most recent assistant-response display messages back to the
         // user bubble so the new response replaces the old one visually.
-        while let last = messages.last {
-            switch last.kind {
-            case .user:
-                // Leave the user bubble in place and stop.
+        withAnimation(.easeOut(duration: 0.25)) {
+            while let last = messages.last {
+                switch last.kind {
+                case .user:
+                    // Leave the user bubble in place and stop.
+                    break
+                default:
+                    messages.removeLast()
+                    continue
+                }
                 break
-            default:
-                messages.removeLast()
-                continue
             }
-            break
+        }
+
+        // Re-anchor scroll on the now-trailing user bubble so the regenerated
+        // response renders below it from the top of the viewport.
+        if let last = messages.last, case .user = last.kind {
+            anchorMessageID = "msg-\(last.id.uuidString)"
         }
 
         // Also drop the previous assistant turn from conversationHistory so the
@@ -753,7 +772,7 @@ struct ChatView: View {
         historyForCall.append(["role": "user", "content": hint])
 
         isLoading = true
-        Task {
+        Task { @MainActor in
             do {
                 var response = try await SupabaseService.shared.sendChatMessage(
                     prompt,
@@ -768,13 +787,11 @@ struct ChatView: View {
                     response = reparsed
                 }
 
-                await MainActor.run {
-                    isLoading = false
-                    renderResponse(response)
-                }
+                isLoading = false
+                await renderResponse(response)
             } catch {
-                await MainActor.run {
-                    isLoading = false
+                isLoading = false
+                withAnimation(.easeOut(duration: 0.3)) {
                     messages.append(DisplayMessage(kind: classifyChatError(error)))
                 }
             }
@@ -869,7 +886,6 @@ struct DisplayMessage: Identifiable {
         case followUp(String)
         case error(String)
         case rateLimit(String)
-        case donationNudge
     }
 }
 

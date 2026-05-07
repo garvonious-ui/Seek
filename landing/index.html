@@ -625,11 +625,13 @@ a { color: inherit; text-decoration: none; }
 
 /* =============== responsive =============== */
 @media (max-width: 880px) {
+  .container { padding: 0 40px; }
   .hero {
     grid-template-columns: 1fr;
     gap: 56px;
     padding: 24px 0 80px;
   }
+  .hero h1 { font-size: clamp(36px, 9vw, 56px); }
   .hero .sub { font-size: 18px; }
   .nav .links { display: none; }
   .nav .mark { height: 36px; }

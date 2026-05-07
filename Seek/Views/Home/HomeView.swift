@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var showProfile = false
     @State private var customPrompt: String = ""
     @State private var chatTarget: ChatTarget?
+    @State private var showSignIn = false
     @FocusState private var isCustomPromptFocused: Bool
 
     /// Hashable wrapper so we can drive navigationDestination(item:) with a typed value.
@@ -67,12 +68,16 @@ struct HomeView: View {
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 6) {
-                            Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
-                                .font(.headline)
-                                .foregroundStyle(Color(hex: "CDA349"))
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color(hex: "CDA349").opacity(0.12), in: Capsule())
+                            // Streak only shown for signed-in users — guests
+                            // don't have a profile to track activity against.
+                            if !authManager.isGuest {
+                                Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
+                                    .font(.headline)
+                                    .foregroundStyle(Color(hex: "CDA349"))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color(hex: "CDA349").opacity(0.12), in: Capsule())
+                            }
 
                             if !networkMonitor.isConnected {
                                 Label("Offline", systemImage: "wifi.slash")
@@ -105,7 +110,11 @@ struct HomeView: View {
                         ], spacing: 10) {
                             ForEach(quickPrompts, id: \.0) { prompt, icon in
                                 Button {
-                                    chatTarget = ChatTarget(message: "I'm dealing with \(prompt.lowercased())")
+                                    if authManager.isGuest {
+                                        showSignIn = true
+                                    } else {
+                                        chatTarget = ChatTarget(message: "I'm dealing with \(prompt.lowercased())")
+                                    }
                                 } label: {
                                     HStack(spacing: 8) {
                                         Image(systemName: icon)
@@ -179,6 +188,9 @@ struct HomeView: View {
             .sheet(isPresented: $showProfile) {
                 ProfileView()
             }
+            .sheet(isPresented: $showSignIn) {
+                GuestSignInSheet(isPresented: $showSignIn)
+            }
             .navigationDestination(item: $chatTarget) { target in
                 ChatView(initialMessage: target.message)
             }
@@ -187,7 +199,10 @@ struct HomeView: View {
             }
             .task {
                 await loadDailyVerse()
-                StreakManager.recordActivity(modelContext: modelContext)
+                // Streak only meaningful for signed-in users.
+                if !authManager.isGuest {
+                    StreakManager.recordActivity(modelContext: modelContext)
+                }
             }
             // Re-fetch as soon as we come back online so the user doesn't have
             // to manually pull-to-refresh after regaining signal.
@@ -207,6 +222,11 @@ struct HomeView: View {
         guard !trimmed.isEmpty else { return }
         // Drop focus so the keyboard collapses before navigation pushes ChatView.
         isCustomPromptFocused = false
+        // Guests see the sign-in sheet — chat is account-based.
+        if authManager.isGuest {
+            showSignIn = true
+            return
+        }
         chatTarget = ChatTarget(message: String(trimmed.prefix(500)))
         customPrompt = ""
     }

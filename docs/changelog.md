@@ -1,5 +1,167 @@
 # Changelog
 
+## 2026-05-07 — Session 16 (App Review response: donation removal, guest mode, web cleanup → Build 8)
+
+### Context
+Apple rejected Build 7 on 2026-05-04 (Submission ID `97514e7b-0f96-4fea-b475-11e5a96d388a`, reviewed on iPad Air M3 + iPhone 17 Pro Max running iPadOS/iOS 26.4.2). Four cited issues:
+- **2.1(a)** — Sign in with Apple did not sign the user in on iOS 26.4.2.
+- **5.1.1(v)** — App required login to access non-account features.
+- **2.1** — China mainland book content needed an Internet Publishing License (网络出版服务许可证).
+- **3.1.1** — Donations cannot use Stripe; must use IAP or be removed.
+
+User's call: hide donations entirely (revisit only if app gets traction), address the rest. China is ASC-only — remove from territories.
+
+Session 15's iOS work (chat-stream UX, keyboard dismiss, landing padding, cost model) was uncommitted in the working tree and ships in this commit alongside the App Review fixes.
+
+### Built
+
+#### Apple Sign In atomic-transition fix (`Seek/Services/AuthManager.swift`)
+Pre-existing in the working tree from before this session — flips `authState = .authenticated` AND `hasCompletedOnboarding = true` inside one `MainActor.run` block instead of two. Wraps every error setter in `MainActor.run`. Adds extensive `print("[Auth] …")` logging throughout the Apple Sign In path so the next 26.4.2 debugging session has a trail. Comment cites "the .onChange-driven navigation chain that broke under iOS 26.4." Plausible root-cause fix; **not yet verified on iOS 26.4 device** — should be smoke-tested on TestFlight before resubmission.
+
+#### Donation removal (3.1.1 compliance)
+- **iOS surfaces hidden, code retained.**
+  - `ChatView.swift`: stripped `DisplayMessage.Kind.donationNudge`, the `donationNudgeCard` view, the `hasShownDonationNudge` / `showDonationSheet` state, the in-`renderResponse` trigger after the 3rd chat, and the `DonationView` sheet modifier.
+  - `ProfileView.swift`: removed the "Support Seek" `NavigationLink` to `DonationView`.
+  - `DonationView.swift` retained as dormant code per user's "we will make a decision on payment stuff if the app gets traction."
+- **Web pages: Privacy / Terms / Support cleansed of all donation + Stripe references.**
+  - `landing/terms.html`: section 7 retitled "Pricing" — drops the donation paragraph; keeps the "Seek is free, no IAP, no subscription" line.
+  - `landing/support.html`: deleted the entire "Donations" Q&A block; kept the "Pricing → Is Seek free?" item; rewrote the privacy quick-recap to remove the Stripe sentence; meta description updated.
+  - `landing/privacy.html`: short-version callout no longer mentions donations or Stripe; dropped the dedicated "we do not collect payment information / Stripe handles cards" paragraph; removed the Stripe row from the Service Providers table. Apple, Anthropic, and Supabase rows preserved.
+- Smoke-tested production: `curl https://askseekpray.app/{privacy,terms,support}` → 200, zero hits on `/donation|stripe|donat/i`.
+
+The Stripe Payment Links, the `donations` table, and the `stripe-webhook` Edge Function remain server-side. They are now unreachable from any user surface (in-app, web, in-app WebContentView). The webhook still works if anyone happens to use a stale Payment Link URL — but no UI now surfaces those URLs.
+
+#### Guest mode (5.1.1(v) compliance)
+Goal: let App Review (and any user) browse the Daily Verse without an account, while gating chat / library / save behind sign-in CTAs.
+
+- **`AuthManager.swift`** — added `hasOptedForGuest: Bool` (UserDefaults-persisted), `var isGuest: Bool { authState == .unauthenticated && hasOptedForGuest }`, and `func continueAsGuest()`. Cleared on sign-in (so a guest who later signs in flips to the authenticated path) and on sign-out / delete-account. Architectural choice over adding a 4th `AuthState` case — touches one struct property instead of every switch site.
+- **`SeekApp.swift`** — routes `.unauthenticated && hasOptedForGuest` → `ContentView()` (the tab bar). Other cases unchanged.
+- **`SignInView.swift`** — "Continue without an account" sage-tinted button rendered below the Sign Up / Sign In toggle. Calls `authManager.continueAsGuest()`; SeekApp re-renders to `ContentView` automatically.
+- **`ContentView.swift`** — two new reusable structs: `GuestSignInSheet` (NavigationStack + Cancel + auto-dismiss on `authState == .authenticated`) and `GuestGateView` (icon + title + message + Sign In CTA, used by Chat and Library tabs).
+- **`ChatListView.swift`** — guests see a `GuestGateView` ("Sign in to chat") with a sheet-presented sign-in flow. Conversation list and inline `ChatView` are not reachable for guests.
+- **`LibraryView.swift`** — same pattern. Library tabs (Cards / Favorites / History) hidden behind `GuestGateView` ("Sign in to save").
+- **`ProfileView.swift`** — split into `guestProfile` (icon, sign-in CTA, Privacy / Terms links) and `authenticatedProfile` (the full existing screen). Profile button on Home opens the right one based on `authManager.isGuest`.
+- **`HomeView.swift`** — for guests: streak capsule hidden (no profile to track), `StreakManager.recordActivity()` skipped in `.task`, quick-prompt taps and custom prompt submission divert to `showSignIn = true` instead of pushing `ChatView`. Daily Verse, "Share with a friend," and the wordmark all still render normally — they're the non-account features Apple wants accessible.
+- **`supabase/functions/daily-verse/index.ts`** — auth header is now optional. With no JWT (or a JWT that decodes to no user, e.g. just the anon key the supabase-swift client sends when there's no session), the function defaults `translation = "NLT"` and proceeds. With a real user JWT, it still looks up `profiles.preferred_translation`. **Deployed** via `supabase functions deploy daily-verse --no-verify-jwt --project-ref hxfiaowayrhuhzhhbaix` — live for guest callers.
+
+#### Build 8
+- `project.yml` `CURRENT_PROJECT_VERSION` 7 → 8.
+- `xcodegen generate` → `xcodebuild -sdk iphonesimulator build` → **BUILD SUCCEEDED**.
+- Per CLAUDE.md gotcha: archive must happen via Xcode GUI; CLI archive blocked on Apple Developer account auth in the keychain. Verify the build number in Xcode matches `project.yml = 8` before archiving (Xcode caches the prior value).
+
+### Decisions
+- **Hide-don't-delete on donations.** `DonationView.swift`, the `StripeManager` patterns, the `donations` table, and the `stripe-webhook` Edge Function all stay. Reversible if Apple changes the rules or we register as a 501(c)(3) later. Saved ~30 min of deletion work and a future merge headache.
+- **`hasOptedForGuest: Bool` flag, not a 4th `AuthState` case.** A new enum case forces every existing switch site (auth listener, SeekApp routing, SignInView completion handler, ProfileView body, etc.) to handle it explicitly. A boolean derives `isGuest` and lives behind `.unauthenticated`, leaving the existing 3-case state machine untouched.
+- **Daily verse Edge Function: optional auth, NOT a separate `--no-verify-jwt` public-anon endpoint.** Deno + supabase-js can decode the token to "no user" cleanly; one code path serves both authenticated and guest callers. NLT default for guests aligns with the app's default; signed-in users still get their preferred translation.
+- **Streak hidden for guests, not zeroed.** Showing "0 🔥" with no profile anchoring it would be misleading. Hiding it removes the question entirely.
+- **No "Convert to IAP donation" attempt.** Apple takes 15-30%; the UX would force tier-priced amounts (no $250 / $500 presets); reviewer rejects on "developer support" IAPs are common; risks another rejection cycle. Hide is the higher-leverage move.
+
+### Bug caught + new gotcha
+- **`GuestGateView` parameter named `body` collided with SwiftUI's required `var body: some View`.** Real build failure: "invalid redeclaration of 'body'" at line 82 of ContentView.swift. Renamed parameter to `message`. Added to CLAUDE.md so future View structs avoid the same trap.
+
+### Verification
+- `xcodebuild -project Seek.xcodeproj -scheme Seek -sdk iphonesimulator build` → **BUILD SUCCEEDED** (after the `body` rename).
+- `daily-verse` Edge Function deployed and listed by `supabase functions list`.
+- `landing/` deployed to Vercel production. `curl` smoke test: `/`, `/privacy`, `/terms`, `/support` all 200. Grep for `donation|stripe|donat` across all four pages: zero hits.
+- iOS source grep for `donation|DonationView|support seek` outside `DonationView.swift` itself: zero hits.
+
+### Pending — required before resubmission
+1. **China territory** — ASC → My Apps → Seek → Pricing & Availability → uncheck China mainland. Cheaper than registering for an Internet Publishing License. **Blocked on user.**
+2. **Build 8 archive + TestFlight upload** — Xcode Organizer; CLI blocked on Developer-account keychain. **Blocked on user.**
+3. **Smoke test on iOS 26.4.2 device** — verify Apple Sign In actually works. The atomic-transition fix is plausible but unverified. Worth installing Build 8 from TestFlight to a real device on 26.4.2 before resubmitting.
+4. **Verify guest flow on real device** — tap "Continue without an account" → land on Home → see Daily Verse → tap a Quick Prompt → see sign-in sheet → cancel → tap Chat tab → see GuestGateView → tap Library → see GuestGateView. All without a single auth call.
+
+### App Review response notes (paste into ASC reply when resubmitting)
+> Thank you for the detailed feedback on Build 7. We've addressed each item in Build 8:
+>
+> **2.1(a) Sign in with Apple** — We refactored the Apple Sign In handler to flip authentication state and onboarding completion atomically inside a single `MainActor.run` block, eliminating an `.onChange`-driven navigation race that we believe broke under iOS 26.4. We also wrapped all `errorMessage` setters in `MainActor.run` for consistency.
+>
+> **5.1.1(v) Account-based features** — We added "Continue without an account" to the sign-in screen. Guest users land on the Home tab, can read the daily verse, share the app with friends, and read our Privacy Policy and Terms of Service — all without creating an account. Chat and the Library are gated behind sign-in CTAs because both are inherently account-based (rate limits and conversation history; saved cards/favorites/prayers).
+>
+> **2.1 China mainland** — We have removed China mainland from the app's distribution territories; we do not currently hold the required Internet Publishing License.
+>
+> **3.1.1 Donations** — We have removed the optional donation feature entirely from the app. There is no longer any donation surface in iOS, and our Privacy Policy, Terms of Service, and Support page have been updated accordingly. The app is free with no in-app purchases.
+>
+> Please test signing in with Apple on iOS 26.4.2 on Build 8. We are happy to provide additional context if any of these resolutions need further detail.
+
+### Current Status
+- Phase 1 MVP: 100% of in-app code complete for resubmission.
+- App Store submission: rejected on Build 7. Build 8 staged in working tree, **uncommitted at session start, committed at session end.**
+- All four rejection issues addressed (3 in-code, 1 ASC-blocked on user).
+- Stripe + webhook + donations table preserved server-side, dormant.
+- Site at `askseekpray.app` cleansed of donation references; production verified.
+
+
+
+### Built
+
+#### Monthly cost spreadsheet (`docs/cost-model.xlsx`)
+3-sheet Excel model auditing every line item that touches Seek's runway. Built with openpyxl using formulas (no hardcoded calculated values). Color-coded per industry standard: blue inputs, black formulas, green cross-sheet refs, yellow on key assumptions to revisit.
+- **Fixed Costs**: Apple Dev ($99/yr), domain askseekpray.app ($20/yr), Google Workspace ($192/yr = $16/mo), GitHub/Vercel/Supabase/Anthropic/Stripe/Resend at $0 base. Total fixed: **$25.92/mo**.
+- **Variable Cost Model**: single-MAU model with editable inputs for usage assumptions (DAU/MAU ratio, chats per DAU, daily verse views), Anthropic per-token pricing (with prompt-caching toggle in B22), Supabase Free→Pro tier auto-flip via `IF(AND(...))`, donation conversion (rate × avg × Stripe fees). Auto-computes cost-per-chat, monthly Claude/Supabase/Stripe spend, and net monthly position. At default 1K MAU + 1.5 chats/DAU/day → **~$523/mo total cost** (Claude is ~97% of variable), **$403/mo net** after donations.
+- **Scenarios**: 100 / 1K / 10K / 50K MAU side-by-side, all assumptions cross-sheet referenced. Anthropic API dominates at every scale; donations break even somewhere around 0.3–0.5% conversion at $25 avg.
+- All 50+ formulas audited for missing refs (LibreOffice not installed locally for in-place recalc; Excel/Numbers compute on open). 1K MAU scenario sanity-checked in Python — values match.
+
+#### YouVersion benchmark research
+Pulled current numbers via web search to ground the cost model: **1B installs** (Nov 2025), **~14M DAU** end of 2024, peaks 19–22M on big days, **100% donation-funded**, Life.Church 501(c)(3), explicitly anti-monetization. For Seek: even 0.1% of YouVersion's DAU = ~47K MAU = ~$26K/mo Anthropic at default assumptions. Donation conversion needs to keep pace with scale.
+
+#### Chat-stream UX (`Seek/Views/Chat/ChatView.swift`)
+Old behavior: user types → spinner → all 5–6 cards plop in at once → scroll lands at the bottom (followUp / donationNudge), so user reads from the END of the response and has to scroll up.
+
+New behavior:
+- New `@State private var anchorMessageID: String?` tracks the latest user-message scroll target.
+- Each `DisplayMessage` row now has `.id("msg-\(uuid)")` so we can scroll to a specific message.
+- When user sends or regenerates, `anchorMessageID` is set to the user's bubble UUID. `.onChange(of: anchorMessageID)` fires once and scrolls that bubble to the **top** of the viewport with `anchor: .top`. Response cards then flow downward into view via natural document layout — user reads top-to-bottom in order.
+- `renderResponse(_:)` rewritten as `@MainActor async` with `try? await Task.sleep(for: .milliseconds(140))` between each card append. Cards stream in: intro → verses → prayer → worship song → action → follow-up. Donation nudge gets an extra 220ms beat at the end so it feels like a quiet "p.s." rather than another card in the burst.
+- Each row has `.transition(.asymmetric(insertion: .opacity.combined(with: .move(edge: .top)), removal: .opacity))`. Combined with `withAnimation(.easeOut(duration: 0.3))` around each append, cards fade and slide in.
+- History-load path (existing conversation from Library) leaves `anchorMessageID == nil` and falls back to scroll-to-bottom via the `messages.count` onChange — opening a past conversation lands you at the latest message, not the original prompt.
+
+#### Keyboard dismiss fix (same file)
+Bug: once the keyboard was up in chat, there was no obvious way to collapse it. `.scrollDismissesKeyboard(.interactively)` worked via drag-down but most users never discovered it.
+- `@FocusState private var isInputFocused: Bool` on ChatView.
+- `.focused($isInputFocused)` on the message TextField.
+- `.toolbar { ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { ... } } }` on the input bar — sage-tinted Done button in the keyboard accessory bar.
+- `isInputFocused = false` in `sendMessage` so the keyboard auto-collapses on send (lets the user watch the staggered response stream in without keyboard occlusion).
+- Compile passes (xcodebuild iphonesimulator → BUILD SUCCEEDED). **Not yet visually tested in simulator** — recommend Cmd+R smoke test before TestFlight upload.
+
+#### Landing page mobile padding (`landing/{index,privacy,terms,support}.html`)
+Hero content on mobile sat too close to phone screen edge (user noticed on real device). All four pages share the same `.container { padding: 0 32px }` baseline.
+- All four pages: added `.container { padding: 0 40px; }` inside their respective mobile media queries (880px on index, 640px on the legal pages).
+- `index.html` only: added `.hero h1 { font-size: clamp(36px, 9vw, 56px); }` inside the same media query — drops headline floor from 48px to 36px so it doesn't crush small phones.
+- Independent ship path. No iOS rebuild required. Deploy via `cd landing && vercel --prod`.
+
+#### Build 8 reminder routine (remote agent)
+Created one-time remote agent `trig_01LzzpyiXienBYwGeDgV3Wxg`. Fires Mon **2026-05-04 at 13:00 UTC** (9am ET). Reads the repo, verifies which of (chat-stream / keyboard / landing) made it to `main`, produces a Build 8 punch-list (App Review verdict check → bump `CURRENT_PROJECT_VERSION` 7→8 → xcodegen → archive → upload), and writes a Session 15 changelog stub at `/tmp/session-15-changelog.md`. Default Sonnet 4.6 + WFY environment + read-only allowed tools. Manage at https://claude.ai/code/routines/trig_01LzzpyiXienBYwGeDgV3Wxg.
+
+### Decisions
+- **Cost model defaults to no prompt caching.** Toggle in Variable Cost Model B22 — flip to 1 if/when caching gets wired into `chat/index.ts`. Sonnet 4.6 cached input is $0.30/M vs $3.00/M fresh, meaningful since system prompt is ~1800 tokens. Worth implementing as a follow-up.
+- **Single-MAU input drives the model; Scenarios sheet is for fan-out.** No projection columns in the main model — easier to fork in conversations ("what if 5K MAU?" → edit one cell, all derived numbers update).
+- **0.5% donation conversion baseline at $25 avg.** No real data yet. The math says donations cover ~25% of cost at 1K MAU, ~95% at 10K MAU. Re-validate in 30–60 days when actual Stripe data lands.
+- **Chat scroll anchors on the user's bubble at top, not on the first response card.** Anchoring on the user's message makes the conversation flow feel natural ("here's what I asked, here's the answer below") and works identically for both first send and regenerate.
+- **140ms stagger between cards is the floor.** Less than ~100ms feels like a single dump again; more than ~200ms feels artificially slow.
+- **Keyboard accessory Done button over tap-to-dismiss.** Tap-to-dismiss in a chat with tappable verse / prayer / song cards would steal taps and be ambiguous. Keyboard accessory bar is the standard iOS pattern.
+- **Build 8 reminder is one-time at +3 days, not recurring daily.** Apple Review SLA is 1–3 days; ~3 days is the sweet spot. Re-arm via the routines URL if the verdict slips past Tuesday.
+
+### Bugs found / issues to address next time
+- **Working tree is uncommitted.** Five files changed this session (`Seek/Views/Chat/ChatView.swift`, four `landing/*.html`) plus one new file (`docs/cost-model.xlsx`) — never committed or pushed. The Build 8 reminder agent runs against `main` on GitHub, so without a push it will report "expected changes are missing" and tell the user to commit first. **Run `git add ... && git commit && git push` before Monday morning.**
+- **Chat keyboard fix not yet visually verified in simulator.** Compile passes; Cmd+R + smoke-test the Done button before merging to confirm the toolbar item shows up where expected.
+- **Cost model not opened in Excel/Numbers locally.** LibreOffice not installed for recalc-in-place. First open will compute everything fresh; watch for any `#NAME?` or `#REF!` on first user open.
+- **Donation rate assumption is a guess.** Once real Stripe data lands (post-verification, post-launch traffic), update Variable Cost Model B42 with actuals — could materially change the net-monthly picture.
+
+### Verification
+- `xcodebuild -project Seek.xcodeproj -scheme Seek -sdk iphonesimulator build` → BUILD SUCCEEDED twice. First failure was a `userMsg` variable name collision against an existing SwiftData ChatMessage variable; renamed to `userBubbleMsg`.
+- All cross-sheet formula refs in `cost-model.xlsx` audited via openpyxl walker — 0 missing refs.
+- Sanity-checked 1K MAU scenario in Python; values match the spreadsheet's formulas.
+- Web search corroborated YouVersion's nonprofit donation model + 1B install milestone.
+
+### Current Status
+- Phase 1 MVP: ~99% complete (unchanged headline; this session was UX polish + financial planning, not new features).
+- Build 7 still pending Apple Review (submitted Session 14 on 2026-05-01, ~48 hours ago).
+- Build 8 staged in working tree but **uncommitted**: chat-stream UX, keyboard dismiss, landing padding fix.
+- Cost model and remote-agent reminder are non-iOS deliverables (don't gate on App Review).
+- Stripe activation still pending (~2-3 days for LCIII Ventures LLC verification, started 2026-05-01).
+- Build number unchanged (still 7 in `project.yml`). Next push: bump to 8 once Build 7 is approved.
+
 ## 2026-05-01 — Session 14 (App submitted to App Store)
 
 ### Built

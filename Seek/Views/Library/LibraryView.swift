@@ -2,7 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct LibraryView: View {
+    @Environment(AuthManager.self) private var authManager
     @State private var selectedTab: LibraryTab = .cards
+    @State private var showSignIn = false
 
     enum LibraryTab: String, CaseIterable {
         case cards = "Cards"
@@ -12,26 +14,41 @@ struct LibraryView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                Picker("Library", selection: $selectedTab) {
-                    ForEach(LibraryTab.allCases, id: \.self) { tab in
-                        Text(tab.rawValue).tag(tab)
+            Group {
+                if authManager.isGuest {
+                    GuestGateView(
+                        icon: "bookmark.fill",
+                        title: "Sign in to save",
+                        message: "Your favorite verses, prayers, and verse cards live in your library when you create a free account."
+                    ) {
+                        showSignIn = true
                     }
-                }
-                .pickerStyle(.segmented)
-                .padding()
+                } else {
+                    VStack(spacing: 0) {
+                        Picker("Library", selection: $selectedTab) {
+                            ForEach(LibraryTab.allCases, id: \.self) { tab in
+                                Text(tab.rawValue).tag(tab)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding()
 
-                switch selectedTab {
-                case .cards:
-                    CardsGridView()
-                case .favorites:
-                    FavoritesListView()
-                case .history:
-                    HistoryListView()
+                        switch selectedTab {
+                        case .cards:
+                            CardsGridView()
+                        case .favorites:
+                            FavoritesListView()
+                        case .history:
+                            HistoryListView()
+                        }
+                    }
                 }
             }
             .background(Color(hex: "FAFAF6"))
             .navigationTitle("Library")
+        }
+        .sheet(isPresented: $showSignIn) {
+            GuestSignInSheet(isPresented: $showSignIn)
         }
     }
 }

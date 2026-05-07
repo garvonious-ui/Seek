@@ -2,12 +2,22 @@ import SwiftUI
 import SwiftData
 
 struct ChatListView: View {
+    @Environment(AuthManager.self) private var authManager
     @Query(sort: \ChatConversation.startedAt, order: .reverse) private var conversations: [ChatConversation]
+    @State private var showSignIn = false
 
     var body: some View {
         NavigationStack {
             Group {
-                if conversations.isEmpty {
+                if authManager.isGuest {
+                    GuestGateView(
+                        icon: "message.fill",
+                        title: "Sign in to chat",
+                        message: "Scripture chat keeps your conversations and tracks your daily limit. Create a free account to get started."
+                    ) {
+                        showSignIn = true
+                    }
+                } else if conversations.isEmpty {
                     // Empty state — go straight to new chat
                     ChatView()
                 } else {
@@ -61,6 +71,9 @@ struct ChatListView: View {
             }
             .background(Color(hex: "FAFAF6"))
             .navigationTitle("Chat")
+        }
+        .sheet(isPresented: $showSignIn) {
+            GuestSignInSheet(isPresented: $showSignIn)
         }
     }
 }
