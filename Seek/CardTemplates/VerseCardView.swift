@@ -1,18 +1,27 @@
 import SwiftUI
 
-/// The actual card view that gets rendered to an image
+/// The actual card view that gets rendered to an image OR shown as a
+/// thumbnail. All internal dimensions scale off `renderSize.width` so the
+/// 1080x1920 export and a small library-grid thumbnail use the same layout
+/// — no more "looks great in preview, tiny in library" mismatch.
 struct VerseCardView: View {
     let verseText: String
     let verseReference: String
     let template: CardTemplate
+    /// Defaults to 9:16 IG story (1080x1920). Pass a smaller size for a
+    /// thumbnail; everything scales proportionally.
+    var renderSize: CGSize = CGSize(width: 1080, height: 1920)
 
-    // Render dimensions: 1080x1920 (9:16 IG story)
     static let renderWidth: CGFloat = 1080
     static let renderHeight: CGFloat = 1920
 
+    /// Scale factor relative to the canonical 1080-wide render. Use this to
+    /// scale fonts, padding, spacing — anything that should track the
+    /// container size.
+    private var scale: CGFloat { renderSize.width / Self.renderWidth }
+
     var body: some View {
         ZStack {
-            // Background
             if let gradient = template.backgroundGradient {
                 LinearGradient(
                     colors: gradient,
@@ -23,40 +32,38 @@ struct VerseCardView: View {
                 template.backgroundColor
             }
 
-            // Content
-            VStack(spacing: 40) {
+            VStack(spacing: 40 * scale) {
                 Spacer()
 
-                // Verse text
                 Text(verseText)
-                    .font(.custom(template.fontName, size: fontSize))
-                    .lineSpacing(20)
+                    .font(.custom(template.fontName, size: fontSize * scale))
+                    .lineSpacing(20 * scale)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(template.textColor)
-                    .padding(.horizontal, 100)
+                    .padding(.horizontal, 100 * scale)
 
-                // Reference
                 Text("— \(verseReference)")
-                    .font(.system(size: 44, weight: .semibold))
+                    .font(.system(size: 44 * scale, weight: .semibold))
                     .foregroundStyle(template.referenceColor)
 
                 Spacer()
 
-                // Watermark
-                HStack(spacing: 6) {
-                    Image(systemName: "book.closed.fill")
-                        .font(.system(size: 16))
-                    Text("Seek")
-                        .font(.system(size: 16, weight: .medium))
-                }
-                .foregroundStyle(template.textColor.opacity(0.3))
-                .padding(.bottom, 40)
+                // Wordmark watermark — uses the same brand asset as launch
+                // screen / Home header. .template rendering recolors it to
+                // the template's text color so it reads on any background.
+                Image("Wordmark")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 100 * scale)
+                    .foregroundStyle(template.textColor.opacity(0.45))
+                    .padding(.bottom, 60 * scale)
             }
         }
-        .frame(width: Self.renderWidth, height: Self.renderHeight)
+        .frame(width: renderSize.width, height: renderSize.height)
     }
 
-    /// Auto-size font based on verse length
+    /// Auto-size font based on verse length. Scaled by `scale` at use site.
     private var fontSize: CGFloat {
         let length = verseText.count
         if length < 80 { return 88 }

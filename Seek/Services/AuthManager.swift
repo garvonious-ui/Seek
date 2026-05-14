@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 import SwiftData
 import AuthenticationServices
 import CryptoKit
@@ -47,12 +48,43 @@ final class AuthManager {
     /// Mark the user as a guest. They land on ContentView with non-account
     /// features (Daily Verse, share, card creator from daily verse) available
     /// and chat/library gated behind inline sign-in.
+    ///
+    /// Defensive: if the user is somehow already authenticated when this is
+    /// called (e.g., stale keychain session from a prior install survived an
+    /// app delete, leaving them stuck in OnboardingView with
+    /// hasCompletedOnboarding=false), sign out first so the guest opt-in
+    /// actually takes effect. Without this, the button is a silent no-op
+    /// because SeekApp's `.authenticated` routing branch doesn't consult
+    /// `hasOptedForGuest`.
     func continueAsGuest() {
-        hasOptedForGuest = true
+        if authState == .authenticated {
+            print("[Auth] continueAsGuest while authenticated — signing out first")
+            Task {
+                try? await SupabaseService.shared.signOut()
+                await MainActor.run {
+                    authState = .unauthenticated
+                    hasCompletedOnboarding = false
+                    hasOptedForGuest = true
+                }
+            }
+        } else {
+            hasOptedForGuest = true
+        }
     }
 
     private var currentNonce: String?
     private var authListenerTask: Task<Void, Never>?
+
+    // Long-lived owner of the in-flight ASAuthorizationController. AuthManager
+    // outlives every SwiftUI view, so the delegate + presentation provider
+    // references stay valid even if the originating view (SignInView inside a
+    // sheet) is torn down while Apple's modal is up. The previous implementation
+    // (SwiftUI SignInWithAppleButton, then a UIViewRepresentable Coordinator)
+    // both lost their callbacks on iOS 26 — Face ID succeeded but the delegate
+    // never fired because the owning SwiftUI view had been deallocated.
+    private var appleAuthController: ASAuthorizationController?
+    private var appleAuthDelegate: AppleAuthDelegate?
+    private weak var appleAuthModelContext: ModelContext?
 
     init() {
         startAuthListener()
@@ -78,13 +110,26 @@ final class AuthManager {
                 await MainActor.run {
                     switch event {
                     case .signedIn:
+                        print("[Auth] Listener: .signedIn")
                         self?.authState = .authenticated
                         // Successful auth supersedes any prior guest opt-in.
                         self?.hasOptedForGuest = false
                     case .signedOut:
+                        // Defensive: supabase-swift can emit a spurious .signedOut
+                        // shortly after a successful Apple Sign In on iOS 26.4 (Build
+                        // 8 was rejected for exactly this — flash of authenticated
+                        // state, then revert to login). Trust the keychain-stored
+                        // session over the event itself; only react if Supabase
+                        // confirms there is genuinely no session.
+                        let stillHasSession = SupabaseService.shared.currentSession != nil
+                        print("[Auth] Listener: .signedOut, currentSession=\(stillHasSession ? "present" : "nil")")
+                        guard !stillHasSession else { return }
+                        // Note: do NOT reset hasCompletedOnboarding or hasOptedForGuest
+                        // here. Those are explicit user-state flags — only the user-
+                        // initiated signOut() / deleteAccount() paths should reset
+                        // them. Letting a listener event reset them was the Build 8
+                        // rejection bug.
                         self?.authState = .unauthenticated
-                        self?.hasCompletedOnboarding = false
-                        self?.hasOptedForGuest = false
                     default:
                         break
                     }
@@ -100,6 +145,45 @@ final class AuthManager {
         let nonce = randomNonceString()
         currentNonce = nonce
         return sha256(nonce)
+    }
+
+    /// Start the native Apple Sign In flow. Owns the ASAuthorizationController
+    /// on AuthManager (long-lived) so iOS 26 can't drop the delegate callback
+    /// when the originating SwiftUI view is rebuilt mid-flow.
+    @MainActor
+    func startAppleSignIn(modelContext: ModelContext) {
+        print("[Auth] startAppleSignIn: building request")
+        appleAuthModelContext = modelContext
+
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = prepareAppleSignIn()
+
+        let delegate = AppleAuthDelegate { [weak self] result in
+            guard let self else { return }
+            print("[Auth] AppleAuthDelegate: callback received")
+            // Free the controller + delegate as soon as we have a result.
+            self.appleAuthController = nil
+            self.appleAuthDelegate = nil
+            let context = self.appleAuthModelContext
+            self.appleAuthModelContext = nil
+            Task {
+                if let context {
+                    await self.handleAppleSignIn(result: result, modelContext: context)
+                } else {
+                    print("[Auth] AppleAuthDelegate: missing modelContext, cannot complete sign-in")
+                }
+            }
+        }
+
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = delegate
+        controller.presentationContextProvider = delegate
+        // Hold strong refs on the long-lived AuthManager so neither is freed
+        // while Apple's modal is up.
+        appleAuthDelegate = delegate
+        appleAuthController = controller
+        controller.performRequests()
     }
 
     func handleAppleSignIn(result: Result<ASAuthorization, Error>, modelContext: ModelContext) async {
@@ -137,10 +221,20 @@ final class AuthManager {
                         displayName: displayName,
                         modelContext: modelContext
                     )
+                    // Set ALL auth-success flags explicitly here. Don't rely on
+                    // the listener .signedIn handler to clear hasOptedForGuest —
+                    // that was the Build 8 rejection bug: when reviewer signed
+                    // in from the *guest profile sheet*, the listener never
+                    // cleared hasOptedForGuest in a timely way (or .signedIn
+                    // didn't fire reliably under iOS 26.4 in a sheet-over-sheet
+                    // context), so a subsequent spurious .signedOut reverted
+                    // authState to .unauth while hasOptedForGuest stayed true,
+                    // dumping the user back at the guest profile.
                     authState = .authenticated
                     hasCompletedOnboarding = true
+                    hasOptedForGuest = false
                     errorMessage = nil
-                    print("[Auth] Apple Sign In: authState=.authenticated, onboarding complete")
+                    print("[Auth] Apple Sign In: authState=.authenticated, onboarding=true, guest=false")
                 }
                 // Ensure remote profile + notification settings exist
                 Task {
@@ -177,7 +271,9 @@ final class AuthManager {
                 password: password
             )
             let userId = session.user.id.uuidString
-            // Returning user — skip rest of onboarding atomically with auth flip.
+            // Returning user — set all auth-success flags atomically (don't
+            // rely on the listener for hasOptedForGuest; see Apple Sign In
+            // path for why).
             await MainActor.run {
                 createLocalProfileIfNeeded(
                     userId: userId,
@@ -186,6 +282,7 @@ final class AuthManager {
                 )
                 authState = .authenticated
                 hasCompletedOnboarding = true
+                hasOptedForGuest = false
             }
             Task {
                 try? await SupabaseService.shared.ensureRemoteProfile(userId: userId, email: email, displayName: "")
@@ -207,6 +304,13 @@ final class AuthManager {
                 password: password
             )
             let userId = session.user.id.uuidString
+            // New user — set auth flags atomically. Force hasCompletedOnboarding
+            // back to false so the user goes through personalization +
+            // notifications even if a prior session on this device had set it
+            // to true (UserDefaults persists across sign-out → sign-up flows).
+            // Without this reset, a returning device with a stale
+            // hasCompletedOnboarding=true would skip new sign-ups straight to
+            // Home, missing onboarding.
             await MainActor.run {
                 createLocalProfileIfNeeded(
                     userId: userId,
@@ -214,6 +318,8 @@ final class AuthManager {
                     modelContext: modelContext
                 )
                 authState = .authenticated
+                hasOptedForGuest = false
+                hasCompletedOnboarding = false
             }
             Task {
                 try? await SupabaseService.shared.ensureRemoteProfile(userId: userId, email: email, displayName: "")
@@ -247,6 +353,14 @@ final class AuthManager {
     func signOut() async {
         do {
             try await SupabaseService.shared.signOut()
+            // Explicit reset on user-initiated sign-out. The auth listener no
+            // longer touches these flags (Build 8 rejection bug), so we own
+            // them here.
+            await MainActor.run {
+                authState = .unauthenticated
+                hasCompletedOnboarding = false
+                hasOptedForGuest = false
+            }
         } catch {
             errorMessage = "Sign out failed: \(error.localizedDescription)"
         }
@@ -265,7 +379,12 @@ final class AuthManager {
             try modelContext.save()
 
             try await SupabaseService.shared.deleteAccount()
-            hasCompletedOnboarding = false
+            // Explicit reset on user-initiated delete. Mirror signOut().
+            await MainActor.run {
+                authState = .unauthenticated
+                hasCompletedOnboarding = false
+                hasOptedForGuest = false
+            }
         } catch {
             errorMessage = "Delete failed: \(error.localizedDescription)"
         }
@@ -332,5 +451,47 @@ final class AuthManager {
         let inputData = Data(input.utf8)
         let hashedData = SHA256.hash(data: inputData)
         return hashedData.compactMap { String(format: "%02x", $0) }.joined()
+    }
+}
+
+// MARK: - Apple Auth Delegate
+//
+// NSObject because ASAuthorizationController's delegate + presentation context
+// provider protocols both require an NSObject conformer. Lives on AuthManager
+// (not on a SwiftUI view's coordinator) so its lifetime survives any SwiftUI
+// view rebuild during the Apple modal — this is the iOS 26 fix.
+
+final class AppleAuthDelegate: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+    private let onResult: (Result<ASAuthorization, Error>) -> Void
+
+    init(onResult: @escaping (Result<ASAuthorization, Error>) -> Void) {
+        self.onResult = onResult
+    }
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        print("[Auth] AppleAuthDelegate: didCompleteWithAuthorization")
+        onResult(.success(authorization))
+    }
+
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        print("[Auth] AppleAuthDelegate: didCompleteWithError \(error)")
+        onResult(.failure(error))
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        let scenes = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+        let activeScene = scenes.first { $0.activationState == .foregroundActive }
+            ?? scenes.first
+        let window = activeScene?.windows.first { $0.isKeyWindow }
+            ?? activeScene?.windows.first
+        print("[Auth] AppleAuthDelegate: presentationAnchor window=\(window != nil ? "found" : "nil")")
+        return window ?? ASPresentationAnchor()
     }
 }

@@ -57,6 +57,11 @@ struct LibraryView: View {
 
 struct CardsGridView: View {
     @Query(sort: \SavedCard.createdAt, order: .reverse) private var cards: [SavedCard]
+    @Environment(\.modelContext) private var modelContext
+    /// True when user has long-pressed any card. Disables the NavigationLink,
+    /// shows a red (-) badge on each card. Exits via the Done toolbar button.
+    @State private var isEditing = false
+    @State private var pendingDeleteCard: SavedCard?
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -64,55 +69,134 @@ struct CardsGridView: View {
     ]
 
     var body: some View {
-        if cards.isEmpty {
-            libraryEmptyState(
-                icon: "rectangle.on.rectangle",
-                title: "No cards yet",
-                subtitle: "Create your first verse card from a scripture chat"
-            )
-        } else {
-            ScrollView {
-                LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(cards) { card in
-                        cardThumbnail(card)
+        Group {
+            if cards.isEmpty {
+                libraryEmptyState(
+                    icon: "rectangle.on.rectangle",
+                    title: "No cards yet",
+                    subtitle: "Create your first verse card from a scripture chat"
+                )
+            } else {
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(cards) { card in
+                            cardThumbnail(card)
+                        }
                     }
+                    .padding()
                 }
-                .padding()
+            }
+        }
+        .toolbar {
+            // Show Done in the top-right while editing so users have an
+            // explicit way out (iOS Home Screen pattern: tap a card to
+            // delete, tap Done to commit).
+            if isEditing {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            isEditing = false
+                        }
+                    }
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+                }
+            }
+        }
+        .alert("Delete card?", isPresented: Binding(
+            get: { pendingDeleteCard != nil },
+            set: { if !$0 { pendingDeleteCard = nil } }
+        )) {
+            Button("Cancel", role: .cancel) { pendingDeleteCard = nil }
+            Button("Delete", role: .destructive) {
+                if let card = pendingDeleteCard {
+                    modelContext.delete(card)
+                    try? modelContext.save()
+                }
+                pendingDeleteCard = nil
+            }
+        } message: {
+            Text("This card will be removed from your library. The image saved to Photos isn't affected.")
+        }
+    }
+
+    @ViewBuilder
+    private func cardThumbnail(_ card: SavedCard) -> some View {
+        if isEditing {
+            // Edit mode: no nav, wiggle, red (-) badge on top-right tap to
+            // delete. Long-pressing again is a no-op; users exit via Done.
+            cardThumbnailContent(card)
+                .overlay(alignment: .topTrailing) {
+                    Button {
+                        pendingDeleteCard = card
+                    } label: {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.title2)
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(.white, .red)
+                            .background(
+                                Circle().fill(.white).padding(2)
+                            )
+                            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+                    }
+                    .buttonStyle(.plain)
+                    .offset(x: 6, y: -6)
+                    .accessibilityLabel("Delete card")
+                }
+                .modifier(WiggleEffect())
+        } else {
+            // Normal: tap to re-edit (NavigationLink), long-press enters
+            // edit mode for delete.
+            NavigationLink {
+                CardCreatorView(
+                    verseReference: card.verseReference,
+                    verseText: card.verseText,
+                    initialTemplateID: card.templateID
+                )
+            } label: {
+                cardThumbnailContent(card)
+            }
+            .buttonStyle(.plain)
+            .onLongPressGesture(minimumDuration: 0.5) {
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    isEditing = true
+                }
+            }
+            .contextMenu {
+                Button {
+                    UIPasteboard.general.string = "\(card.verseText)\n— \(card.verseReference)"
+                } label: {
+                    Label("Copy Verse", systemImage: "doc.on.doc")
+                }
+                Button(role: .destructive) {
+                    pendingDeleteCard = card
+                } label: {
+                    Label("Delete Card", systemImage: "trash")
+                }
             }
         }
     }
 
-    private func cardThumbnail(_ card: SavedCard) -> some View {
+    /// Thumbnail visual — extracted so both the editing and non-editing
+    /// branches render identically. Uses VerseCardView at thumbnail size so
+    /// it matches the preview + 1080x1920 export pixel-for-pixel (scaled).
+    private func cardThumbnailContent(_ card: SavedCard) -> some View {
         let template = CardTemplate.all.first { $0.id == card.templateID } ?? CardTemplate.all[0]
-
         return VStack(alignment: .leading, spacing: 6) {
-            ZStack {
-                if let gradient = template.backgroundGradient {
-                    LinearGradient(
-                        colors: gradient,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                } else {
-                    template.backgroundColor
-                }
-
-                VStack(spacing: 4) {
-                    Text(card.verseText)
-                        .font(.custom(template.fontName, size: 9))
-                        .lineLimit(4)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(template.textColor)
-                        .padding(.horizontal, 8)
-
-                    Text(card.verseReference)
-                        .font(.system(size: 7, weight: .semibold))
-                        .foregroundStyle(template.referenceColor)
-                }
-                .padding(8)
+            GeometryReader { geo in
+                let width = geo.size.width
+                let height = width * (16.0 / 9.0)
+                VerseCardView(
+                    verseText: card.verseText,
+                    verseReference: card.verseReference,
+                    template: template,
+                    renderSize: CGSize(width: width, height: height)
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
             .aspectRatio(9.0/16.0, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
 
             Text(card.verseReference)
                 .font(.caption2.weight(.medium))
@@ -121,13 +205,28 @@ struct CardsGridView: View {
                 .font(.caption2)
                 .foregroundStyle(Color(hex: "9CA3AF"))
         }
-        .contextMenu {
-            Button {
-                UIPasteboard.general.string = "\(card.verseText)\n— \(card.verseReference)"
-            } label: {
-                Label("Copy Verse", systemImage: "doc.on.doc")
+    }
+}
+
+// MARK: - Wiggle Effect
+//
+// Subtle continuous rotation animation, matches the iOS Home Screen
+// "delete mode" feel. Each card uses a slight phase offset so they don't
+// all wiggle in lockstep, but for our 2-col grid a single phase reads fine.
+private struct WiggleEffect: ViewModifier {
+    @State private var phase: Double = 0
+
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(phase))
+            .onAppear {
+                withAnimation(.easeInOut(duration: 0.15).repeatForever(autoreverses: true)) {
+                    phase = 1.2
+                }
             }
-        }
+            .onDisappear {
+                phase = 0
+            }
     }
 }
 

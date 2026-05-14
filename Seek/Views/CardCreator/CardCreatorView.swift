@@ -16,9 +16,14 @@ struct CardCreatorView: View {
     @State private var showSavedToast = false
     @State private var showPermissionAlert = false
 
-    init(verseReference: String, verseText: String) {
+    init(verseReference: String, verseText: String, initialTemplateID: String? = nil) {
         self.verseReference = verseReference
         self.verseText = verseText
+        // Preselect the template the user originally picked when re-editing
+        // a saved card from the library. Falls back to the first template if
+        // the ID no longer exists or none was passed.
+        let starting = initialTemplateID.flatMap { id in CardTemplate.all.first { $0.id == id } } ?? CardTemplate.all[0]
+        self._selectedTemplate = State(initialValue: starting)
     }
 
     /// Creates a card from a prayer instead of a scripture verse. Reuses the
@@ -26,6 +31,7 @@ struct CardCreatorView: View {
     init(prayerText: String) {
         self.verseReference = "A Prayer"
         self.verseText = prayerText
+        self._selectedTemplate = State(initialValue: CardTemplate.all[0])
     }
 
     var body: some View {
@@ -77,57 +83,26 @@ struct CardCreatorView: View {
         }
     }
 
-    // MARK: - Card Preview (screen-sized, not the 1080x1920 export)
+    // MARK: - Card Preview
+    //
+    // Shares VerseCardView with the renderer + library thumbnail. Preview
+    // size is computed to fit ~480pt tall while preserving 9:16 aspect.
+    // Because VerseCardView scales all internals off renderSize.width, the
+    // preview, the Library grid thumbnail, and the 1080x1920 PNG export are
+    // all visually consistent — picking a template here = exactly what
+    // saves to Photos.
 
     private var cardPreview: some View {
-        ZStack {
-            if let gradient = selectedTemplate.backgroundGradient {
-                LinearGradient(
-                    colors: gradient,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            } else {
-                selectedTemplate.backgroundColor
-            }
-
-            VStack(spacing: 16) {
-                Spacer()
-
-                Text(verseText)
-                    .font(.custom(selectedTemplate.fontName, size: previewFontSize))
-                    .lineSpacing(10)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(selectedTemplate.textColor)
-                    .padding(.horizontal, 32)
-
-                Text("— \(verseReference)")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(selectedTemplate.referenceColor)
-
-                Spacer()
-
-                HStack(spacing: 4) {
-                    Image(systemName: "book.closed.fill")
-                        .font(.system(size: 8))
-                    Text("Seek")
-                        .font(.system(size: 8, weight: .medium))
-                }
-                .foregroundStyle(selectedTemplate.textColor.opacity(0.3))
-                .padding(.bottom, 12)
-            }
-        }
-        .frame(height: 480)
+        let height: CGFloat = 480
+        let width = height * (9.0 / 16.0)
+        return VerseCardView(
+            verseText: verseText,
+            verseReference: verseReference,
+            template: selectedTemplate,
+            renderSize: CGSize(width: width, height: height)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
-    }
-
-    private var previewFontSize: CGFloat {
-        let length = verseText.count
-        if length < 80 { return 36 }
-        if length < 150 { return 30 }
-        if length < 250 { return 24 }
-        return 20
     }
 
     // MARK: - Template Picker

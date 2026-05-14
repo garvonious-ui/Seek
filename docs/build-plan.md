@@ -139,21 +139,21 @@
 - [x] Chat returning 502 on every request — fixed: deprecated model `claude-sonnet-4-20250514` replaced with `claude-sonnet-4-6`, added model fallback logic
 
 ## App Review — Build 7 rejection (2026-05-04, Submission ID 97514e7b)
-- [x] **2.1(a) Apple Sign In broken on iOS 26.4.2** — fixed Session 16: atomic transition (authState + hasCompletedOnboarding flipped together inside one MainActor.run); all errorMessage setters wrapped in MainActor.run; print logging added. **Needs device verification on TestFlight before resubmit.**
+- [x] **2.1(a) Apple Sign In broken on iOS 26.4.2** — fixed Session 16: atomic transition (authState + hasCompletedOnboarding flipped together inside one MainActor.run); all errorMessage setters wrapped in MainActor.run; print logging added. **Did not actually fix the bug — see Build 8 rejection below.**
 - [x] **5.1.1(v) Forced login** — fixed Session 16: guest mode added. AuthManager.hasOptedForGuest flag, "Continue without an account" on SignInView, GuestSignInSheet + GuestGateView reusables, ChatListView/LibraryView gated, ProfileView split (guest vs authenticated), HomeView quick prompts/streak gated, daily-verse Edge Function made auth-optional and deployed.
 - [x] **3.1.1 Donations** — fixed Session 16: all in-app surfaces removed (chat nudge, ProfileView Support Seek link). Privacy/Terms/Support cleansed of Stripe + donation refs. DonationView retained as dormant code. Stripe + webhook + donations table preserved server-side, unreachable from any UI.
-- [ ] **2.1 China book permit** — ASC checkbox: remove China mainland from territories under Pricing & Availability. Cheaper than registering for an Internet Publishing License. **Blocked on user.**
+- [x] **2.1 China book permit** — assumed handled before Build 8 submission (Build 8 reviewed without citing China — user removed territory in ASC).
 
-## Resubmission checklist (Build 8)
-- [x] Build 8 — `CURRENT_PROJECT_VERSION` 7→8, xcodegen + xcodebuild → BUILD SUCCEEDED
-- [x] Daily-verse Edge Function deployed
-- [x] Landing pages cleansed and redeployed to Vercel production
-- [x] All work committed + pushed to `main` (commit `4c72b0d`)
-- [ ] ASC: remove China territory
-- [ ] Xcode Organizer: archive Build 8 (verify version number reads 8 — Xcode caches)
-- [ ] TestFlight upload + smoke test on iOS 26.4.2 device (guest flow + Apple Sign In)
-- [ ] Reply to App Review with the response draft in changelog Session 16
-- [ ] Resubmit Build 8
+## App Review — Build 8 rejection (2026-05-11, Submission ID e419a650-e4ab-4e10-895a-691ad4d7e5f3)
+- [ ] **2.1(a) "Reverted back to the login page after Sign in with Apple"** — fixed Session 17: AuthManager listener `.signedOut` handler now guards on `currentSession == nil` before reacting (defends against spurious post-Apple-Sign-In `.signedOut` events on iOS 26.4). Listener no longer resets `hasCompletedOnboarding` or `hasOptedForGuest` — those resets moved to explicit user-initiated `signOut()` and `deleteAccount()` paths only. Hypothesis-driven fix; **needs device verification on TestFlight before resubmit.**
+
+## Resubmission checklist (Build 9)
+- [x] Session 17 fix — AuthManager listener idempotency + explicit reset in user-initiated paths only
+- [x] `CURRENT_PROJECT_VERSION` 8→9 in project.yml
+- [ ] Xcodegen + archive Build 9 (verify version reads 9 — Xcode caches; CLI build blocked on SPM transitive-dep issue under Xcode 17 / SDK 26.5, Xcode GUI resolves differently)
+- [ ] TestFlight upload + smoke test on iOS 26.4.2 device — **critical: verify Apple Sign In actually persists this time, watch Console.app for `[Auth]` log lines**
+- [ ] Reply to App Review with the response draft in changelog Session 17
+- [ ] Resubmit Build 9
 
 ## Pending Data / Blockers
 - Apple Developer Program enrollment ($99/year) required for App Store + push notifications

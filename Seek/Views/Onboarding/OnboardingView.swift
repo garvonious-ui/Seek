@@ -16,22 +16,25 @@ struct OnboardingView: View {
     ]
 
     var body: some View {
-        TabView(selection: $currentPage) {
-            // MARK: Page 0 — Welcome
-            welcomePage.tag(0)
-
-            // MARK: Page 1 — Sign In
-            signInPage.tag(1)
-
-            // MARK: Page 2 — Personalization
-            personalizationPage.tag(2)
-
-            // MARK: Page 3 — Notifications
-            notificationPage.tag(3)
+        // Switch-based instead of TabView(.page). The TabView page style let
+        // users swipe freely between Welcome / SignIn / Personalization /
+        // Notifications regardless of completion state, which App Review
+        // would (correctly) flag as broken UX. Forward progress is now
+        // strictly via buttons.
+        ZStack {
+            Color(hex: "FAFAF6").ignoresSafeArea()
+            Group {
+                switch currentPage {
+                case 0: welcomePage
+                case 1: signInPage
+                case 2: personalizationPage
+                case 3: notificationPage
+                default: welcomePage
+                }
+            }
+            .transition(.asymmetric(insertion: .opacity, removal: .opacity))
         }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .background(Color(hex: "FAFAF6"))
-        .animation(.easeInOut, value: currentPage)
+        .animation(.easeInOut(duration: 0.25), value: currentPage)
     }
 
     // MARK: - Welcome Page
@@ -40,13 +43,30 @@ struct OnboardingView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "book.closed.fill")
-                .font(.system(size: 72))
-                .foregroundStyle(Color(hex: "5B7B5E"))
+            // Gold glowing halo — a thin gold ring with a soft outer glow.
+            // The shadow stack (multiple shadows at increasing radii) is what
+            // sells the "glow" — single shadow looks flat.
+            ZStack {
+                Circle()
+                    .fill(Color(hex: "CDA349").opacity(0.18))
+                    .frame(width: 96, height: 96)
+                    .blur(radius: 12)
+                Circle()
+                    .stroke(Color(hex: "CDA349"), lineWidth: 4)
+                    .frame(width: 96, height: 96)
+                    .shadow(color: Color(hex: "CDA349").opacity(0.55), radius: 18)
+                    .shadow(color: Color(hex: "CDA349").opacity(0.35), radius: 8)
+                    .shadow(color: Color(hex: "EDD99A").opacity(0.4), radius: 30)
+            }
+            .frame(height: 110)
+            .padding(.bottom, 8)
 
-            Text("Seek")
-                .font(.system(size: 42, weight: .bold, design: .default))
-                .foregroundStyle(Color(hex: "1A1A1A"))
+            // Wordmark — same brand asset as launch screen + Home header,
+            // replaces the bare "Seek" Text.
+            Image("Wordmark")
+                .resizable()
+                .scaledToFit()
+                .frame(height: 56)
 
             Text("Scripture for every moment")
                 .font(.title3)

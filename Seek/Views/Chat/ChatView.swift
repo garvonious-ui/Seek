@@ -59,10 +59,7 @@ struct ChatView: View {
                                 }
                             }
                             .id("msg-\(msg.id.uuidString)")
-                            .transition(.asymmetric(
-                                insertion: .opacity.combined(with: .move(edge: .top)),
-                                removal: .opacity
-                            ))
+                            .transition(Self.transition(for: msg.kind))
                         }
 
                         if isLoading {
@@ -224,15 +221,32 @@ struct ChatView: View {
 
     private func assistantIntro(_ text: String) -> some View {
         HStack {
-            // SwiftUI's `Text` only interprets markdown when built from a literal
-            // LocalizedStringKey — variables render raw. Parse to AttributedString so
-            // follow-up responses that contain **bold**, *italic*, etc. render properly.
-            Text(Self.renderMarkdown(text))
+            // Typewriter reveal — the intro text feels like it's being
+            // thought out rather than appearing all at once. Markdown
+            // (**bold**, etc.) snaps in once the reveal completes.
+            TypewriterText(fullText: text)
                 .foregroundStyle(Color(hex: "1A1A1A"))
                 .padding(12)
                 .background(Color(hex: "F3F4F6"))
                 .clipShape(RoundedRectangle(cornerRadius: 16))
             Spacer(minLength: 60)
+        }
+    }
+
+    /// Per-kind transition. Assistant cards slide in from the leading edge
+    /// (left in LTR), reinforcing that the AI is "delivering" content into
+    /// view. User bubbles, error bubbles, and rate-limit cards just fade —
+    /// they're either right-aligned (user) or system messages where a slide
+    /// would feel decorative. Keep this in sync with DisplayMessage.Kind.
+    static func transition(for kind: DisplayMessage.Kind) -> AnyTransition {
+        switch kind {
+        case .user, .error, .rateLimit:
+            return .opacity
+        case .intro, .verses, .prayer, .worshipSong, .action, .followUp:
+            return .asymmetric(
+                insertion: .opacity.combined(with: .move(edge: .leading)),
+                removal: .opacity
+            )
         }
     }
 
@@ -499,17 +513,11 @@ struct ChatView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color.white.shadow(.drop(color: .black.opacity(0.05), radius: 4, y: -2)))
-        .toolbar {
-            // Keyboard accessory — gives the user an explicit way to collapse
-            // the keyboard. `.scrollDismissesKeyboard(.interactively)` already
-            // handles drag-to-dismiss, but most users don't discover it.
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") { isInputFocused = false }
-                    .foregroundStyle(Color(hex: "5B7B5E"))
-                    .fontWeight(.medium)
-            }
-        }
+        // Keyboard dismisses via `.scrollDismissesKeyboard(.interactively)` on
+        // the chat ScrollView — drag down to hide. We removed the toolbar Done
+        // button because it visually overlapped the send button on the input
+        // bar (real-device repro). Auto-dismiss on `sendMessage()` still
+        // collapses the keyboard out of the way of incoming response cards.
     }
 
     /// Whether the send button should be inert — empty text, in-flight request,
@@ -637,40 +645,50 @@ struct ChatView: View {
     /// stagger so the response feels like it's arriving rather than dumping.
     @MainActor
     private func renderResponse(_ response: ChatResponse) async {
-        let stagger: Duration = .milliseconds(140)
+        // Pacing: each card's spring animates over ~0.45s. Stagger should be
+        // long enough that one card lands before the next starts, but not so
+        // long that the response feels stalled. ~360ms feels deliberate
+        // (CLAUDE.md note: 140ms read as a single dump, 200ms+ feels
+        // intentional). Verses get a longer pre-beat because they're the
+        // main content; supporting cards (prayer, song, action) use a
+        // tighter rhythm afterward.
+        let arrival: Animation = .spring(response: 0.45, dampingFraction: 0.85)
+        let leadIn: Duration = .milliseconds(220)
+        let beat: Duration = .milliseconds(360)
+        let coda: Duration = .milliseconds(280)
 
         if !response.message.isEmpty {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(arrival) {
                 messages.append(DisplayMessage(kind: .intro(response.message)))
             }
-            try? await Task.sleep(for: stagger)
+            try? await Task.sleep(for: leadIn)
         }
         if !response.verses.isEmpty {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(arrival) {
                 messages.append(DisplayMessage(kind: .verses(response.verses)))
             }
-            try? await Task.sleep(for: stagger)
+            try? await Task.sleep(for: beat)
         }
         if !response.prayer.isEmpty {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(arrival) {
                 messages.append(DisplayMessage(kind: .prayer(response.prayer)))
             }
-            try? await Task.sleep(for: stagger)
+            try? await Task.sleep(for: coda)
         }
         if let song = response.worshipSong {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(arrival) {
                 messages.append(DisplayMessage(kind: .worshipSong(song)))
             }
-            try? await Task.sleep(for: stagger)
+            try? await Task.sleep(for: coda)
         }
         if let action = response.action {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(arrival) {
                 messages.append(DisplayMessage(kind: .action(action)))
             }
-            try? await Task.sleep(for: stagger)
+            try? await Task.sleep(for: coda)
         }
         if let followUp = response.followUp, !followUp.isEmpty {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(arrival) {
                 messages.append(DisplayMessage(kind: .followUp(followUp)))
             }
         }
@@ -895,6 +913,47 @@ struct DisplayMessage: Identifiable {
 struct PrayerCardTarget: Identifiable {
     let id = UUID()
     let text: String
+}
+
+// MARK: - Typewriter Text
+//
+// Reveals plain text character-by-character, then snaps to fully-rendered
+// markdown once the reveal completes. Used for the assistant intro so the
+// AI's opening line feels like it's being thought out rather than dumped.
+struct TypewriterText: View {
+    let fullText: String
+    /// ~70 chars/sec ≈ 14ms per char. Snappy but legible. Bump down for a
+    /// more "thinking" pace; bump up for snappier delivery.
+    var charsPerSecond: Double = 70
+    @State private var visibleCount: Int = 0
+
+    var body: some View {
+        Group {
+            if visibleCount >= fullText.count {
+                Text(Self.renderMarkdown(fullText))
+            } else {
+                Text(String(fullText.prefix(visibleCount)))
+            }
+        }
+        .task(id: fullText) {
+            // Reset if the bound text changes (e.g. view reused for a new
+            // message). Animate from 0 to full.
+            visibleCount = 0
+            let interval: Duration = .milliseconds(max(1, Int(1000.0 / charsPerSecond)))
+            for n in 1...max(1, fullText.count) {
+                visibleCount = n
+                try? await Task.sleep(for: interval)
+            }
+        }
+    }
+
+    static func renderMarkdown(_ string: String) -> AttributedString {
+        let options = AttributedString.MarkdownParsingOptions(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace
+        )
+        return (try? AttributedString(markdown: string, options: options))
+            ?? AttributedString(string)
+    }
 }
 
 #Preview {

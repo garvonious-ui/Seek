@@ -9,7 +9,10 @@ struct SignInView: View {
     @State private var isSignUp = false
     @State private var isLoading = false
     @State private var showResetAlert = false
+    @FocusState private var focusedField: Field?
     var onAuthenticated: ((_ isNewUser: Bool) -> Void)?
+
+    enum Field: Hashable { case email, password }
 
     var body: some View {
         VStack(spacing: 32) {
@@ -22,19 +25,18 @@ struct SignInView: View {
                     .foregroundStyle(Color(hex: "6B7280"))
             }
 
-            // Sign in with Apple
-            SignInWithAppleButton(.signIn) { request in
-                let hashedNonce = authManager.prepareAppleSignIn()
-                request.requestedScopes = [.fullName, .email]
-                request.nonce = hashedNonce
-            } onCompletion: { result in
+            // Sign in with Apple — visual button only. The actual
+            // ASAuthorizationController is owned by AuthManager (long-lived
+            // @State) so iOS 26 can't drop the delegate callback when the
+            // SwiftUI view is rebuilt mid-flow. Background story: App Review
+            // rejected Build 8 because SignInWithAppleButton's onCompletion
+            // never fired in this sheet-over-sheet context.
+            AppleSignInButton {
                 isLoading = true
-                Task {
-                    await authManager.handleAppleSignIn(result: result, modelContext: modelContext)
-                    isLoading = false
-                }
+                authManager.startAppleSignIn(modelContext: modelContext)
+                // isLoading flips back when the auth callback fires (handled
+                // by .onChange of authState below).
             }
-            .signInWithAppleButtonStyle(.black)
             .frame(height: 50)
             .clipShape(RoundedRectangle(cornerRadius: 24))
 
@@ -54,12 +56,18 @@ struct SignInView: View {
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .focused($focusedField, equals: .email)
+                    .submitLabel(.next)
+                    .onSubmit { focusedField = .password }
                     .padding()
                     .background(Color(hex: "F3F4F6"))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 SecureField("Password", text: $password)
                     .textContentType(isSignUp ? .newPassword : .password)
+                    .focused($focusedField, equals: .password)
+                    .submitLabel(.go)
+                    .onSubmit { focusedField = nil }
                     .padding()
                     .background(Color(hex: "F3F4F6"))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -161,6 +169,19 @@ struct SignInView: View {
 
         }
         .padding(.horizontal, 24)
+        // Keyboard dismiss is via the toolbar Done button below + the
+        // SecureField's submit handler. We do NOT add an outer .onTapGesture
+        // to dismiss because it would consume taps before the wrapped UIKit
+        // ASAuthorizationAppleIDButton (AppleSignInButton) could receive
+        // them — broke Apple Sign In on a prior iteration.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { focusedField = nil }
+                    .foregroundStyle(Color(hex: "5B7B5E"))
+                    .fontWeight(.semibold)
+            }
+        }
         .alert("Reset Email Sent", isPresented: $showResetAlert) {
             Button("OK", role: .cancel) {
                 authManager.resetPasswordSent = false
@@ -169,9 +190,15 @@ struct SignInView: View {
             Text("Check your email for a password reset link.")
         }
         .onChange(of: authManager.authState) { _, newState in
+            isLoading = false
             if newState == .authenticated {
                 onAuthenticated?(isSignUp)
             }
+        }
+        .onChange(of: authManager.errorMessage) { _, newValue in
+            // Reset spinner on any auth error (Apple, email, etc.) so the
+            // user can retry.
+            if newValue != nil { isLoading = false }
         }
     }
 }
