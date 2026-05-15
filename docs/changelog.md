@@ -68,10 +68,38 @@ Two independent defensive layers:
 >
 > Together these eliminate the state-reversion race the screenshot revealed. We are happy to provide additional context if helpful.
 
+### Session-end additions (after the AuthManager listener fix shipped)
+The original Session 17 plan was just the listener idempotency fix. After we got the user onto the device and Console.app open, the actual bug turned out to be deeper, and we added a series of fixes / polish in one continuous session:
+
+1. **Real Apple Sign In fix.** Console showed the SwiftUI `SignInWithAppleButton`'s `onCompletion` was *never firing* on iOS 26.4 in the sheet-over-sheet context — Face ID succeeded, modal dismissed, no callback. Diagnosed as the SwiftUI coordinator being deallocated mid-flow. Built a custom `AppleSignInButton` (UIViewRepresentable wrapping `ASAuthorizationAppleIDButton`) where the `ASAuthorizationController` + `AppleAuthDelegate` live on AuthManager (long-lived `@State`), guaranteeing the delegate stays alive. **Confirmed on device: full sign-in chain now works.**
+2. **Defensive `continueAsGuest`.** Stale Supabase session in keychain after delete+reinstall left users authenticated-but-not-onboarded; tapping "Continue without an account" was a silent no-op because routing was on the `.authenticated` branch. Now signs out first if authenticated.
+3. **Onboarding TabView → switch.** Replaced `.tabViewStyle(.page)` with switch-based body so users can no longer swipe freely between Welcome / SignIn / Personalization / Notifications. App Review would have flagged that.
+4. **`signUpWithEmail` resets `hasCompletedOnboarding=false`** so new users always see personalization, even if a prior session on the device had set the flag to true.
+5. **Welcome page redesign.** SF Symbol book + bold "Seek" Text → gold glowing halo (multi-shadow Circle) + Wordmark image asset.
+6. **SignInView keyboard handling.** Added `@FocusState`, per-field `.onSubmit` chain, keyboard accessory Done button. **Removed** the outer `.onTapGesture` for tap-outside-to-dismiss because it stole taps from the `AppleSignInButton` underneath (CLAUDE.md gotcha — added).
+7. **ChatView keyboard Done removed.** Real-device screenshot showed it overlapping the send button.
+8. **Chat pacing tuned.** 140ms uniform stagger → 220/360/280ms variable stagger (lead-in / beat / coda) with spring arrival, so each card lands before the next begins.
+9. **Per-kind chat transitions.** Assistant cards (intro, verses, prayer, song, action, follow-up) slide in from the leading edge; user / error / rate-limit just fade.
+10. **TypewriterText component** for the assistant intro reveal (~70 chars/sec, snaps to markdown when complete).
+11. **VerseCardView refactored** to accept `renderSize`. Preview, library thumbnail, and 1080×1920 PNG export now share one view definition — eliminates the "looks great in preview, tiny in library" mismatch.
+12. **Watermark swap** — SF book + "Seek" Text → `Wordmark` image asset (`.template` rendering inherits `template.textColor`, sized at 100×scale, opacity 0.45).
+13. **Library cards: tap to re-edit.** Wrapped thumbnails in `NavigationLink` to `CardCreatorView`. New `initialTemplateID:` init param preselects the original template; user picks a different style and re-saves.
+14. **Library cards: long-press wiggle/edit mode** — iOS Home Screen pattern. Long-press triggers haptic, all cards wiggle, red `minus.circle.fill` badge appears top-right of each. Tap badge → confirmation alert → delete. Done in toolbar exits edit mode. Photos library export untouched by deletes (alert message says so).
+
+### CLAUDE.md gotchas added in this session
+- **SwiftUI `.onTapGesture` on parent steals taps from `UIViewRepresentable`-wrapped UIControls underneath.** Use `.simultaneousGesture` if you need both.
+- **supabase-swift `.signedOut` is not authoritative AND `.signedIn` is not reliable in sheet-over-sheet contexts on iOS 26.4.** Always cross-check `currentSession`. Never let listener events reset user-state flags — set those directly in each auth-success path.
+
+### Memory updated
+- `~/.claude/projects/-Users-loucesario-Seek/memory/feedback_supabase_signedout_not_authoritative.md` updated with the second failure mode (.signedIn unreliable, not just .signedOut spurious).
+
 ### Current Status
 - Phase 1 MVP: 100% of in-app code complete.
-- App Store submission: rejected on Build 8. Build 9 fix in working tree.
-- The Build 7 issues (5.1.1(v) guest mode, 3.1.1 donations, China territory) remain resolved — Build 8's only citation was 2.1(a).
+- App Store submission: rejected on Build 8. **Build 9 fix shipped to `main` (commit `c3146df`), branch deleted.**
+- Build 9 is **device-verified on iOS 26.4.2**, not hypothesis-driven this time. The exact rejection scenario (guest profile → Sign In → Apple → Face ID) was reproduced and fixed.
+- Build 7 issues (5.1.1(v) guest mode, 3.1.1 donations, China territory) remain resolved.
+- All session 17 polish (chat pacing, library re-edit + delete, gold halo welcome page, etc.) shipped in the same commit.
+- **Pending user actions:** Xcode Archive Build 9 → upload via Organizer → paste reply (above) into ASC → Submit for Review.
 - Stripe + webhook + donations table preserved server-side, dormant. Site at `askseekpray.app` still clean.
 
 ## 2026-05-07 — Session 16 (App Review response: donation removal, guest mode, web cleanup → Build 8)

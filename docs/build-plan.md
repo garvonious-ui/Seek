@@ -145,15 +145,17 @@
 - [x] **2.1 China book permit** — assumed handled before Build 8 submission (Build 8 reviewed without citing China — user removed territory in ASC).
 
 ## App Review — Build 8 rejection (2026-05-11, Submission ID e419a650-e4ab-4e10-895a-691ad4d7e5f3)
-- [ ] **2.1(a) "Reverted back to the login page after Sign in with Apple"** — fixed Session 17: AuthManager listener `.signedOut` handler now guards on `currentSession == nil` before reacting (defends against spurious post-Apple-Sign-In `.signedOut` events on iOS 26.4). Listener no longer resets `hasCompletedOnboarding` or `hasOptedForGuest` — those resets moved to explicit user-initiated `signOut()` and `deleteAccount()` paths only. Hypothesis-driven fix; **needs device verification on TestFlight before resubmit.**
+- [x] **2.1(a) "Reverted back to the login page after Sign in with Apple"** — fixed Session 17: replaced SwiftUI `SignInWithAppleButton` (which silently dropped its `onCompletion` callback in sheet-over-sheet contexts on iOS 26.4 because the SwiftUI coordinator was deallocated mid-flow) with a custom `AppleSignInButton` UIViewRepresentable wrapping `ASAuthorizationAppleIDButton`. Actual `ASAuthorizationController` + delegate now live on `AuthManager` (long-lived `@State` on SeekApp), so callbacks always fire. Plus auth-state hardening: defensive `.signedOut` listener, every auth-success path explicitly clears `hasOptedForGuest`, defensive `continueAsGuest` for stale-keychain edge. **Verified on iPhone 17 Pro Max iOS 26.4.2 — guest profile → Sign In → Apple → Face ID lands authenticated reliably.**
 
 ## Resubmission checklist (Build 9)
-- [x] Session 17 fix — AuthManager listener idempotency + explicit reset in user-initiated paths only
+- [x] Session 17 fix — Apple Sign In via custom UIViewRepresentable + AuthManager-owned controller
 - [x] `CURRENT_PROJECT_VERSION` 8→9 in project.yml
-- [ ] Xcodegen + archive Build 9 (verify version reads 9 — Xcode caches; CLI build blocked on SPM transitive-dep issue under Xcode 17 / SDK 26.5, Xcode GUI resolves differently)
-- [ ] TestFlight upload + smoke test on iOS 26.4.2 device — **critical: verify Apple Sign In actually persists this time, watch Console.app for `[Auth]` log lines**
+- [x] Device-verified on iOS 26.4.2 (the actual rejection scenario reproduced and fixed)
+- [x] All committed + pushed to `main` (commit `c3146df`)
+- [ ] Xcode archive Build 9 (verify version reads 9 — Xcode caches; archive must be GUI per CLAUDE.md gotcha)
+- [ ] TestFlight upload via Xcode Organizer
 - [ ] Reply to App Review with the response draft in changelog Session 17
-- [ ] Resubmit Build 9
+- [ ] Resubmit Build 9 in ASC
 
 ## Pending Data / Blockers
 - Apple Developer Program enrollment ($99/year) required for App Store + push notifications
