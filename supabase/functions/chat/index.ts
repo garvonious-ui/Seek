@@ -186,27 +186,79 @@ serve(async (req: Request) => {
       });
     }
 
-    let claudeResponse = await callClaude(CLAUDE_MODEL);
+    // Retry transient 5xx + 429 with exponential backoff. Build 9 was
+    // rejected by App Review because Anthropic returned brief 5xx errors
+    // during their test window; the function passed those straight through
+    // as 502s. Three short retries with backoff (500ms, 1.2s, 2.5s) absorb
+    // most transient blips. 4xx errors (model not found, bad request,
+    // billing) are not retried — they're not transient.
+    async function callClaudeWithRetry(model: string): Promise<Response> {
+      const delays = [500, 1200, 2500];
+      let resp = await callClaude(model);
+      for (const delay of delays) {
+        if (resp.ok) return resp;
+        if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) return resp;
+        await new Promise((r) => setTimeout(r, delay));
+        resp = await callClaude(model);
+      }
+      return resp;
+    }
 
-    // If primary model fails (e.g. deprecated), try fallback
+    let claudeResponse = await callClaudeWithRetry(CLAUDE_MODEL);
+    let primaryStatus = claudeResponse.status;
+    let primaryErr = "";
+    let fallbackStatus = 0;
+    let fallbackErr = "";
+
+    // If primary model fails, capture the error and try fallback
     if (!claudeResponse.ok) {
-      const errBody = await claudeResponse.text();
-      console.error(`Claude API error (${CLAUDE_MODEL}, status ${claudeResponse.status}):`, errBody);
+      primaryErr = await claudeResponse.text();
+      console.error(`Claude API error (${CLAUDE_MODEL}, status ${primaryStatus}):`, primaryErr);
 
-      // Retry with fallback model on 4xx errors (not rate limits)
+      // Retry with fallback model on 4xx errors (not rate limits) — also
+      // uses the same backoff retry loop in case the fallback model has
+      // its own transient blips.
       if (claudeResponse.status !== 429) {
         console.log(`Retrying with fallback model: ${CLAUDE_MODEL_FALLBACK}`);
-        claudeResponse = await callClaude(CLAUDE_MODEL_FALLBACK);
+        claudeResponse = await callClaudeWithRetry(CLAUDE_MODEL_FALLBACK);
+        fallbackStatus = claudeResponse.status;
       }
 
       if (!claudeResponse.ok) {
-        const fallbackErr = await claudeResponse.text();
-        console.error(`Claude API fallback error (status ${claudeResponse.status}):`, fallbackErr);
+        fallbackErr = await claudeResponse.text();
+        console.error(`Claude API fallback error (status ${fallbackStatus}):`, fallbackErr);
+
+        // Persist the error so we can read it via SQL — the basic edge-function
+        // logs only show HTTP status, not function stdout. Remove this debug
+        // sink once the root cause is fixed.
+        await supabase.from("debug_logs").insert({
+          context: "chat_anthropic_error",
+          payload: {
+            user_id: user.id,
+            message_preview: message.slice(0, 200),
+            history_length: (conversationHistory ?? []).length,
+            primaryModel: CLAUDE_MODEL,
+            primaryStatus,
+            primaryError: primaryErr.slice(0, 1500),
+            fallbackModel: fallbackStatus > 0 ? CLAUDE_MODEL_FALLBACK : null,
+            fallbackStatus: fallbackStatus || null,
+            fallbackError: fallbackErr.slice(0, 1500),
+          },
+        });
+
         return new Response(
           JSON.stringify({
             error: "ai_error",
             message:
               "Something went wrong finding scripture for you. Please try again.",
+            debug: {
+              primaryModel: CLAUDE_MODEL,
+              primaryStatus,
+              primaryError: primaryErr.slice(0, 500),
+              fallbackModel: fallbackStatus > 0 ? CLAUDE_MODEL_FALLBACK : null,
+              fallbackStatus: fallbackStatus || null,
+              fallbackError: fallbackErr.slice(0, 500),
+            },
           }),
           { status: 502 },
         );
@@ -277,6 +329,22 @@ serve(async (req: Request) => {
     );
   } catch (err) {
     console.error("Unexpected error:", err);
+    // Best-effort write to debug_logs so we can see the unexpected error
+    // without relying on stdout. Wrapped in try because supabase client may
+    // not be initialized if the catch fires before the client is created.
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      await supabase.from("debug_logs").insert({
+        context: "chat_unexpected_error",
+        payload: {
+          message: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack?.slice(0, 2000) : null,
+          name: err instanceof Error ? err.name : null,
+        },
+      });
+    } catch (_inner) {}
     return new Response(
       JSON.stringify({
         error: "server_error",
