@@ -157,7 +157,7 @@ struct ProfileView: View {
                     }
 
                     ShareLink(
-                        item: URL(string: "https://apps.apple.com/app/seek")!,
+                        item: URL(string: "https://apps.apple.com/us/app/seek-scripture-companion/id6761785270")!,
                         message: Text("I've been using Seek to find scripture for what's on my heart. It's quiet, beautiful, and free. I think you'd love it.")
                     ) {
                         Label("Share Seek", systemImage: "square.and.arrow.up")
