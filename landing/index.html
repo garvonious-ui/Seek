@@ -138,6 +138,21 @@ a { color: inherit; text-decoration: none; }
   color: var(--fg-3);
 }
 
+/* App Store badge — Apple guidelines: 40px min height, preserve clear space, do not modify */
+.app-store-badge {
+  display: inline-block;
+  margin: 0 0 24px;
+  transition: opacity .15s ease, transform .15s ease;
+}
+.app-store-badge img {
+  display: block;
+  height: 56px;
+  width: auto;
+}
+.app-store-badge:hover { opacity: .85; }
+.app-store-badge:active { transform: translateY(1px); }
+.cta .app-store-badge { margin: 0 0 20px; }
+
 /* =============== iPhone frame (reused across sections) =============== */
 .device {
   justify-self: center;
@@ -677,6 +692,10 @@ a { color: inherit; text-decoration: none; }
       <h1>Scripture for every moment.</h1>
       <p class="sub">Share what's on your heart. Seek surfaces the verses, prayer, and worship song that meet you there.</p>
 
+      <a class="app-store-badge" href="https://apps.apple.com/us/app/seek-scripture-companion/id6761785270" target="_blank" rel="noopener">
+        <img src="assets/app-store-badge.svg" alt="Download Seek on the App Store">
+      </a>
+
       <form id="waitlist" class="waitlist" novalidate>
         <input type="email" name="email" required placeholder="you@example.com" aria-label="Email address">
         <button type="submit">Join the waitlist</button>
@@ -859,6 +878,10 @@ a { color: inherit; text-decoration: none; }
     <div class="container">
       <h2>Be first on iOS.</h2>
       <p>Join the waitlist and we'll send one email when Seek launches. That's it.</p>
+
+      <a class="app-store-badge" href="https://apps.apple.com/us/app/seek-scripture-companion/id6761785270" target="_blank" rel="noopener">
+        <img src="assets/app-store-badge.svg" alt="Download Seek on the App Store">
+      </a>
 
       <form id="waitlist-2" class="waitlist" novalidate>
         <input type="email" name="email" required placeholder="you@example.com" aria-label="Email address">
