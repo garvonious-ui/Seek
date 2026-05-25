@@ -28,3 +28,6 @@ landing/.vercel/
 Seek_Build_Prompt.md
 Claude_Code_Project_Structure_Guide.md
 *.xcuserstate
+
+# Claude Code local agent workspaces
+.claude/worktrees/
