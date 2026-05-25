@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-05-17 — Session 18 (Build 9 rejected on chat 502 → retry/backoff → Build 10 APPROVED & LIVE)
+
+### Context
+Build 9 (the Apple Sign In listener fix from Session 17) was archived, uploaded, and resubmitted. App Review **accepted the Apple Sign In fix** — the guest-sheet sign-in scenario worked. But Build 9 was **rejected on a new issue: the scripture chat returned a 502** during the reviewer's test window. Root cause was not our code per se — Anthropic's API returned brief transient 5xx errors, and the chat Edge Function passed them straight through as 502s with no retry. The reviewer happened to hit one of those blips.
+
+### Fixed — chat Edge Function resilience (commit `85d64f7`, `supabase/functions/chat/index.ts`)
+- **`callClaudeWithRetry(model)`** wraps every Anthropic call. Retries up to 3× with 500ms / 1.2s / 2.5s exponential backoff on **5xx and 429**. Does **not** retry other 4xx (model-not-found, bad request, billing) — those aren't transient. Both the primary (`claude-sonnet-4-6`) and fallback (`claude-sonnet-4-5-20250929`) model calls now go through this loop.
+- **`debug_logs` table sink** added on the error paths. The basic edge-function logs only expose HTTP status, not function stdout, so transient-error diagnostics were invisible. The sink captures `primaryStatus` / `primaryErr` / `fallbackStatus` / `fallbackErr`. RLS-locked, no public access. Marked for removal once confidence is high.
+- Deployed to the `chat` function.
+
+### Built — Build 10 (1.0.1) launch polish
+- **ShareLink URLs wired to the real listing** (commits `ddcfd99`, `ffef22e`). Replaced placeholder `https://apps.apple.com/app/seek` with `https://apps.apple.com/us/app/seek-scripture-companion/id6761785270` in both share entry points (Home + Profile). This was the headline reason for the version bump.
+- **Landing page App Store badge** (commit `d274ce8`) — `landing/assets/app-store-badge.svg` + a download button in `landing/index.html` pointing at the live listing.
+- **Version bump** — `MARKETING_VERSION` 1.0.0 → 1.0.1, `CURRENT_PROJECT_VERSION` 9 → 10.
+
+### Outcome
+- **Build 10 submitted → approved.** Seek is **live on the App Store**: [Seek - Scripture Companion](https://apps.apple.com/us/app/seek-scripture-companion/id6761785270) (App ID `6761785270`).
+- App Review rejection saga closed after Builds 7, 8, and 9: forced login, donations, China territory, guest-sheet Apple Sign In race, and finally a transient-5xx chat 502 — all resolved.
+
+### New gotcha (worth carrying forward)
+- **App Review will hit transient upstream-API failures and reject on them.** A 5xx from a third-party API (Anthropic, here) that you pass through as a 5xx of your own can fail review even when your code is correct. Wrap third-party calls that gate a core flow in retry-with-backoff, and log enough to tell a transient blip from a real error after the fact.
+
+### Current Status
+- **Phase 1 MVP: shipped. Live on the App Store as 1.0.1 (Build 10).**
+- Chat is hardened against transient Anthropic 5xx. `debug_logs` sink is in place for diagnostics.
+- Post-launch backlog (deferred for review, now unblocked): AdMob, APNs server-side push (Phase B), re-enabling donations if traction warrants, Phase 2 features (widget, Bible browse, topical index, journaling, cloud sync).
+
 ## 2026-05-14 — Session 17 (App Review Build 8 rejection → AuthManager listener fix → Build 9)
 
 ### Context

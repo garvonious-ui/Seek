@@ -109,6 +109,7 @@
 - [x] TestFlight beta distribution
 - [x] Final QA pass
 - [x] Submit to App Store
+- [x] **LIVE on the App Store** — Build 10 (1.0.1) approved; [Seek - Scripture Companion, App ID 6761785270](https://apps.apple.com/us/app/seek-scripture-companion/id6761785270)
 
 ### Pre-launch Marketing
 - [x] Public GitHub repo (github.com/garvonious-ui/Seek)
@@ -147,15 +148,17 @@
 ## App Review — Build 8 rejection (2026-05-11, Submission ID e419a650-e4ab-4e10-895a-691ad4d7e5f3)
 - [x] **2.1(a) "Reverted back to the login page after Sign in with Apple"** — fixed Session 17: replaced SwiftUI `SignInWithAppleButton` (which silently dropped its `onCompletion` callback in sheet-over-sheet contexts on iOS 26.4 because the SwiftUI coordinator was deallocated mid-flow) with a custom `AppleSignInButton` UIViewRepresentable wrapping `ASAuthorizationAppleIDButton`. Actual `ASAuthorizationController` + delegate now live on `AuthManager` (long-lived `@State` on SeekApp), so callbacks always fire. Plus auth-state hardening: defensive `.signedOut` listener, every auth-success path explicitly clears `hasOptedForGuest`, defensive `continueAsGuest` for stale-keychain edge. **Verified on iPhone 17 Pro Max iOS 26.4.2 — guest profile → Sign In → Apple → Face ID lands authenticated reliably.**
 
-## Resubmission checklist (Build 9)
-- [x] Session 17 fix — Apple Sign In via custom UIViewRepresentable + AuthManager-owned controller
-- [x] `CURRENT_PROJECT_VERSION` 8→9 in project.yml
-- [x] Device-verified on iOS 26.4.2 (the actual rejection scenario reproduced and fixed)
-- [x] All committed + pushed to `main` (commit `c3146df`)
-- [ ] Xcode archive Build 9 (verify version reads 9 — Xcode caches; archive must be GUI per CLAUDE.md gotcha)
-- [ ] TestFlight upload via Xcode Organizer
-- [ ] Reply to App Review with the response draft in changelog Session 17
-- [ ] Resubmit Build 9 in ASC
+## App Review — Build 9 rejection (chat 502 during review window)
+- [x] Build 9 archived, uploaded, and resubmitted — Apple Sign In fix accepted.
+- [x] **Rejected anyway: chat returned 502 during the reviewer's test window.** Root cause was Anthropic returning brief transient 5xx errors; the chat Edge Function passed them straight through as 502s with no retry.
+- [x] **Fixed:** `callClaudeWithRetry` wraps both primary and fallback model calls — retries up to 3× with 500ms / 1.2s / 2.5s backoff on 5xx + 429 (not on other 4xx, which aren't transient). Added an RLS-locked `debug_logs` table sink on the error paths so future diagnostics don't depend on edge-function stdout. Deployed to `chat`. (commit `85d64f7`)
+
+## Build 10 (1.0.1) — APPROVED & LIVE
+- [x] Chat retry/backoff hardening (above) bundled into Build 10
+- [x] ShareLink URLs wired to the real listing `https://apps.apple.com/us/app/seek-scripture-companion/id6761785270` (was placeholder `/app/seek`) — commits `ddcfd99`, `ffef22e`
+- [x] Landing page: App Store download badge added pointing at the live listing (commit `d274ce8`)
+- [x] `MARKETING_VERSION` 1.0.0→1.0.1, `CURRENT_PROJECT_VERSION` 9→10
+- [x] Archived, uploaded, submitted → **approved. Seek is live on the App Store.**
 
 ## Pending Data / Blockers
 - Apple Developer Program enrollment ($99/year) required for App Store + push notifications

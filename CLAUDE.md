@@ -75,5 +75,6 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - Bundle ID: com.loucesario.seek
 
 ## Current Phase
-Phase 1 — MVP (App Store Ready)
+Phase 1 MVP — **SHIPPED & LIVE** on the App Store as 1.0.1 (Build 10): [Seek - Scripture Companion, App ID 6761785270](https://apps.apple.com/us/app/seek-scripture-companion/id6761785270)
+Next up is post-launch (monitoring, AdMob, APNs push, possible donation re-enable) and Phase 2.
 See @docs/build-plan.md for task checklist
