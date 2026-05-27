@@ -47,6 +47,22 @@ same Supabase backend as iOS (no backend changes).
   Studio (same model as the iOS Xcode-GUI build step). Expect minor first-sync
   fixups (dependency versions, the invoke signature).
 
+### Verified on emulator (same session)
+- Android Studio first sync: **green** (no errors) — supabase-kt, Compose, Room all resolved.
+- Drove the rest headless from CLI: installed `cmdline-tools`, pulled the
+  `android-35;google_apis;arm64-v8a` system image, created AVD `seek_pixel`,
+  fetched the Gradle wrapper jar, built the debug APK, booted the emulator,
+  `adb install` + launched.
+- **One compile fix:** `SeekApi.kt` was missing two imports —
+  `io.github.jan.supabase.functions.functions` (the accessor extension) and
+  `io.ktor.client.request.setBody`. Confirmed the real `Functions.invoke`
+  builder-lambda signature via `javap` on the resolved jar; the call structure
+  was already correct. `SessionRepository` and everything else compiled clean
+  first pass.
+- **Result: Seek runs on Android.** Home renders the daily-verse card in the
+  serif font on the cream background, 3-tab nav working. Screenshot-verified.
+- `gradle-wrapper.jar` committed so `./gradlew` works going forward.
+
 ### Current Status
-- Phase 0 complete (pending first-sync verification in Android Studio).
+- Phase 0 complete and **verified running on an API 35 emulator**.
 - Next: Phase 1 — auth (Google/Apple/email + guest) and live Home data.

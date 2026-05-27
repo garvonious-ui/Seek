@@ -3,6 +3,8 @@ package com.loucesario.seek.data.remote
 import com.loucesario.seek.data.remote.dto.ChatRequest
 import com.loucesario.seek.data.remote.dto.ChatResponse
 import com.loucesario.seek.data.remote.dto.DailyVerseDto
+import io.github.jan.supabase.functions.functions
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
