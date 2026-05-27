@@ -1,75 +1,151 @@
 package com.loucesario.seek.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.loucesario.seek.data.remote.dto.DailyVerseDto
 import com.loucesario.seek.ui.theme.ScriptureTextStyle
 import com.loucesario.seek.ui.theme.SeekColors
 
-/**
- * Phase 0 placeholder. Renders the wordmark line + a static daily-verse card so
- * the theme, color tokens, and scripture serif are visible on first run.
- * Phase 1 wires SeekApi.dailyVerse(), the streak capsule, and quick prompts.
- */
+private val QUICK_PROMPTS = listOf("Anxious", "Grateful", "Lonely", "Hopeful", "Tired", "Seeking")
+
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    isGuest: Boolean,
+    onOpenProfile: () -> Unit,
+    vm: HomeViewModel = viewModel(),
+) {
+    val state by vm.state.collectAsStateWithLifecycle()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(SeekColors.Background)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 12.dp),
     ) {
-        Text(
-            text = "Seek",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = SeekColors.TextPrimary,
-        )
-        Spacer(Modifier.height(24.dp))
-
-        Text(
-            text = "TODAY'S VERSE",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = SeekColors.TextSecondary,
-        )
-        Spacer(Modifier.height(8.dp))
-
-        Card(
+        // Top bar: wordmark + profile
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(containerColor = SeekColors.Surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+            Text("Seek", fontSize = 30.sp, fontWeight = FontWeight.SemiBold, color = SeekColors.TextPrimary)
+            IconButton(onClick = onOpenProfile) {
+                Icon(Icons.Outlined.AccountCircle, "Profile", tint = SeekColors.Sage, modifier = Modifier.size(30.dp))
+            }
+        }
+
+        if (!isGuest) {
+            Spacer(Modifier.height(4.dp))
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = SeekColors.LightGold,
             ) {
                 Text(
-                    text = "God is our refuge and strength, always ready to help in times of trouble.",
-                    style = ScriptureTextStyle,
-                    color = SeekColors.TextPrimary,
+                    "🔥 Day 1",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextPrimary,
                 )
-                Text(
-                    text = "Psalm 46:1",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = SeekColors.Sage,
-                )
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+        Text("TODAY'S VERSE", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextSecondary)
+        Spacer(Modifier.height(8.dp))
+
+        when (val s = state) {
+            is DailyVerseState.Loading -> LoadingCard()
+            is DailyVerseState.Loaded -> VerseCard(s.verse)
+            is DailyVerseState.Error -> VerseCard(s.cached, showSavedBadge = true)
+        }
+
+        Spacer(Modifier.height(28.dp))
+        Text(
+            if (isGuest) "Sign in to talk it through" else "What's on your heart?",
+            fontSize = 12.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextSecondary,
+        )
+        Spacer(Modifier.height(12.dp))
+        // Quick prompts (visual for Phase 1; wired to chat in Phase 2)
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            QUICK_PROMPTS.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                    row.forEach { prompt ->
+                        Surface(
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            color = SeekColors.Surface,
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(prompt, fontSize = 15.sp, color = SeekColors.TextPrimary)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoadingCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth().height(140.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = SeekColors.Surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = SeekColors.Sage)
+        }
+    }
+}
+
+@Composable
+private fun VerseCard(verse: DailyVerseDto, showSavedBadge: Boolean = false) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = SeekColors.Surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(verse.text, style = ScriptureTextStyle, color = SeekColors.TextPrimary)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(verse.reference, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage)
+                if (showSavedBadge) {
+                    Text("· offline", fontSize = 12.sp, color = SeekColors.TextTertiary)
+                }
             }
         }
     }

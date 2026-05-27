@@ -1,5 +1,47 @@
 # Seek for Android — Changelog
 
+## 2026-05-25 — Session A2 (Phase 1: auth + live Home, verified on emulator)
+
+### Built
+- **AuthViewModel** — email sign-in/up + password reset via supabase-kt, browser
+  OAuth for Google/Apple, guest mode, sign-out. Every success path calls
+  `SessionRepository.onAuthSuccess()` directly (atomic flag flip — the iOS
+  Build 8/9 lesson), with a defensive `sessionStatus` listener for cold-start
+  restoration only.
+- **Auth gate** (`SeekApp`) routes: authenticated/guest → 3-tab shell;
+  otherwise → onboarding.
+- **Onboarding**: gold-halo Welcome → SignIn (email form, Forgot password,
+  Google/Apple buttons, "Continue without an account").
+- **Home (live)**: `HomeViewModel` fetches `SeekApi.dailyVerse()` with an
+  evergreen fallback; streak capsule (auth-only); quick-prompt grid; profile
+  entry. Guest variant hides streak + relabels prompts.
+- **Profile**: guest sign-in CTA (`exitGuest`) / authed sign-out.
+- **Guest gates** on Chat + Library (reusable `GuestGate`).
+
+### Verified on emulator (screenshots)
+- Fresh launch → **Welcome** (gold halo, wordmark, Begin). ✅
+- → **Sign In** (fields, disabled-while-empty button, social + guest). ✅
+- "Continue without an account" → **Home**, and the daily verse came back
+  **live from the Edge Function** ("1 John 5:4", NLT) — not the hardcoded
+  fallback. Confirms guest anon-key → `daily-verse` works end to end. ✅
+- Chat tab (guest) → **GuestGate** ("Sign in to chat"). ✅
+
+### Build fixes this session
+- `SeekApi.kt`: added supabase `functions` accessor + ktor `setBody` imports
+  (confirmed signatures via `javap`).
+- `SignInScreen.kt`: removed `cursorBrush` (not a Material3 OutlinedTextField
+  param — it's BasicTextField only); cascaded into 6 errors, gone after removal.
+
+### Needs external config (wired, not yet functional)
+- **Google Sign-In**: needs a Google OAuth Web client ID in Supabase's Google
+  provider. Code path ready.
+- **Apple Sign-In (Android)**: needs the Apple OAuth Services ID + key in
+  Supabase (iOS uses the native flow, which doesn't apply to Android). Code
+  path ready.
+
+### Next
+- Phase 2: scripture chat (the core loop) against the shared `chat` function.
+
 ## 2026-05-25 — Session A1 (Phase 0 scaffold)
 
 ### Built

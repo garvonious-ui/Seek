@@ -14,35 +14,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.loucesario.seek.ui.auth.AuthViewModel
 import com.loucesario.seek.ui.chat.ChatScreen
 import com.loucesario.seek.ui.home.HomeScreen
 import com.loucesario.seek.ui.library.LibraryScreen
+import com.loucesario.seek.ui.profile.ProfileScreen
 
-private enum class SeekTab(
-    val route: String,
-    val label: String,
-    val icon: ImageVector,
-) {
+private enum class SeekTab(val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "Home", Icons.Outlined.Home),
     CHAT("chat", "Chat", Icons.Outlined.ChatBubbleOutline),
     LIBRARY("library", "Library", Icons.Outlined.Bookmark),
 }
 
-/**
- * Root of the app. For Phase 0 this is the 3-tab shell (matches iOS ContentView).
- * Phase 1 will wrap this in an onboarding/auth gate driven by SessionRepository.
- */
+/** The 3-tab shell, shown for authenticated AND guest users. */
 @Composable
-fun SeekRoot() {
+fun SeekRoot(authVm: AuthViewModel) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+    val session by authVm.session.collectAsStateWithLifecycle()
 
     Scaffold(
         bottomBar = {
@@ -70,9 +67,21 @@ fun SeekRoot() {
             startDestination = SeekTab.HOME.route,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable(SeekTab.HOME.route) { HomeScreen() }
-            composable(SeekTab.CHAT.route) { ChatScreen() }
-            composable(SeekTab.LIBRARY.route) { LibraryScreen() }
+            composable(SeekTab.HOME.route) {
+                HomeScreen(
+                    isGuest = session.isGuest,
+                    onOpenProfile = { navController.navigate("profile") },
+                )
+            }
+            composable(SeekTab.CHAT.route) { ChatScreen(isGuest = session.isGuest) }
+            composable(SeekTab.LIBRARY.route) { LibraryScreen(isGuest = session.isGuest) }
+            composable("profile") {
+                ProfileScreen(
+                    authVm = authVm,
+                    isGuest = session.isGuest,
+                    onBack = { navController.popBackStack() },
+                )
+            }
         }
     }
 }

@@ -13,15 +13,17 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [x] App shell: MainActivity + 3-tab nav + placeholder screens
 - [x] Project docs (CLAUDE.md, build-plan, changelog, README)
 
-## Phase 1 — Auth + Home
-- [ ] Onboarding flow (Welcome → Personalization → Notifications → Sign In)
-- [ ] Google Sign-In via Credential Manager (primary on Android)
-- [ ] Sign in with Apple via Supabase OAuth web flow (Custom Tabs)
-- [ ] Email/password sign-in + sign-up + password reset
-- [ ] Guest mode ("Continue without an account") + gating
-- [ ] Auth gate routing in SeekRoot (onboarding vs shell vs guest)
-- [ ] Home: live daily verse (`SeekApi.dailyVerse()`), streak capsule, quick prompts
-- [ ] Profile/settings (translation picker, sign out, delete account)
+## Phase 1 — Auth + Home  (core verified on emulator)
+- [x] Onboarding flow (Welcome → Sign In) — gold-halo welcome + Begin
+- [x] Email/password sign-in + sign-up + password reset (verified UI; full signup depends on Supabase email-confirm setting)
+- [x] Guest mode ("Continue without an account") + gating — **verified: guest → Home → live verse**
+- [x] Auth gate routing in SeekApp (onboarding vs shell vs guest)
+- [x] Home: live daily verse (`SeekApi.dailyVerse()`), streak capsule (auth-only), quick prompts
+- [x] Profile (guest sign-in CTA / authed sign-out); Chat + Library guest gates
+- [~] Google Sign-In via browser OAuth — **wired in code; needs Google client ID configured in Supabase to function**
+- [~] Sign in with Apple via browser OAuth — **wired; needs Apple OAuth Services ID + key in Supabase (iOS uses native flow, N/A here)**
+- [ ] Personalization + notifications onboarding steps (deferred)
+- [ ] Translation picker (currently static NLT), delete account
 
 ## Phase 2 — Chat
 - [ ] Chat UI (message bubbles, input bar, keyboard handling)

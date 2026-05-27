@@ -66,7 +66,7 @@ class SessionRepository(private val appContext: Context) {
     /** Apply a real session-status change, gating "signed out" on the actual session. */
     fun onStatusChange(status: SessionStatus) {
         when (status) {
-            is SessionStatus.Authenticated -> markAuthenticated()
+            is SessionStatus.Authenticated -> onAuthSuccess()
             is SessionStatus.NotAuthenticated -> {
                 // Defensive: only honor sign-out if the session is truly gone.
                 if (SupabaseModule.client.auth.currentSessionOrNull() == null) {
@@ -77,11 +77,14 @@ class SessionRepository(private val appContext: Context) {
         }
     }
 
-    /** Atomic success transition — every sign-in path calls this. */
-    private fun markAuthenticated() {
+    /**
+     * Atomic success transition — EVERY sign-in path (email, Google, Apple)
+     * calls this directly. Clears the guest flag here, never via a listener.
+     */
+    fun onAuthSuccess() {
         _session.value = _session.value.copy(
             authState = AuthState.AUTHENTICATED,
-            hasOptedForGuest = false, // cleared HERE, not via listener
+            hasOptedForGuest = false,
             hasCompletedOnboarding = true,
         )
     }
@@ -96,6 +99,12 @@ class SessionRepository(private val appContext: Context) {
             authState = AuthState.UNAUTHENTICATED,
             hasOptedForGuest = true,
         )
+    }
+
+    /** Guest taps "Sign In" — drop guest mode so the gate shows onboarding. */
+    suspend fun exitGuest() {
+        appContext.authDataStore.edit { it[hasGuestKey] = false }
+        _session.value = _session.value.copy(hasOptedForGuest = false)
     }
 
     suspend fun setOnboardingComplete(complete: Boolean) {
