@@ -54,11 +54,21 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [ ] Favoriting verses/prayers to populate Favorites tab — deferred
 - [ ] Card delete / long-press edit mode — deferred
 
-## Phase 4 — Notifications + Polish
-- [ ] Scheduled local notifications (WorkManager) — daily verse + streak nudge
-- [ ] Notification settings UI; persist to `notification_settings` (shared table)
-- [ ] Deep links from notification taps
-- [ ] Offline handling, loading/skeleton, error states
+## Phase 4 — Notifications + Polish  (verified on emulator)
+- [x] Local notifications — channel, daily-verse + streak-nudge builders,
+      AlarmManager `setInexactRepeating` scheduler (no exact-alarm permission),
+      BroadcastReceiver, tap→open app
+- [x] POST_NOTIFICATIONS runtime request (Android 13+)
+- [x] Notification settings in Profile — toggles (7am verse / 7pm streak),
+      persisted to DataStore, schedule/cancel on change, "Send a test reminder"
+- [x] Offline handling — `ConnectivityObserver` (validated-internet),
+      Home offline pill + verse fallback badge, Chat offline banner + disabled send
+- [x] **Verified: permission dialog → test notification fired in shade
+      ("Your Daily Verse"); airplane mode → Home "Offline" pill + "Psalm 46:1 ·
+      offline" fallback**
+- [ ] Persist notification prefs to Supabase `notification_settings` (shared) — deferred
+- [ ] Notification deep links to specific screens — deferred
+- [ ] Skeleton loaders — deferred (spinners in place)
 
 ## Phase 5 — Play Store
 - [ ] Google Play Developer account ($25 one-time)

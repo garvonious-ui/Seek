@@ -49,6 +49,8 @@ fun HomeScreen(
     vm: HomeViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val online by com.loucesario.seek.SeekApplication.instance.connectivity.isOnline
+        .collectAsStateWithLifecycle(true)
 
     Column(
         modifier = Modifier
@@ -79,6 +81,17 @@ fun HomeScreen(
                     "🔥 Day 1",
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                     fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextPrimary,
+                )
+            }
+        }
+
+        if (!online) {
+            Spacer(Modifier.height(8.dp))
+            Surface(shape = RoundedCornerShape(20.dp), color = SeekColors.SurfaceMuted) {
+                Text(
+                    "Offline",
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                    fontSize = 12.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextSecondary,
                 )
             }
         }

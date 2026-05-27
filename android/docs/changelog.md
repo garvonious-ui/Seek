@@ -1,5 +1,50 @@
 # Seek for Android — Changelog
 
+## 2026-05-25 — Session A5 (Phase 4: notifications + offline, verified on emulator)
+
+### Built
+- **Local notifications** — `SeekNotifications` (channel + daily-verse/streak
+  builders, tap→MainActivity), `NotificationScheduler` (AlarmManager
+  `setInexactRepeating` — no exact-alarm permission needed), `NotificationReceiver`.
+- **POST_NOTIFICATIONS** runtime request (Android 13+) via Compose
+  `rememberLauncherForActivityResult`.
+- **Notification settings in Profile** — Daily verse (7am) + Streak nudge (7pm)
+  toggles persisted to DataStore (`NotificationPrefs`), schedule/cancel on
+  change, "Send a test reminder".
+- **Offline handling** — `ConnectivityObserver` (callbackFlow over
+  ConnectivityManager); Home offline pill + verse fallback ("· offline" badge);
+  Chat offline banner + disabled send.
+
+### Verified on emulator (screenshots)
+- Profile → notification toggles + "Send a test reminder". ✅
+- Tapped test → **system permission dialog** ("Allow Seek to send you
+  notifications?") → Allow → notification **fired in the shade**: "Your Daily
+  Verse — Start your day with God's word." ✅
+- Airplane mode → Home shows **"Offline" pill** + daily verse falls back to
+  **"Psalm 46:1 · offline"**. ✅
+
+### Two crash/bug fixes (the blockers)
+1. **Startup crash** — `registerDefaultNetworkCallback` threw
+   `SecurityException` (ConnectivityService.enforceAccessPermission). Missing
+   `ACCESS_NETWORK_STATE`. Added it.
+   - **Gotcha:** any ConnectivityManager network-callback use needs
+     `ACCESS_NETWORK_STATE` (a normal install-time permission), not just INTERNET.
+2. **Offline never detected when opening already-offline** — the observer seeded
+   an optimistic `true` and waited for a NetworkCallback event that never fires
+   when nothing changes. Fixed: seed the **actual current state** synchronously
+   via `getNetworkCapabilities`, and require `NET_CAPABILITY_VALIDATED` (not just
+   INTERNET) so "connected, no real internet" reads offline.
+
+### Notes
+- While offline, supabase-kt can't restore the session (network-gated), so a
+  cold start offline lands on the onboarding gate — expected. The Home offline
+  path (pill + fallback) was verified via guest mode.
+- Supabase `notification_settings` sync, notification deep links, and skeleton
+  loaders deferred.
+
+### Next
+- Phase 5: Play Store prep (real icon, Lora font, listing, internal testing).
+
 ## 2026-05-25 — Session A4 (Phase 3: card creator + library, verified on emulator)
 
 ### Built

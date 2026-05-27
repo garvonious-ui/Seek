@@ -59,6 +59,8 @@ fun ChatScreen(
 
     val items by vm.items.collectAsStateWithLifecycle()
     val loading by vm.loading.collectAsStateWithLifecycle()
+    val online by com.loucesario.seek.SeekApplication.instance.connectivity.isOnline
+        .collectAsStateWithLifecycle(true)
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -95,6 +97,17 @@ fun ChatScreen(
             }
         }
 
+        // Offline banner
+        if (!online) {
+            Surface(color = SeekColors.SurfaceMuted, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    "You're offline. Scripture chat will resume when you reconnect.",
+                    fontSize = 13.sp, color = SeekColors.TextSecondary,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                )
+            }
+        }
+
         // Input bar
         Surface(color = SeekColors.Surface, shadowElevation = 8.dp) {
             Row(
@@ -105,19 +118,20 @@ fun ChatScreen(
                 OutlinedTextField(
                     value = input,
                     onValueChange = { input = it },
-                    placeholder = { Text("Share what's on your heart…") },
+                    placeholder = { Text(if (online) "Share what's on your heart…" else "Waiting for connection…") },
+                    enabled = online,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(24.dp),
                     maxLines = 4,
                 )
                 IconButton(
                     onClick = { vm.sendMessage(input); input = "" },
-                    enabled = !loading && input.isNotBlank(),
+                    enabled = !loading && input.isNotBlank() && online,
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Send",
-                        tint = if (input.isNotBlank() && !loading) SeekColors.Sage else SeekColors.TextTertiary,
+                        tint = if (input.isNotBlank() && !loading && online) SeekColors.Sage else SeekColors.TextTertiary,
                     )
                 }
             }
