@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme. Compose drives the real UI; this sets the splash window
+         background to Seek's warm off-white so there's no white/dark flash.
+         Locked to light to match the iOS app (forced light mode). -->
+    <style name="Theme.Seek" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/seek_background</item>
+        <item name="android:statusBarColor">@color/seek_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/seek_background</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+</resources>

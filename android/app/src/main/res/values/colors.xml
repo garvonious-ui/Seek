@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirror of docs/design-system.md tokens (subset used by Android resources). -->
+    <color name="seek_background">#FAFAF6</color>
+    <color name="seek_sage">#5B7B5E</color>
+    <color name="seek_gold">#CDA349</color>
+    <color name="seek_text_primary">#1A1A1A</color>
+</resources>
