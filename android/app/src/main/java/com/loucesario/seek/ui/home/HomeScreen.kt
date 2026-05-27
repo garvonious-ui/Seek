@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -39,10 +40,12 @@ import com.loucesario.seek.ui.theme.SeekColors
 
 private val QUICK_PROMPTS = listOf("Anxious", "Grateful", "Lonely", "Hopeful", "Tired", "Seeking")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     isGuest: Boolean,
     onOpenProfile: () -> Unit,
+    onCreateCard: (String, String) -> Unit,
     vm: HomeViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -86,9 +89,11 @@ fun HomeScreen(
 
         when (val s = state) {
             is DailyVerseState.Loading -> LoadingCard()
-            is DailyVerseState.Loaded -> VerseCard(s.verse)
-            is DailyVerseState.Error -> VerseCard(s.cached, showSavedBadge = true)
+            is DailyVerseState.Loaded -> VerseCard(s.verse, onClick = { onCreateCard(s.verse.text, s.verse.reference) })
+            is DailyVerseState.Error -> VerseCard(s.cached, showSavedBadge = true, onClick = { onCreateCard(s.cached.text, s.cached.reference) })
         }
+        Spacer(Modifier.height(6.dp))
+        Text("Tap the verse to make a card", fontSize = 12.sp, color = SeekColors.TextTertiary)
 
         Spacer(Modifier.height(28.dp))
         Text(
@@ -132,8 +137,9 @@ private fun LoadingCard() {
 }
 
 @Composable
-private fun VerseCard(verse: DailyVerseDto, showSavedBadge: Boolean = false) {
+private fun VerseCard(verse: DailyVerseDto, showSavedBadge: Boolean = false, onClick: () -> Unit = {}) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = SeekColors.Surface),

@@ -21,7 +21,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.loucesario.seek.cards.CardDraft
 import com.loucesario.seek.ui.auth.AuthViewModel
+import com.loucesario.seek.ui.cards.CardCreatorScreen
 import com.loucesario.seek.ui.chat.ChatScreen
 import com.loucesario.seek.ui.home.HomeScreen
 import com.loucesario.seek.ui.library.LibraryScreen
@@ -71,16 +73,39 @@ fun SeekRoot(authVm: AuthViewModel) {
                 HomeScreen(
                     isGuest = session.isGuest,
                     onOpenProfile = { navController.navigate("profile") },
+                    onCreateCard = { text, ref ->
+                        CardDraft.set(text, ref)
+                        navController.navigate("card")
+                    },
                 )
             }
-            composable(SeekTab.CHAT.route) { ChatScreen(isGuest = session.isGuest) }
-            composable(SeekTab.LIBRARY.route) { LibraryScreen(isGuest = session.isGuest) }
+            composable(SeekTab.CHAT.route) {
+                ChatScreen(
+                    isGuest = session.isGuest,
+                    onCreateCard = { text, ref ->
+                        CardDraft.set(text, ref)
+                        navController.navigate("card")
+                    },
+                )
+            }
+            composable(SeekTab.LIBRARY.route) {
+                LibraryScreen(
+                    isGuest = session.isGuest,
+                    onOpenCard = { text, ref ->
+                        CardDraft.set(text, ref)
+                        navController.navigate("card")
+                    },
+                )
+            }
             composable("profile") {
                 ProfileScreen(
                     authVm = authVm,
                     isGuest = session.isGuest,
                     onBack = { navController.popBackStack() },
                 )
+            }
+            composable("card") {
+                CardCreatorScreen(onBack = { navController.popBackStack() })
             }
         }
     }

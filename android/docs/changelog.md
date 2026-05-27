@@ -1,5 +1,42 @@
 # Seek for Android — Changelog
 
+## 2026-05-25 — Session A4 (Phase 3: card creator + library, verified on emulator)
+
+### Built
+- **`CardRenderer`** — a single Android-Canvas renderer producing an exact
+  1080×1920 Bitmap (vertical gradient bg, auto-fit serif verse, reference,
+  "Seek" watermark). Used for BOTH the preview and the export, so they can't
+  diverge (the iOS gotcha where preview ≠ export). 6 templates across categories.
+- **`CardExport`** — save-to-gallery via MediaStore (Pictures/Seek) + share via
+  FileProvider. FileProvider + `WRITE_EXTERNAL_STORAGE` (maxSdk 28) wired in
+  manifest; `res/xml/file_paths.xml` added.
+- **CardCreatorScreen** — live preview (rendered Bitmap), horizontal template
+  picker, Share + Save; persists a SavedCard to Room. Reached via an in-memory
+  `CardDraft` holder (avoids URL-encoding verse text through nav args).
+- **Entry points** — tap the Home daily verse OR a chat verse card → creator.
+- **Library** — real Cards / Favorites / History tabs from Room
+  (`LibraryViewModel` flows). Cards grid re-renders thumbnails from stored
+  template+verse via `CardRenderer`. Empty states; guest gate retained.
+
+### Verified on emulator (screenshots)
+- Signed-in Home → tapped daily verse (Matthew 21:22) → **Create card** opened
+  with a sage-gradient preview. ✅
+- Switched to the **Gold** template → preview re-rendered live (gold gradient,
+  dark text). ✅
+- **Save** → "Saved to your gallery" snackbar (MediaStore write succeeded). ✅
+- **Library → Cards** → the saved Gold card appears in the grid, re-rendered
+  from Room. ✅
+
+### Notes / deferred
+- 6 templates for now (iOS has 18); favoriting to populate the Favorites tab,
+  card delete/edit mode, and worship deep links are deferred polish.
+- Screenshots from `adb` are 1080×2400 — downscale with `sips -Z 1500` before
+  reading (the reader rejects >2000px in multi-image turns).
+
+### Next
+- Phase 4: scheduled local notifications (daily verse + streak nudge), offline
+  handling, loading/error polish.
+
 ## 2026-05-25 — Session A3 (Phase 2: scripture chat, verified on emulator)
 
 ### Built

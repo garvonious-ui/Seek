@@ -38,11 +38,21 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [ ] Regenerate scripture — deferred
 - [ ] Persist chat state across tab switches (currently resets if nav popped) — polish
 
-## Phase 3 — Card Creator + Library
-- [ ] Card templates (port the 18 iOS templates / 4 categories)
-- [ ] Render Composable → 1080×1920 Bitmap (GraphicsLayer), save to gallery + share
-- [ ] App watermark
-- [ ] Library: Cards grid / Favorites / History tabs; re-edit, delete, copy
+## Phase 3 — Card Creator + Library  (verified on emulator)
+- [x] Card templates — 6 across categories (Sage/Cream/Gold/Night/Blush/Sky)
+- [x] **Canvas renderer → exact 1080×1920 Bitmap** (single source for preview +
+      export; avoids the iOS preview/export divergence). Auto-fit serif verse,
+      reference, "Seek" watermark.
+- [x] Card creator: live preview, horizontal template picker, save-to-gallery
+      (MediaStore), share (FileProvider), persist SavedCard to Room
+- [x] Entry points: tap Home daily verse / chat verse card → creator
+- [x] Library: Cards grid (re-rendered thumbnails), Favorites (verses+prayers),
+      History (conversations), empty states; guest gate retained
+- [x] **Verified: Home verse → creator → switch to Gold template (live) → Save
+      ("Saved to your gallery") → card appears in Library Cards grid**
+- [ ] Port remaining iOS templates (18 total) — deferred
+- [ ] Favoriting verses/prayers to populate Favorites tab — deferred
+- [ ] Card delete / long-press edit mode — deferred
 
 ## Phase 4 — Notifications + Polish
 - [ ] Scheduled local notifications (WorkManager) — daily verse + streak nudge

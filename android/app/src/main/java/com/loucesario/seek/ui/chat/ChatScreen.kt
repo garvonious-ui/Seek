@@ -1,6 +1,7 @@
 package com.loucesario.seek.ui.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,7 +47,11 @@ import com.loucesario.seek.ui.theme.ScriptureTextStyle
 import com.loucesario.seek.ui.theme.SeekColors
 
 @Composable
-fun ChatScreen(isGuest: Boolean, vm: ChatViewModel = viewModel()) {
+fun ChatScreen(
+    isGuest: Boolean,
+    onCreateCard: (String, String) -> Unit,
+    vm: ChatViewModel = viewModel(),
+) {
     if (isGuest) {
         GuestGate(title = "Sign in to chat", message = "Create a free account to talk through what's on your heart.")
         return
@@ -79,7 +84,7 @@ fun ChatScreen(isGuest: Boolean, vm: ChatViewModel = viewModel()) {
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(items, key = { it.id }) { item -> ChatRow(item) }
+                items(items, key = { it.id }) { item -> ChatRow(item, onCreateCard) }
                 if (loading) {
                     item("loading") {
                         Row(Modifier.padding(8.dp)) {
@@ -121,7 +126,7 @@ fun ChatScreen(isGuest: Boolean, vm: ChatViewModel = viewModel()) {
 }
 
 @Composable
-private fun ChatRow(item: ChatItem) {
+private fun ChatRow(item: ChatItem, onCreateCard: (String, String) -> Unit) {
     when (item) {
         is ChatItem.UserBubble -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Surface(
@@ -136,7 +141,7 @@ private fun ChatRow(item: ChatItem) {
         is ChatItem.Intro -> Text(item.text, fontSize = 16.sp, color = SeekColors.TextPrimary)
 
         is ChatItem.Verses -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item.verses.forEach { VerseCard(it) }
+            item.verses.forEach { v -> VerseCard(v, onTap = { onCreateCard(v.text, v.reference) }) }
         }
 
         is ChatItem.Prayer -> CardBox(bg = SeekColors.LightGold) {
@@ -162,8 +167,8 @@ private fun ChatRow(item: ChatItem) {
 }
 
 @Composable
-private fun VerseCard(verse: VerseDto) {
-    CardBox(bg = SeekColors.Surface) {
+private fun VerseCard(verse: VerseDto, onTap: () -> Unit) {
+    CardBox(bg = SeekColors.Surface, onClick = onTap) {
         Text(verse.text, style = ScriptureTextStyle, color = SeekColors.TextPrimary)
         Spacer(Modifier.height(8.dp))
         Text(verse.reference, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage)
@@ -171,6 +176,8 @@ private fun VerseCard(verse: VerseDto) {
             Spacer(Modifier.height(6.dp))
             Text(it, fontSize = 13.sp, color = SeekColors.TextSecondary)
         }
+        Spacer(Modifier.height(8.dp))
+        Text("Tap to make a card →", fontSize = 12.sp, color = SeekColors.MidSage)
     }
 }
 
@@ -189,8 +196,14 @@ private fun SongCard(song: WorshipSongDto) {
 }
 
 @Composable
-private fun CardBox(bg: androidx.compose.ui.graphics.Color, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Surface(color = bg, shape = RoundedCornerShape(12.dp), shadowElevation = 1.dp, modifier = Modifier.fillMaxWidth()) {
+private fun CardBox(
+    bg: androidx.compose.ui.graphics.Color,
+    onClick: (() -> Unit)? = null,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+) {
+    val base = Modifier.fillMaxWidth()
+    val mod = if (onClick != null) base.clickable(onClick = onClick) else base
+    Surface(color = bg, shape = RoundedCornerShape(12.dp), shadowElevation = 1.dp, modifier = mod) {
         Column(Modifier.padding(16.dp), content = content)
     }
 }
