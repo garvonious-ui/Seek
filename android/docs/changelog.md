@@ -1,5 +1,47 @@
 # Seek for Android — Changelog
 
+## 2026-05-25 — Session A3 (Phase 2: scripture chat, verified on emulator)
+
+### Built
+- **ChatViewModel** — sends through the shared `chat` Edge Function with
+  conversation history + translation, maps the structured response to display
+  items (intro / verses / prayer / worship song / follow-up / rate-limit /
+  error), and persists conversation + messages to Room.
+- **Chat UI** — message transcript (LazyColumn, auto-scroll), sage user bubbles,
+  white verse cards (serif scripture), gold PRAYER card, WORSHIP card, italic
+  follow-up; input bar with send; empty "What's on your heart?" state. Guests
+  still see the sign-in gate.
+
+### Verified on emulator (screenshots)
+- Provisioned a confirmed test user via Supabase MCP
+  (`androidtest@askseekpray.app`, premium, NLT) — replicating the iOS Session 13
+  pattern (empty-string token columns; `email` identity row; profile trigger
+  fired).
+- Signed in **through the app** with email/password → authenticated Home
+  (🔥 streak capsule now visible; "What's on your heart?" label). ✅
+- Chat: typed "I feel anxious about the future" → sent → **full Claude
+  response rendered**: verse + context, gold prayer card ("Lord, I bring my
+  anxious heart to You right now…"), worship song, and a follow-up question. ✅
+
+### Two timeout fixes (the only blockers)
+Diagnosed via logcat — chat threw, UI showed the error card correctly:
+1. `POST /functions/v1/chat timed out after 10000 ms` — ktor's request timeout.
+   Fixed: `requestTimeout = 60.seconds`.
+2. Then `SocketTimeoutException` from OkHttp (its **own** 10s socket timeout,
+   independent of ktor). Fixed: explicit `OkHttp.create { config { callTimeout
+   / readTimeout = 60s } }` as the `httpEngine`.
+   - **Gotcha:** the `chat` function (Claude generating 3-5 verses + prayer +
+     song) routinely exceeds 10s. BOTH the ktor request timeout AND the OkHttp
+     engine socket/call timeout must be raised — they're separate ceilings.
+
+### Notes
+- Chat state resets if the Chat destination is popped via system BACK (nav
+  lifecycle); persisted to Room regardless. Flagged as polish.
+- Worship deep links, staggered reveal, regenerate — deferred.
+
+### Next
+- Phase 3: Card Creator + Library (Compose→Bitmap render, save/share, tabs).
+
 ## 2026-05-25 — Session A2 (Phase 1: auth + live Home, verified on emulator)
 
 ### Built

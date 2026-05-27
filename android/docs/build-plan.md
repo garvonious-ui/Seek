@@ -25,13 +25,18 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [ ] Personalization + notifications onboarding steps (deferred)
 - [ ] Translation picker (currently static NLT), delete account
 
-## Phase 2 — Chat
-- [ ] Chat UI (message bubbles, input bar, keyboard handling)
-- [ ] Wire `SeekApi.sendChat` with conversation history + translation
-- [ ] Parse response → verse cards, prayer card, worship song (deep links)
-- [ ] Rate-limit UI; error classification (transient vs real, offline)
-- [ ] Persist conversations to Room; staggered card reveal animation
-- [ ] Regenerate scripture
+## Phase 2 — Chat  (verified on emulator)
+- [x] Chat UI (message bubbles, verse/prayer/song/follow-up cards, input bar)
+- [x] Wire `SeekApi.sendChat` with conversation history + translation
+- [x] Parse response → verse cards (serif), gold prayer card, worship song, follow-up
+- [x] Rate-limit + error handling (basic classification)
+- [x] Persist conversations + messages to Room
+- [x] **Verified: signed-in test user → "I feel anxious about the future" → full
+      verse + prayer + worship + follow-up response rendered**
+- [ ] Worship song deep links (Apple Music / Spotify) — deferred
+- [ ] Staggered card reveal animation — deferred
+- [ ] Regenerate scripture — deferred
+- [ ] Persist chat state across tab switches (currently resets if nav popped) — polish
 
 ## Phase 3 — Card Creator + Library
 - [ ] Card templates (port the 18 iOS templates / 4 categories)

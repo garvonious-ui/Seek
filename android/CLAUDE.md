@@ -57,6 +57,12 @@ downloads deps + SDK. Run on an API 26+ device/emulator. See `README.md`.
 - supabase-kt `functions.invoke` builder signature should be confirmed on first
   sync (see comment in `SeekApi.kt`) — request is encoded to a JSON string and
   decoded manually to avoid reified-type content-negotiation issues.
+- **The `chat` Edge Function needs BOTH timeouts raised.** Claude generating
+  3-5 verses + prayer + song routinely exceeds 10s. There are two independent
+  10s ceilings: ktor's `requestTimeout` (set on the SupabaseClient builder) AND
+  OkHttp's socket/call timeout (set via `httpEngine = OkHttp.create { config {
+  callTimeout/readTimeout } }`). Raising only one still times out at the other.
+  Both are set to 60s in `SupabaseModule`.
 
 ## Current Phase
 Phase 0 (scaffold) — DONE. Builds to a 3-tab shell on the Seek theme with Room +
