@@ -1,5 +1,64 @@
 # Seek for Android — Changelog
 
+## 2026-06-10 — Session A6 (Phase 5 prep: icon, Lora, signing, listing, screenshots)
+
+Code-side Play Store prep complete. Blocked only on the Google Play Developer Organization account approval (D-U-N-S verified, ready to register).
+
+### Built
+- **Adaptive launcher icon** — Real PNGs across all 5 densities (mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi), foreground generated from the iOS 1024 `AppIcon.png` source via Python+Pillow, scaled into the 66dp safe zone of the 108dp adaptive canvas so it survives every OEM mask shape. Background = `#FAFAF6` color drawable (matches the iOS squircle so the cream edges blend in). Monochrome silhouette vector for Android 13+ themed icons. Placeholder vector `drawable/ic_launcher_foreground.xml` removed. Also generated `store/icon_512.png` for Play listing.
+- **Lora scripture font** — Two-track wiring so both the Compose UI scripture text AND the 1080x1920 Canvas card render get real Lora:
+  - **Compose side**: Downloadable Google Fonts via `androidx.compose.ui.text.googlefonts.GoogleFont` + provider certs in `res/values/font_certs.xml`. `ScriptureFontFamily` now defines Lora at 4 weights (Normal/Italic/Medium/SemiBold).
+  - **Canvas side**: `Lora-Regular.ttf` + `Lora-Italic.ttf` bundled in `assets/fonts/` (OFL-licensed, free to bundle). `CardRenderer` loads them via `Typeface.createFromAsset(SeekApplication.instance.assets, ...)` with a lazy delegate. Falls back to `Typeface.SERIF` defensively if the asset goes missing.
+- **Release signing config** — Keystore generated via `keytool` (RSA 2048, 100-year validity, DN = `CN=LCIII Ventures LLC, OU=Mobile, O=LCIII Ventures LLC, L=Charlotte, ST=NC, C=US`), alias `seek-upload`. `signingConfigs.release` in `app/build.gradle.kts` reads from gitignored `keystore.properties` at the project root. Keystore + creds backed up to `~/.seek/seek-upload-keystore-backup.jks` + `~/.seek/KEYSTORE_README.md` outside the repo. Both `release.keystore` and `keystore.properties` added to `.gitignore`.
+- **Signed AAB** — `bundleRelease` produces `app/build/outputs/bundle/release/app-release.aab` (6.3 MB, signed by the release keystore, both Lora TTFs bundled, R8 minification on).
+- **Play Store listing draft** — `docs/play-store-submission.md` mirrors the iOS `docs/app-store-submission.md` adapted to Play's field structure: app name (27 chars), short description (78 chars), full description (~2.6K chars), Data Safety form matrix, IARC content rating answers (Everyone 3+/4+/E), target audience (18+ to stay clear of Designed-for-Families program), app access (test account paste-ready), URLs.
+- **Phone screenshots** — Five captured from `seek_pixel` AVD signed in as `androidtest@askseekpray.app`, scaled to 1500px-max via `sips -Z`:
+  - `01_home.png` — Daily verse "God arms me with strength..." (Psalm 18:32), streak capsule, quick-prompts grid
+  - `02_chat.png` — Real chat round-trip "Feeling anxious about the future" → empathetic intro + prayer + worship song ("Anxiety" by Khalid & HVME) + follow-up
+  - `03_card_creator.png` — Sage gradient template with the Psalm 18:32 verse rendered in **real Lora serif** (you can read the bracket serifs on "G", "y", "P"), 6-template circle picker, Share + Save buttons
+  - `04_library.png` — Cards/Favorites/History tabs, Gold gradient saved card showing Matthew 21:22 rendered in Lora
+  - `05_profile.png` — Notification toggles (Daily verse 7am ON / Streak nudge 7pm OFF), "Send a test reminder," Sign Out
+
+### Decisions
+- **Bundle Lora TTF for Canvas, GoogleFont downloadable for Compose.** Canvas doesn't go through Compose's font resolver, so the downloadable wouldn't apply at card render time. Bundling Lora-Regular (212 KB) + Lora-Italic (216 KB) costs ~430 KB of APK size — acceptable for guaranteed serif rendering on the visible-asset surface (the cards users will share).
+- **Adaptive icon foreground = full iOS icon scaled into the 66dp safe zone**, not extracted "S+dot" elements. The cream squircle edges blend invisibly into the cream background drawable so what reads is the S + gold dot. Robust across every OEM mask (circle, squircle, square, rounded-rect, teardrop). The tradeoff is the foreground is smaller than it could be edge-to-edge, but for an MVP launch this is the right tradeoff vs trying to extract elements from a rasterized PNG.
+- **Release keystore validity = 100 years, RSA 2048.** Standard for Play upload keys. With Play App Signing (default for new apps), Google holds the actual signing key; this is the upload key. Losing it isn't catastrophic but it's a manual process to reset, so back it up.
+- **Same keystore + key password** for simplicity. Both stored in `keystore.properties` (gitignored) and `~/.seek/KEYSTORE_README.md` (outside repo). Generated a 28-char password with mixed case + digits + symbols.
+- **DN pinned to LCIII Ventures LLC + Charlotte, NC.** If the LLC is registered elsewhere, regenerate the keystore BEFORE the first Play upload — the DN is what Google records and it's hard to change post-publish.
+- **Target audience 18+, not Family.** Designed-for-Families program adds restrictions on third-party SDKs (notably AI APIs) and we don't want that scrutiny. Faith app for adults is the cleanest path.
+
+### Verified
+- `assembleDebug` clean after icon + Lora changes.
+- `bundleRelease` clean → signed AAB produced.
+- Card creator screenshot shows Lora serifs rendering correctly through the bundled TTF path.
+- Library screenshot shows a prior saved card also rendered in Lora.
+
+### Pending (user-side)
+- **Google Play Developer Org account** — D-U-N-S verified, account signup at `play.google.com/console/signup`. Pay $25, complete LCIII Ventures LLC identity verification, wait 1-3 days for org approval.
+- **(Optional polish)** Designed 1024×500 feature graphic for the Play listing.
+- **(Optional polish)** 7-inch and 10-inch tablet screenshots. Phone screenshots alone are sufficient for first submission.
+
+### Files added
+- `app/src/main/res/drawable-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher_foreground.png`
+- `app/src/main/res/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher{,_round}.png`
+- `app/src/main/res/drawable/ic_launcher_monochrome.xml`
+- `app/src/main/res/values/font_certs.xml`
+- `app/src/main/assets/fonts/Lora-{Regular,Italic}.ttf`
+- `store/icon_512.png` + `store/screenshots/{01_home,02_chat,03_card_creator,04_library,05_profile}.png`
+- `docs/play-store-submission.md`
+- `release.keystore` + `keystore.properties` (gitignored)
+- `~/.seek/seek-upload-keystore-backup.jks` + `~/.seek/KEYSTORE_README.md` (outside repo)
+
+### Files modified
+- `app/src/main/res/mipmap-anydpi-v26/ic_launcher{,_round}.xml` — monochrome ref
+- `app/src/main/res/drawable/ic_launcher_foreground.xml` — DELETED (placeholder)
+- `app/src/main/java/com/loucesario/seek/ui/theme/Type.kt` — Lora via GoogleFont
+- `app/src/main/java/com/loucesario/seek/cards/CardRenderer.kt` — Lora via Typeface.createFromAsset
+- `app/build.gradle.kts` — signingConfigs.release from keystore.properties
+- `.gitignore` — `release.keystore`, `keystore.properties`
+
+---
+
 ## 2026-05-25 — Session A5 (Phase 4: notifications + offline, verified on emulator)
 
 ### Built

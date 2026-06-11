@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+}
+
+// Load release signing config from ../keystore.properties (gitignored).
+// Falls back to null when the file is missing so debug builds and CI without
+// the keystore still succeed; release will then fail loudly at signing time.
+val keystoreProps: Properties? = run {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) Properties().apply { f.inputStream().use { load(it) } } else null
 }
 
 android {
@@ -29,10 +39,24 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        if (keystoreProps != null) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (keystoreProps != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 

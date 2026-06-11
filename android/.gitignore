@@ -10,3 +10,8 @@
 local.properties
 app/build/
 .kotlin/
+
+# Release signing — NEVER commit
+release.keystore
+keystore.properties
+

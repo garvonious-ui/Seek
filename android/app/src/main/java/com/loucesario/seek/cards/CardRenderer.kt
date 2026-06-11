@@ -10,6 +10,7 @@ import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.compose.ui.graphics.toArgb
+import com.loucesario.seek.SeekApplication
 
 /**
  * Renders a verse card to an exact 1080x1920 PNG-able Bitmap using the Android
@@ -20,6 +21,20 @@ import androidx.compose.ui.graphics.toArgb
 object CardRenderer {
     const val W = 1080
     const val H = 1920
+
+    /**
+     * Scripture typeface — Lora, bundled in assets/fonts. Loaded once on first
+     * card render. Falls back to Typeface.SERIF (Noto Serif) if the asset is
+     * missing for any reason — defensive, shouldn't trigger in normal builds.
+     */
+    private val loraRegular: Typeface by lazy {
+        runCatching {
+            Typeface.createFromAsset(SeekApplication.instance.assets, "fonts/Lora-Regular.ttf")
+        }.getOrElse { Typeface.create(Typeface.SERIF, Typeface.NORMAL) }
+    }
+    private val loraBold: Typeface by lazy {
+        Typeface.create(loraRegular, Typeface.BOLD)
+    }
 
     fun render(template: CardTemplate, verseText: String, reference: String): Bitmap {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
@@ -37,7 +52,7 @@ object CardRenderer {
 
         val sidePadding = 120f
         val maxTextWidth = (W - 2 * sidePadding).toInt()
-        val serif = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
+        val serif = loraRegular
 
         // Verse text — serif, auto-fit to a vertical budget
         val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -61,7 +76,7 @@ object CardRenderer {
         // Reference below the verse
         val refPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = template.referenceColor.toArgb()
-            typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
+            typeface = loraBold
             textSize = 46f
             textAlign = Paint.Align.CENTER
         }

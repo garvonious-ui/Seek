@@ -3,26 +3,38 @@ package com.loucesario.seek.ui.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.googlefonts.Font
+import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
+import com.loucesario.seek.R
 
 /**
  * Typography for Seek.
  *
  * UI text uses the system sans (Roboto), matching iOS's SF Pro role.
  *
- * SCRIPTURE FONT: the design target is **Lora** (Google Fonts, OFL). Georgia —
- * the iOS scripture font — is Microsoft-proprietary and cannot be bundled on
- * Android, so Lora is the chosen substitute (see docs/android-plan.md).
- *
- * The scaffold ships with [ScriptureFontFamily] = FontFamily.Serif, which
- * resolves to Noto Serif on-device — a clean, zero-config serif so the project
- * builds immediately. To switch to Lora: Android Studio → res → New → Font →
- * "Get more fonts" → Lora (downloadable; the wizard generates the font_certs
- * resource + provider XML correctly), then set ScriptureFontFamily to it.
- * This is the only change needed; every scripture surface reads this one value.
+ * Scripture text is **Lora** (Google Fonts, OFL) — fetched lazily by the
+ * Downloadable Fonts provider at first use, then cached on-device. Georgia (the
+ * iOS scripture font) is Microsoft-proprietary and can't ship with the app.
+ * Lora is the closest serif match: warm humanist proportions, distinct enough
+ * from the UI sans, reads well at scripture sizes.
  */
-val ScriptureFontFamily: FontFamily = FontFamily.Serif
+private val GoogleFontsProvider = GoogleFont.Provider(
+    providerAuthority = "com.google.android.gms.fonts",
+    providerPackage = "com.google.android.gms",
+    certificates = R.array.com_google_android_gms_fonts_certs,
+)
+
+private val LoraGoogleFont = GoogleFont("Lora")
+
+val ScriptureFontFamily: FontFamily = FontFamily(
+    Font(googleFont = LoraGoogleFont, fontProvider = GoogleFontsProvider, weight = FontWeight.Normal),
+    Font(googleFont = LoraGoogleFont, fontProvider = GoogleFontsProvider, weight = FontWeight.Normal, style = FontStyle.Italic),
+    Font(googleFont = LoraGoogleFont, fontProvider = GoogleFontsProvider, weight = FontWeight.Medium),
+    Font(googleFont = LoraGoogleFont, fontProvider = GoogleFontsProvider, weight = FontWeight.SemiBold),
+)
 
 /** Scripture text style — serif, generous line height (~1.6), per design-system.md. */
 val ScriptureTextStyle = TextStyle(

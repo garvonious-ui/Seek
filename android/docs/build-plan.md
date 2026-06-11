@@ -70,12 +70,21 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [ ] Notification deep links to specific screens — deferred
 - [ ] Skeleton loaders — deferred (spinners in place)
 
-## Phase 5 — Play Store
-- [ ] Google Play Developer account ($25 one-time)
-- [ ] Store listing, screenshots, feature graphic
-- [ ] Data safety form (mirror iOS privacy nutrition labels)
-- [ ] Real launcher icon + Lora font swapped in
-- [ ] Internal testing track → production submit
+## Phase 5 — Play Store (code prep DONE; blocked on Play org account)
+- [x] Real adaptive launcher icon (PNG mipmaps + adaptive XML + monochrome silhouette) from iOS 1024 asset
+- [x] Lora font swap — GoogleFont downloadable on Compose side, bundled TTF on CardRenderer side
+- [x] Release signing keystore + signingConfigs in app/build.gradle.kts (creds in `~/.seek/`)
+- [x] Signed release AAB (`app/build/outputs/bundle/release/app-release.aab`)
+- [x] Store listing draft — `docs/play-store-submission.md`
+- [x] Data safety form draft (in `play-store-submission.md`)
+- [x] IARC content rating draft (in `play-store-submission.md`)
+- [x] Phone screenshots (5) — `store/screenshots/`
+- [ ] **Google Play Developer Org account** — D-U-N-S in hand; sign up at play.google.com/console/signup, $25, identity verification
+- [ ] Designed 1024×500 feature graphic (optional polish)
+- [ ] 7" / 10" tablet screenshots (optional polish)
+- [ ] Upload AAB to internal testing track
+- [ ] Paste listing, complete Data Safety + IARC, paste test account
+- [ ] Closed testing → production submit
 
 ## Decisions log
 - Native Kotlin/Compose (not cross-platform/PWA) — match iOS polish.
