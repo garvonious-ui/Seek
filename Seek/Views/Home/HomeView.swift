@@ -139,7 +139,7 @@ struct HomeView: View {
 
                         // Free-text input — opens a new chat with whatever the user types.
                         HStack(spacing: 10) {
-                            TextField("Or type your own...", text: $customPrompt, axis: .vertical)
+                            TextField("What's on your heart?", text: $customPrompt, axis: .vertical)
                                 .textFieldStyle(.plain)
                                 .lineLimit(1...3)
                                 .submitLabel(.send)

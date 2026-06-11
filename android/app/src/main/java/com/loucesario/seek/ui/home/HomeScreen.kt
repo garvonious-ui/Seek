@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,10 +24,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
@@ -46,11 +51,13 @@ fun HomeScreen(
     isGuest: Boolean,
     onOpenProfile: () -> Unit,
     onCreateCard: (String, String) -> Unit,
+    onStartChat: (String) -> Unit,
     vm: HomeViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val online by com.loucesario.seek.SeekApplication.instance.connectivity.isOnline
         .collectAsStateWithLifecycle(true)
+    var customPrompt by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -114,13 +121,16 @@ fun HomeScreen(
             fontSize = 12.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextSecondary,
         )
         Spacer(Modifier.height(12.dp))
-        // Quick prompts (visual for Phase 1; wired to chat in Phase 2)
+        // Quick prompts — tapping one opens a chat seeded with that feeling.
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             QUICK_PROMPTS.chunked(2).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                     row.forEach { prompt ->
                         Surface(
-                            modifier = Modifier.weight(1f).height(48.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .clickable { onStartChat("I'm dealing with ${prompt.lowercase()}") },
                             shape = RoundedCornerShape(14.dp),
                             color = SeekColors.Surface,
                         ) {
@@ -132,6 +142,40 @@ fun HomeScreen(
                 }
             }
         }
+
+        Spacer(Modifier.height(12.dp))
+        // Free-text input — opens a new chat with whatever the user types.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            OutlinedTextField(
+                value = customPrompt,
+                onValueChange = { customPrompt = it },
+                placeholder = { Text("What's on your heart?") },
+                modifier = Modifier.weight(1f),
+                shape = RoundedCornerShape(14.dp),
+                maxLines = 3,
+            )
+            IconButton(
+                onClick = {
+                    val msg = customPrompt.trim()
+                    if (msg.isNotEmpty()) {
+                        onStartChat(msg)
+                        customPrompt = ""
+                    }
+                },
+                enabled = customPrompt.isNotBlank(),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "Send",
+                    tint = if (customPrompt.isNotBlank()) SeekColors.Sage else SeekColors.TextTertiary,
+                )
+            }
+        }
+        Spacer(Modifier.height(24.dp))
     }
 }
 

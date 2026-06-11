@@ -30,6 +30,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -67,11 +69,16 @@ fun CardCreatorScreen(onBack: () -> Unit, vm: CardCreatorViewModel = viewModel()
 
     val verseText = CardDraft.verseText
     val reference = CardDraft.reference
+    val verseContext = CardDraft.context?.takeIf { it.isNotBlank() }
     var template by remember { mutableStateOf(CardTemplates.all.first()) }
+    var includeInterpretation by remember { mutableStateOf(false) }
 
-    // Single renderer drives the preview; recomputed when the template changes.
-    val bitmap = remember(template.id, verseText, reference) {
-        CardRenderer.render(template, verseText, reference)
+    val activeInterpretation = if (includeInterpretation) verseContext else null
+
+    // Single renderer drives the preview; recomputed when template or the
+    // interpretation toggle changes.
+    val bitmap = remember(template.id, verseText, reference, activeInterpretation) {
+        CardRenderer.render(template, verseText, reference, activeInterpretation)
     }
 
     Scaffold(
@@ -111,6 +118,35 @@ fun CardCreatorScreen(onBack: () -> Unit, vm: CardCreatorViewModel = viewModel()
                 items(CardTemplates.all) { t -> TemplateSwatch(t, selected = t.id == template.id) { template = t } }
             }
 
+            // Interpretation toggle — only when the card came from a chat verse.
+            if (verseContext != null) {
+                Spacer(Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Include interpretation", fontSize = 15.sp, color = SeekColors.TextPrimary)
+                        Text(
+                            verseContext,
+                            fontSize = 12.sp,
+                            color = SeekColors.TextSecondary,
+                            maxLines = 2,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        )
+                    }
+                    Switch(
+                        checked = includeInterpretation,
+                        onCheckedChange = { includeInterpretation = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = SeekColors.Surface,
+                            checkedTrackColor = SeekColors.Sage,
+                        ),
+                    )
+                }
+            }
+
             Spacer(Modifier.height(16.dp))
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -126,7 +162,7 @@ fun CardCreatorScreen(onBack: () -> Unit, vm: CardCreatorViewModel = viewModel()
                     onClick = {
                         scope.launch {
                             val ok = withContext(Dispatchers.IO) { CardExport.saveToGallery(context, bitmap) }
-                            vm.persist(template.id, verseText, reference)
+                            vm.persist(template.id, verseText, reference, activeInterpretation)
                             snackbar.showSnackbar(if (ok) "Saved to your gallery" else "Couldn't save to gallery")
                         }
                     },

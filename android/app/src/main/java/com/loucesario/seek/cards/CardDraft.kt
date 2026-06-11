@@ -8,9 +8,12 @@ package com.loucesario.seek.cards
 object CardDraft {
     var verseText: String = ""
     var reference: String = ""
+    /** AI interpretation of the verse (chat `context`); null for daily verse / prayer. */
+    var context: String? = null
 
-    fun set(text: String, ref: String) {
+    fun set(text: String, ref: String, context: String? = null) {
         verseText = text
         reference = ref
+        this.context = context
     }
 }

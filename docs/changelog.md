@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-06-11 — Session 19 (5 feature additions, iOS + Android parity)
+
+Five user-requested features built on **both** platforms before the Android Play submission, so the two stores launch at parity. iOS side below; Android counterparts in `android/docs/changelog.md`. iOS compiles clean (`xcodebuild -sdk iphonesimulator` → **BUILD SUCCEEDED**); Android verified end-to-end on the emulator.
+
+### Built (iOS)
+- **F1 — Typewriter types once (iOS-only bug).** `TypewriterText`'s reveal state was per-view `@State`, destroyed on `LazyVStack` row recycle, so scrolling away and back re-typed the intro and fought the scroll anchor. Fixed by lifting "already revealed" state into `ChatView` (`revealedIntroIDs: Set<UUID>`, keyed on the stable `DisplayMessage.id`). `TypewriterText` now takes `messageID` / `alreadyRevealed` / `onReveal` and keys its `.task` on the id — recycled rows snap to the finished markdown, no replay. History-loaded intros are pre-seeded as revealed so reopened conversations render static.
+- **F2 — Interpretation on cards.** `CardCreatorView` gained `verseContext: String?` + an `includeInterpretation` toggle (default OFF, shown only when a context exists). The chat→card sheet passes `verse.context`. `VerseCardView` gained an `interpretation` param, rendered italic/dimmed below the reference; the verse auto-fit drops a tier when an interpretation is present so nothing overflows. Persisted to `SavedCard.contextNote` when included.
+- **F3 — Share full response as one card — BUILT, THEN REMOVED.** Shipped a `ResponseShareCardView` + "Share response" button, iterated twice (compact 9:16 references → "On experiencing {subject}" header + full verse cards at variable height). The variable-height version read as too **long and skinny** (e.g. 1080×2641 for 5 verses) and didn't share well. The user opted to **remove the feature entirely** rather than constrain it. All F3 surfaces deleted on both platforms (`ResponseShareCardView.swift` removed; `lastResponse`/`shareFullResponse`/`canShareResponse`/`ShareImageTarget` gone; regenerate bar back to its original single button). Kept: the per-verse-card **text-size bump** (verse larger, and the interpretation "sub text" made bigger **and bolder** — 46pt semibold italic — in `VerseCardView` / card creator) — independent of F3 and improves the normal cards.
+- **F4 — Chat empty-state — TRIED, THEN REVERTED.** Swapped the 3 sentence chips for 12 emotion pills + a shorter sub-line; the user didn't like the emotion pills. **Reverted entirely on iOS** — back to the original 3 sentence chips ("I'm feeling grateful today" / "I need strength for something hard" / "I just want to praise God") and the original descriptive sub-line. (`ChipFlowLayout` + the emotion list removed.) Net: the iOS chat empty state is unchanged from before this session.
+  - **Android got the parity win:** its empty state used to be a bare "What's on your heart?" — it now mirrors iOS (heading + descriptive sub-line + the same 3 sentence chips, wired to send on tap).
+- **F5 — Home input copy.** `HomeView` placeholder "Or type your own…" → "What's on your heart?" (the section heading is "Seek scripture for…", so no collision).
+
+### Decisions
+- Interpretation toggle defaults **OFF** — verse-first card by design; the user opts in.
+- F3 is a **compact fixed 9:16 card** (intro + references + prayer), per the user's pick over a variable-height stack — fits the existing fixed-size renderer pattern on both platforms; no template picker (it's a summary artifact, not a designable card).
+- Emotion pills send the single word (matches Home's existing single-word prompt behavior).
+
+### Files
+- New: `Seek/CardTemplates/ResponseShareCardView.swift`
+- Modified: `Seek/Views/Chat/ChatView.swift`, `Seek/Views/CardCreator/CardCreatorView.swift`, `Seek/CardTemplates/VerseCardView.swift`, `Seek/Views/Home/HomeView.swift`
+
+### Pending
+- **iOS:** bump build number, archive, App Store submit (new App Review cycle — these are user-facing). Not yet done.
+- **Android:** these fold into the first Play submission (signed AAB already builds). Still blocked on the Play org account.
+
+---
+
 ## 2026-05-17 — Session 18 (Build 9 rejected on chat 502 → retry/backoff → Build 10 APPROVED & LIVE)
 
 ### Context

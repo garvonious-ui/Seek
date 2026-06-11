@@ -86,6 +86,13 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [ ] Paste listing, complete Data Safety + IARC, paste test account
 - [ ] Closed testing → production submit
 
+## Feature additions (2026-06-11, parity with iOS — verified on emulator)
+- [x] Interpretation toggle on cards (CardDraft.context → CardRenderer interpretation param + Switch)
+- [x] ~~Share full response as one card~~ — built + iterated, then **removed** (read as too long/skinny)
+- [x] Chat empty-state: 12 emotion pills + sub-copy (ChatEmptyState / FlowRow)
+- [x] Home parity: wired quick-prompts + free-text input → ChatDraft → Chat tab auto-send
+- [x] Card text-size bump (verse + interpretation larger)
+
 ## Decisions log
 - Native Kotlin/Compose (not cross-platform/PWA) — match iOS polish.
 - `android/` folder in the iOS monorepo; `docs/schemas.md` + `docs/api-routes.md` shared.

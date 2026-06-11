@@ -5,6 +5,10 @@ import Photos
 struct CardCreatorView: View {
     let verseReference: String
     let verseText: String
+    /// The AI "interpretation" of the verse (the context line shown in chat).
+    /// Optional — present only when a card is created from a chat verse. When
+    /// set, the user can toggle it onto the card.
+    let verseContext: String?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -15,10 +19,14 @@ struct CardCreatorView: View {
     @State private var renderedImage: UIImage?
     @State private var showSavedToast = false
     @State private var showPermissionAlert = false
+    /// Whether to print the interpretation on the card. Defaults OFF so the
+    /// card stays verse-first; the user opts in.
+    @State private var includeInterpretation = false
 
-    init(verseReference: String, verseText: String, initialTemplateID: String? = nil) {
+    init(verseReference: String, verseText: String, verseContext: String? = nil, initialTemplateID: String? = nil) {
         self.verseReference = verseReference
         self.verseText = verseText
+        self.verseContext = verseContext
         // Preselect the template the user originally picked when re-editing
         // a saved card from the library. Falls back to the first template if
         // the ID no longer exists or none was passed.
@@ -31,7 +39,15 @@ struct CardCreatorView: View {
     init(prayerText: String) {
         self.verseReference = "A Prayer"
         self.verseText = prayerText
+        self.verseContext = nil
         self._selectedTemplate = State(initialValue: CardTemplate.all[0])
+    }
+
+    /// The interpretation actually drawn on the card — nil unless the user has
+    /// a context available and has toggled it on.
+    private var activeInterpretation: String? {
+        guard let verseContext, !verseContext.isEmpty, includeInterpretation else { return nil }
+        return verseContext
     }
 
     var body: some View {
@@ -45,6 +61,9 @@ struct CardCreatorView: View {
 
                     // Template picker
                     templatePicker
+
+                    // Interpretation toggle (only for chat verses)
+                    interpretationToggle
 
                     // Actions
                     actionButtons
@@ -99,10 +118,35 @@ struct CardCreatorView: View {
             verseText: verseText,
             verseReference: verseReference,
             template: selectedTemplate,
+            interpretation: activeInterpretation,
             renderSize: CGSize(width: width, height: height)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.15), radius: 12, y: 4)
+    }
+
+    // MARK: - Interpretation Toggle
+    //
+    // Only meaningful when the card came from a chat verse (we have the AI's
+    // interpretation). Lets the user add that context line onto the card.
+
+    @ViewBuilder
+    private var interpretationToggle: some View {
+        if let verseContext, !verseContext.isEmpty {
+            Toggle(isOn: $includeInterpretation.animation(.easeInOut(duration: 0.2))) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Include interpretation")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color(hex: "1A1A1A"))
+                    Text(verseContext)
+                        .font(.caption)
+                        .foregroundStyle(Color(hex: "6B7280"))
+                        .lineLimit(2)
+                }
+            }
+            .tint(Color(hex: "5B7B5E"))
+            .padding(.horizontal)
+        }
     }
 
     // MARK: - Template Picker
@@ -198,7 +242,8 @@ struct CardCreatorView: View {
             content: VerseCardView(
                 verseText: verseText,
                 verseReference: verseReference,
-                template: selectedTemplate
+                template: selectedTemplate,
+                interpretation: activeInterpretation
             )
         )
         renderer.scale = 2.0 // 2x for quality
@@ -253,6 +298,9 @@ struct CardCreatorView: View {
             verseText: verseText,
             templateID: selectedTemplate.id
         )
+        // Remember the interpretation only when it was actually printed on the
+        // card, so a Library re-render reproduces the same card.
+        card.contextNote = activeInterpretation
         modelContext.insert(card)
 
         if let profile = profiles.first {

@@ -1,5 +1,27 @@
 # Seek for Android — Changelog
 
+## 2026-06-11 — Session A7 (5 feature additions, parity with iOS)
+
+Five features landed on both platforms before the first Play submission so the two stores launch at parity. Android side below; iOS counterparts in `../../docs/changelog.md`.
+
+### Built (Android)
+- **F2 — Interpretation on cards.** The verse `context` now threads to the card creator. `CardDraft` gained a `context` field; the chat→card callback widened to `(text, ref, context)` (SeekRoot + ChatScreen). `CardCreatorScreen` shows an "Include interpretation" `Switch` (default OFF) only when a context exists; `CardRenderer.render` takes an `interpretation` param and draws it italic/dimmed below the reference, shrinking the verse height budget so nothing overflows. Persisted to `SavedCardEntity.contextNote` when included. **Verified on emulator: toggle ON → interpretation renders on the card, verse auto-shrinks, no overflow.**
+- **F3 — Share full response as one card — BUILT, THEN REMOVED.** Shipped `ResponseCardRenderer` + a "Share this response" button, iterated to an "On experiencing {subject}" header + full verse cards at variable height (verified via the rendered PNG: 1080×2641, "On experiencing grief" + 5 verse cards + prayer). The image read as too **long and skinny** and the user opted to **remove the feature** rather than constrain it. All F3 surfaces deleted (`ResponseCardRenderer.kt` removed; `lastResponse`/`lastPrompt` gone from `ChatViewModel`; share button + its imports removed from `ChatScreen`).
+- **Card text size bump** (both platforms, KEPT): `CardRenderer` verse start 96→112px, height budget raised. Interpretation ("sub text") made bigger **and bolder** at the user's request — 36→52px, regular→**bold italic**, higher alpha. Verified on emulator (fits above the watermark, no overflow).
+- **F4 — Chat empty-state (now mirrors iOS).** New `ChatEmptyState` composable replaces the bare "What's on your heart?": heading + the iOS descriptive sub-line + 3 sentence chips ("I'm feeling grateful today" / "I need strength for something hard" / "I just want to praise God") → `vm.sendMessage(...)`. (An interim 12-emotion-pill version was tried and reverted at the user's request — Android now matches iOS exactly.)
+- **F5 — Home parity (net-new on Android).** New `ChatDraft` hand-off object. The 6 Home quick-prompts are now clickable → `onStartChat("I'm dealing with …")`; added a Home "What's on your heart?" free-text input + send. `SeekRoot` switches to the Chat tab and sets `ChatDraft.pending` (authed only; guests land on the Chat sign-in gate). `ChatScreen` consumes the pending draft once on appear and auto-sends. **Verified: Home input → Chat tab → full streaming response.**
+
+### Notes
+- F1 (typewriter type-once) is iOS-only — Android renders the intro instantly, so there's no re-type bug.
+- `ResponseCardRenderer` is Canvas-based like `CardRenderer` (single source of truth, no Compose-capture hazards), with per-block shrink-to-fit for intro + prayer.
+- `assembleDebug` + signed `bundleRelease` both green; AAB still 6.3 MB.
+
+### Files
+- New: `ui/chat/ChatDraft.kt`, `cards/ResponseCardRenderer.kt`
+- Modified: `cards/CardDraft.kt`, `cards/CardRenderer.kt`, `ui/cards/CardCreatorScreen.kt`, `ui/cards/CardCreatorViewModel.kt`, `ui/chat/ChatScreen.kt`, `ui/chat/ChatViewModel.kt`, `ui/home/HomeScreen.kt`, `ui/SeekRoot.kt`
+
+---
+
 ## 2026-06-10 — Session A6 (Phase 5 prep: icon, Lora, signing, listing, screenshots)
 
 Code-side Play Store prep complete. Blocked only on the Google Play Developer Organization account approval (D-U-N-S verified, ready to register).

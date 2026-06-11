@@ -22,6 +22,10 @@ struct ChatView: View {
     @State private var anchorMessageID: String?
     @State private var hasLoadedInitialMessage = false
     @State private var lastUserPrompt: String?
+    /// Intro message ids that have finished their typewriter reveal. Keyed by
+    /// the stable DisplayMessage.id so a recycled row never re-types. History
+    /// loads pre-seed this so reopened conversations render static.
+    @State private var revealedIntroIDs: Set<UUID> = []
 
     private var profile: UserProfile? { profiles.first }
 
@@ -41,7 +45,7 @@ struct ChatView: View {
                                 case .user(let text):
                                     userBubble(text)
                                 case .intro(let text):
-                                    assistantIntro(text)
+                                    assistantIntro(text, messageID: msg.id)
                                 case .verses(let verses):
                                     versesCard(verses)
                                 case .prayer(let text):
@@ -154,7 +158,8 @@ struct ChatView: View {
         .sheet(item: $selectedVerse) { verse in
             CardCreatorView(
                 verseReference: verse.reference,
-                verseText: verse.text
+                verseText: verse.text,
+                verseContext: verse.context
             )
         }
         .sheet(item: $selectedPrayer) { target in
@@ -219,12 +224,23 @@ struct ChatView: View {
         }
     }
 
-    private func assistantIntro(_ text: String) -> some View {
+    private func assistantIntro(_ text: String, messageID: UUID) -> some View {
         HStack {
             // Typewriter reveal — the intro text feels like it's being
             // thought out rather than appearing all at once. Markdown
             // (**bold**, etc.) snaps in once the reveal completes.
-            TypewriterText(fullText: text)
+            //
+            // The "already revealed" state lives in the parent (keyed by the
+            // stable message id), NOT in TypewriterText's own @State — so a
+            // row that scrolls off-screen and recycles snaps straight to the
+            // finished text instead of re-typing and fighting the scroll
+            // anchor.
+            TypewriterText(
+                fullText: text,
+                messageID: messageID,
+                alreadyRevealed: revealedIntroIDs.contains(messageID),
+                onReveal: { revealedIntroIDs.insert(messageID) }
+            )
                 .foregroundStyle(Color(hex: "1A1A1A"))
                 .padding(12)
                 .background(Color(hex: "F3F4F6"))
@@ -860,7 +876,11 @@ struct ChatView: View {
                    let response = try? JSONDecoder().decode(ChatResponse.self, from: data) {
 
                     if !response.message.isEmpty {
-                        messages.append(DisplayMessage(kind: .intro(response.message)))
+                        let intro = DisplayMessage(kind: .intro(response.message))
+                        messages.append(intro)
+                        // History-loaded intros are old — show them static, no
+                        // typewriter replay.
+                        revealedIntroIDs.insert(intro.id)
                     }
                     if !response.verses.isEmpty {
                         messages.append(DisplayMessage(kind: .verses(response.verses)))
@@ -880,7 +900,9 @@ struct ChatView: View {
                     conversationHistory.append(["role": "assistant", "content": msg.content])
                 } else {
                     // Fallback: show as plain text
-                    messages.append(DisplayMessage(kind: .intro(msg.content)))
+                    let intro = DisplayMessage(kind: .intro(msg.content))
+                    messages.append(intro)
+                    revealedIntroIDs.insert(intro.id)
                     conversationHistory.append(["role": "assistant", "content": msg.content])
                 }
             }
@@ -922,6 +944,17 @@ struct PrayerCardTarget: Identifiable {
 // AI's opening line feels like it's being thought out rather than dumped.
 struct TypewriterText: View {
     let fullText: String
+    /// Stable id of the owning message. The reveal animation is keyed on this
+    /// (NOT on `fullText`) so two messages with identical intro text don't
+    /// confuse the `.task` identity.
+    let messageID: UUID
+    /// Whether this message already finished revealing. When true (e.g. the
+    /// row recycled after scrolling, or the conversation was loaded from
+    /// history) the text snaps straight to its final markdown form.
+    let alreadyRevealed: Bool
+    /// Called once when the reveal completes, so the parent can remember this
+    /// message and pass `alreadyRevealed: true` on any future re-render.
+    let onReveal: () -> Void
     /// ~70 chars/sec ≈ 14ms per char. Snappy but legible. Bump down for a
     /// more "thinking" pace; bump up for snappier delivery.
     var charsPerSecond: Double = 70
@@ -935,15 +968,22 @@ struct TypewriterText: View {
                 Text(String(fullText.prefix(visibleCount)))
             }
         }
-        .task(id: fullText) {
-            // Reset if the bound text changes (e.g. view reused for a new
-            // message). Animate from 0 to full.
+        .task(id: messageID) {
+            // Already revealed once (recycled row / history load): snap to the
+            // finished text, no animation, no scroll disruption.
+            if alreadyRevealed {
+                visibleCount = fullText.count
+                return
+            }
+            // Fresh reveal — animate from 0 to full, then mark complete.
             visibleCount = 0
             let interval: Duration = .milliseconds(max(1, Int(1000.0 / charsPerSecond)))
             for n in 1...max(1, fullText.count) {
                 visibleCount = n
                 try? await Task.sleep(for: interval)
             }
+            visibleCount = fullText.count
+            onReveal()
         }
     }
 

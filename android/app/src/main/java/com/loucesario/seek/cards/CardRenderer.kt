@@ -36,7 +36,12 @@ object CardRenderer {
         Typeface.create(loraRegular, Typeface.BOLD)
     }
 
-    fun render(template: CardTemplate, verseText: String, reference: String): Bitmap {
+    fun render(
+        template: CardTemplate,
+        verseText: String,
+        reference: String,
+        interpretation: String? = null,
+    ): Bitmap {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
@@ -53,21 +58,25 @@ object CardRenderer {
         val sidePadding = 120f
         val maxTextWidth = (W - 2 * sidePadding).toInt()
         val serif = loraRegular
+        val hasInterp = !interpretation.isNullOrBlank()
 
-        // Verse text — serif, auto-fit to a vertical budget
+        // Verse text — serif, auto-fit to a vertical budget. Shrink the budget
+        // when an interpretation will also be printed so both fit.
         val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             color = template.textColor.toArgb()
             typeface = serif
         }
-        val heightBudget = 1120
-        var size = 96f
+        val heightBudget = if (hasInterp) 1020 else 1240
+        var size = 112f
         var layout = buildLayout(verseText, textPaint, maxTextWidth, size)
-        while (size > 40f && layout.height > heightBudget) {
+        while (size > 48f && layout.height > heightBudget) {
             size -= 4f
             layout = buildLayout(verseText, textPaint, maxTextWidth, size)
         }
 
-        val verseTop = (H - layout.height) / 2f - 80f
+        // Shift the verse block up when an interpretation follows so there's
+        // room for the reference + interpretation below it.
+        val verseTop = (H - layout.height) / 2f - (if (hasInterp) 200f else 80f)
         canvas.save()
         canvas.translate(sidePadding, verseTop)
         layout.draw(canvas)
@@ -80,7 +89,29 @@ object CardRenderer {
             textSize = 46f
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText(reference, W / 2f, verseTop + layout.height + 96f, refPaint)
+        val refBaseline = verseTop + layout.height + 96f
+        canvas.drawText(reference, W / 2f, refBaseline, refPaint)
+
+        // Interpretation (optional) — italic serif, dimmed, centered below the
+        // reference.
+        if (hasInterp) {
+            val interpPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = template.textColor.toArgb()
+                alpha = 225
+                typeface = Typeface.create(serif, Typeface.BOLD_ITALIC)
+                textSize = 52f
+            }
+            val interpLayout = StaticLayout.Builder
+                .obtain(interpretation!!, 0, interpretation.length, interpPaint, maxTextWidth)
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(8f, 1.1f)
+                .setIncludePad(false)
+                .build()
+            canvas.save()
+            canvas.translate(sidePadding, refBaseline + 60f)
+            interpLayout.draw(canvas)
+            canvas.restore()
+        }
 
         // Watermark
         val wmPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {

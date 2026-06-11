@@ -9,7 +9,7 @@ import java.util.UUID
 class CardCreatorViewModel(app: Application) : AndroidViewModel(app) {
     private val savedCardDao = (app as SeekApplication).database.savedCardDao()
 
-    suspend fun persist(templateId: String, verseText: String, reference: String) {
+    suspend fun persist(templateId: String, verseText: String, reference: String, contextNote: String? = null) {
         savedCardDao.upsert(
             SavedCardEntity(
                 id = UUID.randomUUID().toString(),
@@ -18,7 +18,7 @@ class CardCreatorViewModel(app: Application) : AndroidViewModel(app) {
                 templateId = templateId,
                 createdAt = System.currentTimeMillis(),
                 isFavorite = false,
-                contextNote = null,
+                contextNote = contextNote,
             )
         )
     }

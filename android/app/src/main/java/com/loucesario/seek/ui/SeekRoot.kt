@@ -24,6 +24,7 @@ import androidx.navigation.compose.rememberNavController
 import com.loucesario.seek.cards.CardDraft
 import com.loucesario.seek.ui.auth.AuthViewModel
 import com.loucesario.seek.ui.cards.CardCreatorScreen
+import com.loucesario.seek.ui.chat.ChatDraft
 import com.loucesario.seek.ui.chat.ChatScreen
 import com.loucesario.seek.ui.home.HomeScreen
 import com.loucesario.seek.ui.library.LibraryScreen
@@ -77,13 +78,24 @@ fun SeekRoot(authVm: AuthViewModel) {
                         CardDraft.set(text, ref)
                         navController.navigate("card")
                     },
+                    onStartChat = { message ->
+                        // Authed users carry the message into the Chat tab,
+                        // where ChatScreen auto-sends it. Guests just land on
+                        // the Chat tab's sign-in gate.
+                        if (!session.isGuest) ChatDraft.pending = message
+                        navController.navigate(SeekTab.CHAT.route) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                 )
             }
             composable(SeekTab.CHAT.route) {
                 ChatScreen(
                     isGuest = session.isGuest,
-                    onCreateCard = { text, ref ->
-                        CardDraft.set(text, ref)
+                    onCreateCard = { text, ref, context ->
+                        CardDraft.set(text, ref, context)
                         navController.navigate("card")
                     },
                 )

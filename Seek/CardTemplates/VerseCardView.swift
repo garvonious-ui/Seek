@@ -8,6 +8,8 @@ struct VerseCardView: View {
     let verseText: String
     let verseReference: String
     let template: CardTemplate
+    /// Optional AI interpretation line, printed below the reference when set.
+    var interpretation: String? = nil
     /// Defaults to 9:16 IG story (1080x1920). Pass a smaller size for a
     /// thumbnail; everything scales proportionally.
     var renderSize: CGSize = CGSize(width: 1080, height: 1920)
@@ -46,6 +48,16 @@ struct VerseCardView: View {
                     .font(.system(size: 44 * scale, weight: .semibold))
                     .foregroundStyle(template.referenceColor)
 
+                if let interpretation, !interpretation.isEmpty {
+                    Text(interpretation)
+                        .font(.system(size: 46 * scale, weight: .semibold))
+                        .italic()
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(template.textColor.opacity(0.88))
+                        .padding(.horizontal, 110 * scale)
+                        .padding(.top, 14 * scale)
+                }
+
                 Spacer()
 
                 // Wordmark watermark — uses the same brand asset as launch
@@ -64,13 +76,19 @@ struct VerseCardView: View {
     }
 
     /// Auto-size font based on verse length. Scaled by `scale` at use site.
+    /// When an interpretation is also printed, shrink slightly to leave room
+    /// for it so a long verse + interpretation doesn't overflow the card.
     private var fontSize: CGFloat {
         let length = verseText.count
-        if length < 80 { return 88 }
-        if length < 150 { return 72 }
-        if length < 250 { return 60 }
-        if length < 400 { return 48 }
-        return 40
+        let base: CGFloat
+        if length < 80 { base = 104 }
+        else if length < 150 { base = 88 }
+        else if length < 250 { base = 72 }
+        else if length < 400 { base = 58 }
+        else { base = 48 }
+
+        let hasInterpretation = !(interpretation ?? "").isEmpty
+        return hasInterpretation ? max(42, base - 8) : base
     }
 }
 

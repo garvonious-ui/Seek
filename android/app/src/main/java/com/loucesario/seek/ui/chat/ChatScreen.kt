@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,7 +52,7 @@ import com.loucesario.seek.ui.theme.SeekColors
 @Composable
 fun ChatScreen(
     isGuest: Boolean,
-    onCreateCard: (String, String) -> Unit,
+    onCreateCard: (String, String, String?) -> Unit,
     vm: ChatViewModel = viewModel(),
 ) {
     if (isGuest) {
@@ -64,6 +67,11 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
+    // Consume a message handed off from Home (quick prompt / free-text input).
+    LaunchedEffect(Unit) {
+        ChatDraft.consume()?.let { vm.sendMessage(it) }
+    }
+
     LaunchedEffect(items.size, loading) {
         val count = items.size + if (loading) 1 else 0
         if (count > 0) listState.animateScrollToItem(count - 1)
@@ -73,12 +81,10 @@ fun ChatScreen(
         modifier = Modifier.fillMaxSize().background(SeekColors.Background).imePadding(),
     ) {
         if (items.isEmpty()) {
-            Box(Modifier.weight(1f).fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    "What's on your heart?",
-                    fontSize = 18.sp, color = SeekColors.TextSecondary,
-                )
-            }
+            ChatEmptyState(
+                modifier = Modifier.weight(1f),
+                onPick = { vm.sendMessage(it) },
+            )
         } else {
             LazyColumn(
                 state = listState,
@@ -140,7 +146,7 @@ fun ChatScreen(
 }
 
 @Composable
-private fun ChatRow(item: ChatItem, onCreateCard: (String, String) -> Unit) {
+private fun ChatRow(item: ChatItem, onCreateCard: (String, String, String?) -> Unit) {
     when (item) {
         is ChatItem.UserBubble -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Surface(
@@ -155,7 +161,7 @@ private fun ChatRow(item: ChatItem, onCreateCard: (String, String) -> Unit) {
         is ChatItem.Intro -> Text(item.text, fontSize = 16.sp, color = SeekColors.TextPrimary)
 
         is ChatItem.Verses -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item.verses.forEach { v -> VerseCard(v, onTap = { onCreateCard(v.text, v.reference) }) }
+            item.verses.forEach { v -> VerseCard(v, onTap = { onCreateCard(v.text, v.reference, v.context) }) }
         }
 
         is ChatItem.Prayer -> CardBox(bg = SeekColors.LightGold) {
@@ -219,5 +225,48 @@ private fun CardBox(
     val mod = if (onClick != null) base.clickable(onClick = onClick) else base
     Surface(color = bg, shape = RoundedCornerShape(12.dp), shadowElevation = 1.dp, modifier = mod) {
         Column(Modifier.padding(16.dp), content = content)
+    }
+}
+
+/** Example prompts offered on the empty chat screen. */
+private val SUGGESTION_PROMPTS = listOf(
+    "I'm feeling grateful today",
+    "I need strength for something hard",
+    "I just want to praise God",
+)
+
+@Composable
+private fun ChatEmptyState(modifier: Modifier, onPick: (String) -> Unit) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(24.dp))
+        Text(
+            "Share what's on your heart",
+            fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = SeekColors.TextPrimary,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Tell me what you're going through — joy, gratitude, struggle, or seeking — and I'll find scripture for your moment.",
+            fontSize = 14.sp, color = SeekColors.TextSecondary, textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(20.dp))
+        SUGGESTION_PROMPTS.forEach { prompt ->
+            Surface(
+                color = SeekColors.Sage.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.padding(vertical = 5.dp).clickable { onPick(prompt) },
+            ) {
+                Text(
+                    prompt,
+                    fontSize = 15.sp, color = SeekColors.Sage,
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                )
+            }
+        }
     }
 }
