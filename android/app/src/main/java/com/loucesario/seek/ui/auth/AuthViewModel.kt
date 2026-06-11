@@ -6,16 +6,19 @@ import androidx.lifecycle.viewModelScope
 import com.loucesario.seek.SeekApplication
 import com.loucesario.seek.data.SeekSession
 import com.loucesario.seek.data.SessionRepository
+import com.loucesario.seek.data.remote.SeekApi
 import com.loucesario.seek.data.remote.SupabaseModule
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Apple
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class AuthUiState(
     val loading: Boolean = false,
@@ -105,6 +108,29 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     fun signOut() = run("Couldn't sign out.") {
         sessionRepo.signOut()
+    }
+
+    /**
+     * Permanently deletes the account: server-side delete (Edge Function) →
+     * wipe local Room data → clear the session and reset to a fresh install.
+     * On success the auth state flips to UNAUTHENTICATED, routing to onboarding.
+     */
+    fun deleteAccount(onResult: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            _ui.value = AuthUiState(loading = true)
+            try {
+                SeekApi.deleteAccount() // token still valid here
+                withContext(Dispatchers.IO) {
+                    (getApplication() as SeekApplication).database.clearAllTables()
+                }
+                sessionRepo.deleteAccountReset()
+                _ui.value = AuthUiState()
+                onResult(true)
+            } catch (t: Throwable) {
+                _ui.value = AuthUiState(error = t.message ?: "Couldn't delete your account. Please try again.")
+                onResult(false)
+            }
+        }
     }
 
     fun clearError() {

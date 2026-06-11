@@ -43,4 +43,20 @@ object SeekApi {
         val response = SupabaseModule.client.functions.invoke("daily-verse")
         return SeekJson.decodeFromString(DailyVerseDto.serializer(), response.bodyAsText())
     }
+
+    /**
+     * Permanently deletes the signed-in user's account + all server-side data
+     * (the `delete-account` Edge Function deletes the auth user, cascading to
+     * profiles / notification_settings / usage_logs). The session token is
+     * attached automatically by the Functions plugin and must still be valid
+     * when this is called (i.e. before sign-out).
+     */
+    suspend fun deleteAccount() {
+        val response = SupabaseModule.client.functions.invoke("delete-account") {
+            contentType(ContentType.Application.Json)
+        }
+        if (response.status.value !in 200..299) {
+            throw IllegalStateException("Account deletion failed (${response.status.value})")
+        }
+    }
 }

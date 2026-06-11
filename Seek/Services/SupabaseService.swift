@@ -72,9 +72,13 @@ class SupabaseService {
     }
 
     func deleteAccount() async throws {
-        // Delete user via Supabase admin API (requires Edge Function for full delete)
-        // For now, sign out — full account deletion needs server-side support
-        try await client.auth.signOut()
+        // Permanently delete the account + all server-side data via the
+        // delete-account Edge Function (service-role admin delete; cascades to
+        // profiles / notification_settings / usage_logs). Invoke BEFORE signing
+        // out, while the session token is still valid.
+        struct DeleteResponse: Decodable { let success: Bool? }
+        let _: DeleteResponse = try await client.functions.invoke("delete-account")
+        try? await client.auth.signOut()
     }
 
     // MARK: - Auth State

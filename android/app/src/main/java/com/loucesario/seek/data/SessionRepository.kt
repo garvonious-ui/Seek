@@ -121,4 +121,18 @@ class SessionRepository(private val appContext: Context) {
         }
         _session.value = SeekSession()
     }
+
+    /**
+     * After the server-side account delete has succeeded: clear the (now
+     * invalid) local session and reset all state to a fresh install. The
+     * sign-out call is best-effort — the token is already invalid server-side.
+     */
+    suspend fun deleteAccountReset() {
+        runCatching { SupabaseModule.client.auth.signOut() }
+        appContext.authDataStore.edit {
+            it[hasGuestKey] = false
+            it[hasOnboardedKey] = false
+        }
+        _session.value = SeekSession()
+    }
 }
