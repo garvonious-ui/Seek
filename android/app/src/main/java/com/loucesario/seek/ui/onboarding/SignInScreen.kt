@@ -15,7 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -125,23 +124,10 @@ fun SignInScreen(authVm: AuthViewModel) {
             )
         }
 
-        Spacer(Modifier.height(8.dp))
-        Text("or", color = SeekColors.TextTertiary, fontSize = 13.sp)
-        Spacer(Modifier.height(8.dp))
-
-        // Social sign-in (browser OAuth). Functional once providers are
-        // configured in Supabase (Google client ID; Apple OAuth Services ID).
-        OutlinedButton(
-            onClick = { authVm.signInWithGoogle() },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(25.dp),
-        ) { Text("Continue with Google", color = SeekColors.TextPrimary) }
-        Spacer(Modifier.height(10.dp))
-        OutlinedButton(
-            onClick = { authVm.signInWithApple() },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            shape = RoundedCornerShape(25.dp),
-        ) { Text("Continue with Apple", color = SeekColors.TextPrimary) }
+        // Social sign-in (Google/Apple) is hidden until the OAuth providers are
+        // configured in Supabase for Android (Google client ID; Apple OAuth
+        // Services ID + key). `signInWithGoogle()` / `signInWithApple()` remain
+        // on AuthViewModel, ready to re-enable. Email + guest cover launch.
 
         Spacer(Modifier.height(20.dp))
         TextButton(onClick = { authVm.continueAsGuest() }) {
