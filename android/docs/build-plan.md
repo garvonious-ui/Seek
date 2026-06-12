@@ -70,7 +70,15 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [ ] Notification deep links to specific screens — deferred
 - [ ] Skeleton loaders — deferred (spinners in place)
 
-## Phase 5 — Play Store (code prep DONE; blocked on Play org account)
+## Phase 5 — Play Store ✅ SUBMITTED (2026-06-11, in review)
+- [x] Google Play org account (LCIII Ventures / Ask Seek Pray) approved
+- [x] In-app account deletion + `delete-account` Edge Function + web deletion URL (Google policy)
+- [x] Google/Apple OAuth buttons hidden (no Android backend) — email + guest at launch
+- [x] Production release 3 (1.0.0): bundle + notes + 177 countries + listing + all declarations
+- [x] **Sent for review → Production, full rollout** (auto-publishes on approval; managed publishing off)
+- [ ] (post-approval) wire Google Sign-In + re-enable OAuth buttons in a future update
+
+### Earlier prep (code-side, done before submission)
 - [x] Real adaptive launcher icon (PNG mipmaps + adaptive XML + monochrome silhouette) from iOS 1024 asset
 - [x] Lora font swap — GoogleFont downloadable on Compose side, bundled TTF on CardRenderer side
 - [x] Release signing keystore + signingConfigs in app/build.gradle.kts (creds in `~/.seek/`)

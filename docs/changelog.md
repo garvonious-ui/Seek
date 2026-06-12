@@ -22,8 +22,12 @@ Five user-requested features built on **both** platforms before the Android Play
 - Modified: `Seek/Views/Chat/ChatView.swift`, `Seek/Views/CardCreator/CardCreatorView.swift`, `Seek/CardTemplates/VerseCardView.swift`, `Seek/Views/Home/HomeView.swift`
 
 ### Pending
-- **iOS:** bump build number, archive, App Store submit (new App Review cycle — these are user-facing). Not yet done.
-- **Android:** these fold into the first Play submission (signed AAB already builds). Still blocked on the Play org account.
+- ~~**iOS:** bump build number, archive, App Store submit~~ — **DONE: submitted as 1.1.0 (build 11).** Now in App Review.
+- ~~**Android:** fold into the first Play submission~~ — **DONE: submitted to Play (1.0.0, code 3), in review.**
+
+### Post-session (2026-06-11) — account deletion + both stores submitted
+- **Account deletion** built for Google Play / App Store compliance: `delete-account` Edge Function (service-role delete, cascades all data) + Android in-app "Delete Account" + web URL `askseekpray.app/delete-account`. iOS `SupabaseService.deleteAccount()` rewired from a fake sign-out to call the real function (ships in a future iOS update). Verified end-to-end on the Android emulator.
+- **Both stores in review:** iOS **1.1.0 (build 11)** and Android **1.0.0 (code 3)**. See `android/docs/changelog.md` Session A8 for the full Play submission detail.
 
 ---
 

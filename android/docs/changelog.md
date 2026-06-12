@@ -1,5 +1,27 @@
 # Seek for Android — Changelog
 
+## 2026-06-11 — Session A8 (account deletion + **submitted to Play Store**)
+
+The Play Data Safety export surfaced the real launch blocker: **no in-app account deletion** (Android had none; iOS's was a fake sign-out) and no deletion URL — both required by Google's account-deletion policy.
+
+### Built
+- **`delete-account` Edge Function** (deployed) — validates the caller's JWT, deletes the auth user with the service role. Deleting the auth user cascades to `profiles` / `notification_settings` / `usage_logs` (verified FK ON DELETE CASCADE). Chat content was never stored. Repo source at `supabase/functions/delete-account/`.
+- **Android in-app deletion** — `SeekApi.deleteAccount()` → `SessionRepository.deleteAccountReset()` → `AuthViewModel.deleteAccount()` (server delete → wipe Room → clear session → route to onboarding). A red **"Delete Account"** button + confirmation dialog in Profile.
+- **iOS** — `SupabaseService.deleteAccount()` now calls the same Edge Function (was a fake sign-out); ships in a future iOS update.
+- **Web deletion page** — `landing/delete-account.html` → live at `https://askseekpray.app/delete-account` (the Data Safety deletion URL).
+- **Hid the Google/Apple sign-in buttons** (no working backend on Android — Apple needs the web-flow Services ID; Google was never configured). Removed to avoid dead buttons in review. Email + guest cover launch.
+- **Verified end-to-end on emulator** with a throwaway account: in-app Delete → routed to onboarding; confirmed in the DB the auth user + profile were gone and the reviewer test account was untouched.
+
+### Submitted to the Play Store
+- Production release **3 (1.0.0)** created, release notes added, **all 177 countries** selected, store listing + all App content declarations complete.
+- **Sent for review** — status: *Changes in review → Production 3 (1.0.0), Start full rollout*. Managed publishing off, so it auto-publishes on approval. Category: **Books & Reference**. Org account (skips the 12-tester/14-day gate).
+- versionCode bumped 1 → 3 across the session (2 = OAuth-hide, 3 = + account deletion).
+
+### Both stores now in review
+- iOS **1.1.0 (build 11)** and Android **1.0.0 (code 3)** both submitted on 2026-06-11.
+
+---
+
 ## 2026-06-11 — Session A7 (5 feature additions, parity with iOS)
 
 Five features landed on both platforms before the first Play submission so the two stores launch at parity. Android side below; iOS counterparts in `../../docs/changelog.md`.
