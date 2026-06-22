@@ -32,9 +32,14 @@ Closed the iOS↔Android feature gap. Driven by a side-by-side audit (`docs/andr
 - New: `data/SeekPrefs.kt`, `data/StreakManager.kt`.
 - Modified: `cards/{CardTemplate,CardRenderer,CardDraft}.kt`, `ui/cards/CardCreator*.kt`, `data/local/Daos.kt`, `data/remote/{SeekApi,dto/ChatDto}.kt`, `ui/SeekRoot.kt`, `ui/chat/{ChatScreen,ChatViewModel}.kt`, `ui/home/{HomeScreen,HomeViewModel}.kt`, `ui/library/{LibraryScreen,LibraryViewModel}.kt`, `ui/onboarding/OnboardingFlow.kt`, `ui/profile/ProfileScreen.kt`, `app/build.gradle.kts` (3→4 / 1.1.0).
 
-### Pending
-- User submits AAB **4 (1.1.0)** to Play when ready (already R8-built + signed at `app/build/outputs/bundle/release/app-release.aab`).
-- Post-launch: wire Google Sign-In + un-hide OAuth buttons (needs Google Cloud + Supabase config).
+### Shipped
+- **Submitted to Play as production release 4 (1.1.0)** — browser-driven via the Play Console (Ask Seek Pray org, account u/2). Reused the already-uploaded v4 AAB from the library, release notes written (user-facing feature list, no Google mention), 177 countries retained, 0 devices dropped. "Send 1 change for review" → **in review** (managed publishing off → auto-publishes on approval).
+
+### Google Sign-In — attempted, BLOCKED, reverted
+Per the user's request we tried to fold Google Sign-In into this release. Code was written (MainActivity `handleDeeplinks` in onCreate + onNewIntent, manifest `launchMode="singleTask"`, un-hidden "Continue with Google" button calling the existing `signInWith(Google)` browser-OAuth) and compiled clean — then **fully reverted** (back to commit `6d84678`) because the backend can't be completed right now:
+- The Supabase Google provider already has a **stored secret but an invalid Client ID** — the field literally holds `garvonious-ui's Project` (a project name with spaces; Supabase rejects "Client IDs should not contain spaces"), provider toggled OFF.
+- **Google Cloud Console is locked behind 2-Step Verification** not enabled on the user's account, so the real Web client ID can't be obtained/created.
+- **To finish later (v5):** user enables 2SV → Cloud Console → create/find OAuth **Web** client (redirect `https://hxfiaowayrhuhzhhbaix.supabase.co/auth/v1/callback`) → paste the real client ID into Supabase + enable + Save → re-apply the 3 small code changes → test → ship. No SHA-1 needed (browser flow). Per the user's call, shipped v4 (pure parity) without it; no dead button.
 
 ## 2026-06-11 — Session A8 (account deletion + **submitted to Play Store**)
 
