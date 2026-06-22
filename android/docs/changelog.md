@@ -35,11 +35,15 @@ Closed the iOS↔Android feature gap. Driven by a side-by-side audit (`docs/andr
 ### Shipped
 - **Submitted to Play as production release 4 (1.1.0)** — browser-driven via the Play Console (Ask Seek Pray org, account u/2). Reused the already-uploaded v4 AAB from the library, release notes written (user-facing feature list, no Google mention), 177 countries retained, 0 devices dropped. "Send 1 change for review" → **in review** (managed publishing off → auto-publishes on approval).
 
-### Google Sign-In — attempted, BLOCKED, reverted
-Per the user's request we tried to fold Google Sign-In into this release. Code was written (MainActivity `handleDeeplinks` in onCreate + onNewIntent, manifest `launchMode="singleTask"`, un-hidden "Continue with Google" button calling the existing `signInWith(Google)` browser-OAuth) and compiled clean — then **fully reverted** (back to commit `6d84678`) because the backend can't be completed right now:
-- The Supabase Google provider already has a **stored secret but an invalid Client ID** — the field literally holds `garvonious-ui's Project` (a project name with spaces; Supabase rejects "Client IDs should not contain spaces"), provider toggled OFF.
-- **Google Cloud Console is locked behind 2-Step Verification** not enabled on the user's account, so the real Web client ID can't be obtained/created.
-- **To finish later (v5):** user enables 2SV → Cloud Console → create/find OAuth **Web** client (redirect `https://hxfiaowayrhuhzhhbaix.supabase.co/auth/v1/callback`) → paste the real client ID into Supabase + enable + Save → re-apply the 3 small code changes → test → ship. No SHA-1 needed (browser flow). Per the user's call, shipped v4 (pure parity) without it; no dead button.
+### Google Sign-In — first blocked, then DONE + shipped as v5 (commit `efaf9b7`)
+We first tried to fold Google Sign-In into the v4 release; the code (MainActivity `handleDeeplinks` in onCreate + onNewIntent, manifest `launchMode="singleTask"`, un-hidden "Continue with Google" button → existing `signInWith(Google)` browser-OAuth) compiled clean but was **reverted** to ship v4 (parity) because the backend was broken: the Supabase Google provider held an **invalid Client ID** (`garvonious-ui's Project`, has spaces) and **Google Cloud was locked behind 2-Step Verification**. v4 shipped clean (no dead button) and **published**.
+
+Then, browser-assisted, we built the whole Google backend and shipped it as **v5 (versionCode 5)**:
+- **Google Cloud** (account `lou.cesario92@gmail.com`, authuser=2 — the one with 2SV; skipped the "Try for free" billing funnel by going straight to `console.cloud.google.com/projectcreate`): new project **"Seek" (`seek-500222`)** → OAuth consent screen (External, **published to production** — instant, no verification for basic email/profile scopes) → OAuth **Web** client `563602952053-hj5b16cc9dgp42iih5pr9juipptljncm.apps.googleusercontent.com` with redirect `https://hxfiaowayrhuhzhhbaix.supabase.co/auth/v1/callback`.
+- **Supabase** Google provider **enabled** with the real client id (replacing the bad value) + the new secret. (Client secret is a credential — copied to clipboard via the dialog, user pasted; the public client id was set via the form directly.)
+- **Code re-applied** (MainActivity / manifest / SignInScreen) + versionCode 4 → 5.
+- **Verified on emulator:** "Continue with Google" opens the real Google sign-in page ("to continue to …supabase.co"), no config error. Final credential entry is one-tap on a real device.
+- **Submitted to Play as production release 5 (1.1.0)** — release notes lead with "Sign in with Google", 0 devices dropped, **in review** (auto-publishes on approval).
 
 ## 2026-06-11 — Session A8 (account deletion + **submitted to Play Store**)
 
