@@ -3,6 +3,7 @@ package com.loucesario.seek.ui.onboarding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -124,12 +127,25 @@ fun SignInScreen(authVm: AuthViewModel) {
             )
         }
 
-        // Social sign-in (Google/Apple) is hidden until the OAuth providers are
-        // configured in Supabase for Android (Google client ID; Apple OAuth
-        // Services ID + key). `signInWithGoogle()` / `signInWithApple()` remain
-        // on AuthViewModel, ready to re-enable. Email + guest cover launch.
+        // Google sign-in (supabase-kt browser OAuth → seek://auth-callback).
+        // Apple stays hidden on Android (needs the Apple OAuth Services ID + key).
+        Spacer(Modifier.height(16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            HorizontalDivider(modifier = Modifier.weight(1f), color = SeekColors.Divider)
+            Text("  or  ", color = SeekColors.TextTertiary, fontSize = 13.sp)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = SeekColors.Divider)
+        }
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(
+            onClick = { authVm.signInWithGoogle() },
+            enabled = !ui.loading,
+            modifier = Modifier.fillMaxWidth().height(54.dp),
+            shape = RoundedCornerShape(27.dp),
+        ) {
+            Text("Continue with Google", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextPrimary)
+        }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(12.dp))
         TextButton(onClick = { authVm.continueAsGuest() }) {
             Text("Continue without an account", color = SeekColors.MidSage, fontWeight = FontWeight.Medium)
         }
