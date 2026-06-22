@@ -103,8 +103,9 @@ fun SeekRoot(authVm: AuthViewModel) {
             composable(SeekTab.LIBRARY.route) {
                 LibraryScreen(
                     isGuest = session.isGuest,
-                    onOpenCard = { text, ref ->
-                        CardDraft.set(text, ref)
+                    onOpenCard = { card ->
+                        // Re-edit: preselect the card's original template + restore its interpretation.
+                        CardDraft.set(card.verseText, card.verseReference, card.contextNote, card.templateId)
                         navController.navigate("card")
                     },
                 )

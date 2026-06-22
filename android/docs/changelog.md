@@ -1,5 +1,41 @@
 # Seek for Android — Changelog
 
+## 2026-06-22 — Session A9 (full feature parity with iOS — 12 gaps closed, verified on emulator)
+
+Closed the iOS↔Android feature gap. Driven by a side-by-side audit (`docs/android-feature-mapping.md` + Explore maps) after the user asked for "the same features." Everything below was implemented, compiles clean (`assembleDebug` + `bundleRelease`/R8), and was **verified live on the emulator signed in as `androidtest@askseekpray.app`**. Version bumped **3 → 4 (1.1.0)**; submission-ready AAB rebuilt.
+
+### Chat parity
+- **Action-steps card** — added `ActionStepDto` to `ChatDto`; `ChatItem.Action` + a numbered-circle card in `ChatScreen` (sage 1/2/3 badges + italic reason), mirroring iOS. Verified live ("Release + Move").
+- **Worship deep links** — Song card now has **Apple Music** (`music.apple.com/search`) + **Spotify** (`spotify:search:` → web fallback) via `Intent.ACTION_VIEW`. Verified live.
+- **Regenerate** — `ChatViewModel.regenerate()` strips trailing assistant rows + re-asks with a "different scriptures" hint; a "↻ Show different scriptures" bar appears when a response is complete. Refactored `sendMessage` into `callChat` + `renderResponse` helpers.
+- **Favoriting** — heart toggle on verse cards (`toggleFavorite`, keyed on reference) + "Save prayer" on prayer cards (`togglePrayer`, keyed on text). `favoritedRefs`/`savedPrayerTexts` StateFlows drive the fill. New `FavoriteVerseDao.deleteByReference` / `SavedPrayerDao.deleteByText`. Library Favorites tab now renders **both** verses and prayers with **All / Verses / Prayers** filter chips (prayers were previously never shown).
+
+### Content parity
+- **KJV translation toggle** — new `SeekPrefs` DataStore holds `preferred_translation`; Profile got a tappable **Bible translation** row → NLT/KJV picker dialog. `ChatScreen` sets `vm.translation` from the pref; `SeekApi.updatePreferredTranslation` mirrors it to Supabase `profiles.preferred_translation` (Postgrest) so the daily-verse function + other devices follow. Verified live.
+- **Real streak tracking** — `StreakManager` ported from iOS (consecutive-day increment, 1-day grace, reset on a longer gap, milestones 7/30/90/365) over `SeekPrefs` epoch-day storage. `HomeViewModel.recordActivity()` fires on Home open (auth-only); the hardcoded "🔥 Day 1" is now the live count. Verified live ("🔥 1 day streak").
+
+### Card creator + Library parity
+- **18 templates** — ported the full iOS set (Nature 5 / Minimal 5 / Watercolor 4 / Bold 4) with **multi-stop gradients** (`CardTemplate.gradient: List<Color>`; renderer + swatches use it). Was 6. Verified live (Ocean 3-stop).
+- **Prayer → card** — chat prayer card got a "Make a card →" action (reference = "A Prayer").
+- **Library edit/delete** — tap a saved card re-opens the creator preselecting its template (`CardDraft.initialTemplateId`) + restores its interpretation; **long-press → delete** with a confirmation dialog (`combinedClickable`). Thumbnails now re-render the saved interpretation.
+
+### Profile / Home / Onboarding parity
+- **Profile stats** — streak / best / verses / cards row (verses + cards counted in `SeekPrefs`, incremented in chat + on card save). Verified live ("🔥 1 · 1 · 5 · 0").
+- **Settings extras** — "More" section: **Rate Seek** (`market://` → web fallback), **Share Seek with a friend** (`ACTION_SEND`), **Privacy Policy** / **Terms of Service** (open the live askseekpray.app pages).
+- **Home share-with-a-friend** capsule (`ACTION_SEND`) between the daily verse and prompts. Verified live ("💛 Share Seek with a friend").
+- **Onboarding personalization + notifications** — two new steps: a 5-topic multi-select (matching iOS exactly) → topics saved to `SeekPrefs`; and a "Stay encouraged" notifications step (requests POST_NOTIFICATIONS, schedules 7am/7pm). Flow is now Welcome → Personalize → Notifications → Sign In. Both verified live.
+
+### Still iOS-only (intentional)
+- **Google / Apple Sign-In** — buttons remain hidden; backend not configured (Google Cloud OAuth client + Supabase provider). Dormant `signInWithGoogle/Apple` still on `AuthViewModel`. The one remaining parity item; needs the user's Google Cloud + Supabase setup. (Typewriter intro is also iOS-only by design — Android intro is static, no bug.)
+
+### Files
+- New: `data/SeekPrefs.kt`, `data/StreakManager.kt`.
+- Modified: `cards/{CardTemplate,CardRenderer,CardDraft}.kt`, `ui/cards/CardCreator*.kt`, `data/local/Daos.kt`, `data/remote/{SeekApi,dto/ChatDto}.kt`, `ui/SeekRoot.kt`, `ui/chat/{ChatScreen,ChatViewModel}.kt`, `ui/home/{HomeScreen,HomeViewModel}.kt`, `ui/library/{LibraryScreen,LibraryViewModel}.kt`, `ui/onboarding/OnboardingFlow.kt`, `ui/profile/ProfileScreen.kt`, `app/build.gradle.kts` (3→4 / 1.1.0).
+
+### Pending
+- User submits AAB **4 (1.1.0)** to Play when ready (already R8-built + signed at `app/build/outputs/bundle/release/app-release.aab`).
+- Post-launch: wire Google Sign-In + un-hide OAuth buttons (needs Google Cloud + Supabase config).
+
 ## 2026-06-11 — Session A8 (account deletion + **submitted to Play Store**)
 
 The Play Data Safety export surfaced the real launch blocker: **no in-app account deletion** (Android had none; iOS's was a fake sign-out) and no deletion URL — both required by Google's account-deletion policy.

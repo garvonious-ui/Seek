@@ -1,10 +1,14 @@
 package com.loucesario.seek.ui.profile
 
 import android.Manifest
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -14,9 +18,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,6 +53,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.loucesario.seek.data.SeekPrefs
+import com.loucesario.seek.data.remote.SeekApi
 import com.loucesario.seek.notifications.NotificationPrefs
 import com.loucesario.seek.notifications.SeekNotifications
 import com.loucesario.seek.ui.auth.AuthViewModel
@@ -100,8 +108,15 @@ private fun ColumnScope.AuthenticatedProfile(authVm: AuthViewModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val prefs = remember { NotificationPrefs(context) }
+    val appPrefs = remember { SeekPrefs(context) }
     val verseOn by prefs.dailyVerseEnabled.collectAsStateWithLifecycle(false)
     val streakOn by prefs.streakEnabled.collectAsStateWithLifecycle(false)
+    val translation by appPrefs.translation.collectAsStateWithLifecycle("NLT")
+    val streak by appPrefs.streakCount.collectAsStateWithLifecycle(0)
+    val longest by appPrefs.longestStreak.collectAsStateWithLifecycle(0)
+    val verses by appPrefs.versesExplored.collectAsStateWithLifecycle(0)
+    val cards by appPrefs.cardsCreated.collectAsStateWithLifecycle(0)
+    var showTranslationPicker by remember { mutableStateOf(false) }
 
     // POST_NOTIFICATIONS request (Android 13+). On grant, enable daily verse.
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -113,7 +128,30 @@ private fun ColumnScope.AuthenticatedProfile(authVm: AuthViewModel) {
 
     Spacer(Modifier.height(8.dp))
     Text("Signed in", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = SeekColors.TextPrimary)
-    Text("Translation: NLT", fontSize = 14.sp, color = SeekColors.TextSecondary, modifier = Modifier.padding(top = 6.dp, bottom = 20.dp))
+
+    Spacer(Modifier.height(16.dp))
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        StatCell(if (streak > 0) "🔥 $streak" else "—", "Day streak")
+        StatCell(longest.toString(), "Best")
+        StatCell(verses.toString(), "Verses")
+        StatCell(cards.toString(), "Cards")
+    }
+
+    Spacer(Modifier.height(16.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { showTranslationPicker = true }
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("Bible translation", fontSize = 15.sp, color = SeekColors.TextPrimary)
+            Text("For chat + daily verse", fontSize = 12.sp, color = SeekColors.TextSecondary)
+        }
+        Text(translation, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage)
+    }
+    Spacer(Modifier.height(8.dp))
 
     HorizontalDivider(color = SeekColors.Divider)
     Spacer(Modifier.height(16.dp))
@@ -134,6 +172,33 @@ private fun ColumnScope.AuthenticatedProfile(authVm: AuthViewModel) {
         if (hasNotifPermission()) SeekNotifications.showDailyVerse(context)
         else permLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }) { Text("Send a test reminder", color = SeekColors.Sage) }
+
+    Spacer(Modifier.height(16.dp))
+    HorizontalDivider(color = SeekColors.Divider)
+    Spacer(Modifier.height(16.dp))
+    Text("More", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = SeekColors.TextSecondary, modifier = Modifier.align(Alignment.Start))
+    Spacer(Modifier.height(8.dp))
+
+    LinkRow("Rate Seek") {
+        // Prefer the Play Store app; fall back to the web listing.
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.loucesario.seek")))
+        } catch (e: ActivityNotFoundException) {
+            openWeb(context, "https://play.google.com/store/apps/details?id=com.loucesario.seek")
+        }
+    }
+    LinkRow("Share Seek with a friend") {
+        val share = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(
+                Intent.EXTRA_TEXT,
+                "I've been using Seek to find scripture for what's on my heart. It's quiet, beautiful, and free. I think you'd love it.\nhttps://play.google.com/store/apps/details?id=com.loucesario.seek",
+            )
+        }
+        context.startActivity(Intent.createChooser(share, "Share Seek"))
+    }
+    LinkRow("Privacy Policy") { openWeb(context, "https://askseekpray.app/privacy") }
+    LinkRow("Terms of Service") { openWeb(context, "https://askseekpray.app/terms") }
 
     Spacer(Modifier.height(24.dp))
     OutlinedButton(
@@ -180,6 +245,69 @@ private fun ColumnScope.AuthenticatedProfile(authVm: AuthViewModel) {
             },
         )
     }
+
+    if (showTranslationPicker) {
+        AlertDialog(
+            onDismissRequest = { showTranslationPicker = false },
+            containerColor = SeekColors.Surface,
+            title = { Text("Bible translation", color = SeekColors.TextPrimary) },
+            text = {
+                Column {
+                    listOf("NLT" to "New Living Translation", "KJV" to "King James Version").forEach { (code, name) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    scope.launch {
+                                        appPrefs.setTranslation(code)
+                                        runCatching { SeekApi.updatePreferredTranslation(code) }
+                                    }
+                                    showTranslationPicker = false
+                                }
+                                .padding(vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(code, fontSize = 16.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextPrimary)
+                                Text(name, fontSize = 13.sp, color = SeekColors.TextSecondary)
+                            }
+                            if (translation == code) {
+                                Icon(Icons.Filled.Check, contentDescription = "Selected", tint = SeekColors.Sage)
+                                Spacer(Modifier.width(4.dp))
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTranslationPicker = false }) { Text("Done", color = SeekColors.Sage) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun StatCell(value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = SeekColors.Sage)
+        Text(label, fontSize = 11.sp, color = SeekColors.TextSecondary)
+    }
+}
+
+@Composable
+private fun LinkRow(label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, fontSize = 15.sp, color = SeekColors.TextPrimary)
+        Text("›", fontSize = 18.sp, color = SeekColors.TextTertiary)
+    }
+}
+
+private fun openWeb(context: android.content.Context, url: String) {
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
 }
 
 @Composable

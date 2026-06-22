@@ -45,11 +45,13 @@ object CardRenderer {
         val bmp = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
-        // Vertical gradient background
+        // Vertical gradient background (1–3 stops; single color = solid)
+        val stops = template.gradient.map { it.toArgb() }.toIntArray()
+        val gradColors = if (stops.size == 1) intArrayOf(stops[0], stops[0]) else stops
         val bgPaint = Paint().apply {
             shader = LinearGradient(
                 0f, 0f, 0f, H.toFloat(),
-                template.topColor.toArgb(), template.bottomColor.toArgb(),
+                gradColors, null,
                 Shader.TileMode.CLAMP,
             )
         }

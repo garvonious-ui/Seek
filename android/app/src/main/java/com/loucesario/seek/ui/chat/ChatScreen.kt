@@ -1,5 +1,9 @@
 package com.loucesario.seek.ui.chat
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +27,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.loucesario.seek.data.SeekPrefs
+import com.loucesario.seek.data.remote.dto.ActionStepDto
 import com.loucesario.seek.data.remote.dto.VerseDto
 import com.loucesario.seek.data.remote.dto.WorshipSongDto
 import com.loucesario.seek.ui.components.GuestGate
@@ -62,13 +72,26 @@ fun ChatScreen(
 
     val items by vm.items.collectAsStateWithLifecycle()
     val loading by vm.loading.collectAsStateWithLifecycle()
+    val favoritedRefs by vm.favoritedRefs.collectAsStateWithLifecycle()
+    val savedPrayers by vm.savedPrayerTexts.collectAsStateWithLifecycle()
     val online by com.loucesario.seek.SeekApplication.instance.connectivity.isOnline
         .collectAsStateWithLifecycle(true)
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
+    // A response is regenerate-able once it's complete and we're idle.
+    val canRegen = !loading && items.isNotEmpty() &&
+        items.last().let { it !is ChatItem.UserBubble && it !is ChatItem.ErrorMsg && it !is ChatItem.RateLimit }
+
+    // Keep the chat's translation in sync with the user's saved preference.
+    val ctx = LocalContext.current
+    val seekPrefs = remember(ctx) { SeekPrefs(ctx) }
+    val translationPref by seekPrefs.translation.collectAsStateWithLifecycle("NLT")
+    LaunchedEffect(translationPref) { vm.translation = translationPref }
+
     // Consume a message handed off from Home (quick prompt / free-text input).
     LaunchedEffect(Unit) {
+        vm.translation = seekPrefs.translationOnce()
         ChatDraft.consume()?.let { vm.sendMessage(it) }
     }
 
@@ -92,7 +115,16 @@ fun ChatScreen(
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                items(items, key = { it.id }) { item -> ChatRow(item, onCreateCard) }
+                items(items, key = { it.id }) { item ->
+                    ChatRow(
+                        item = item,
+                        onCreateCard = onCreateCard,
+                        favoritedRefs = favoritedRefs,
+                        savedPrayers = savedPrayers,
+                        onToggleFavorite = vm::toggleFavorite,
+                        onTogglePrayer = vm::togglePrayer,
+                    )
+                }
                 if (loading) {
                     item("loading") {
                         Row(Modifier.padding(8.dp)) {
@@ -111,6 +143,22 @@ fun ChatScreen(
                     fontSize = 13.sp, color = SeekColors.TextSecondary,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                 )
+            }
+        }
+
+        // Regenerate bar — ask for different scriptures on the same topic.
+        if (canRegen && online) {
+            Surface(color = SeekColors.Background, modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        "↻  Show different scriptures",
+                        fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage,
+                        modifier = Modifier.clickable { vm.regenerate() }.padding(8.dp),
+                    )
+                }
             }
         }
 
@@ -146,7 +194,14 @@ fun ChatScreen(
 }
 
 @Composable
-private fun ChatRow(item: ChatItem, onCreateCard: (String, String, String?) -> Unit) {
+private fun ChatRow(
+    item: ChatItem,
+    onCreateCard: (String, String, String?) -> Unit,
+    favoritedRefs: Set<String>,
+    savedPrayers: Set<String>,
+    onToggleFavorite: (VerseDto) -> Unit,
+    onTogglePrayer: (String) -> Unit,
+) {
     when (item) {
         is ChatItem.UserBubble -> Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             Surface(
@@ -161,16 +216,47 @@ private fun ChatRow(item: ChatItem, onCreateCard: (String, String, String?) -> U
         is ChatItem.Intro -> Text(item.text, fontSize = 16.sp, color = SeekColors.TextPrimary)
 
         is ChatItem.Verses -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            item.verses.forEach { v -> VerseCard(v, onTap = { onCreateCard(v.text, v.reference, v.context) }) }
+            item.verses.forEach { v ->
+                VerseCard(
+                    verse = v,
+                    isFavorite = favoritedRefs.contains(v.reference),
+                    onTap = { onCreateCard(v.text, v.reference, v.context) },
+                    onToggleFavorite = { onToggleFavorite(v) },
+                )
+            }
         }
 
         is ChatItem.Prayer -> CardBox(bg = SeekColors.LightGold) {
             Text("PRAYER", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SeekColors.Gold)
             Spacer(Modifier.height(6.dp))
             Text(item.text, style = ScriptureTextStyle.copy(fontSize = 17.sp), color = SeekColors.TextPrimary)
+            Spacer(Modifier.height(10.dp))
+            val saved = savedPrayers.contains(item.text)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { onTogglePrayer(item.text) },
+                ) {
+                    Icon(
+                        imageVector = if (saved) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = if (saved) "Saved" else "Save prayer",
+                        tint = if (saved) SeekColors.Gold else SeekColors.TextTertiary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (saved) "Saved" else "Save prayer", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.Gold)
+                }
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "Make a card →", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage,
+                    modifier = Modifier.clickable { onCreateCard(item.text, "A Prayer", null) },
+                )
+            }
         }
 
         is ChatItem.Song -> SongCard(item.song)
+
+        is ChatItem.Action -> ActionCard(item.action)
 
         is ChatItem.FollowUp -> Text(
             item.text, fontSize = 15.sp, fontStyle = FontStyle.Italic, color = SeekColors.TextSecondary,
@@ -187,11 +273,22 @@ private fun ChatRow(item: ChatItem, onCreateCard: (String, String, String?) -> U
 }
 
 @Composable
-private fun VerseCard(verse: VerseDto, onTap: () -> Unit) {
+private fun VerseCard(verse: VerseDto, isFavorite: Boolean, onTap: () -> Unit, onToggleFavorite: () -> Unit) {
     CardBox(bg = SeekColors.Surface, onClick = onTap) {
         Text(verse.text, style = ScriptureTextStyle, color = SeekColors.TextPrimary)
         Spacer(Modifier.height(8.dp))
-        Text(verse.reference, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                verse.reference, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                contentDescription = if (isFavorite) "Unfavorite" else "Favorite",
+                tint = if (isFavorite) SeekColors.Gold else SeekColors.TextTertiary,
+                modifier = Modifier.size(22.dp).clickable { onToggleFavorite() },
+            )
+        }
         verse.context?.takeIf { it.isNotBlank() }?.let {
             Spacer(Modifier.height(6.dp))
             Text(it, fontSize = 13.sp, color = SeekColors.TextSecondary)
@@ -203,6 +300,8 @@ private fun VerseCard(verse: VerseDto, onTap: () -> Unit) {
 
 @Composable
 private fun SongCard(song: WorshipSongDto) {
+    val context = LocalContext.current
+    val query = Uri.encode("${song.title} ${song.artist}")
     CardBox(bg = SeekColors.Surface) {
         Text("WORSHIP", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SeekColors.MidSage)
         Spacer(Modifier.height(6.dp))
@@ -212,6 +311,58 @@ private fun SongCard(song: WorshipSongDto) {
             Spacer(Modifier.height(6.dp))
             Text(it, fontSize = 13.sp, color = SeekColors.TextSecondary)
         }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(22.dp)) {
+            Text(
+                "Apple Music", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage,
+                modifier = Modifier.clickable { openUrl(context, "https://music.apple.com/search?term=$query") },
+            )
+            Text(
+                "Spotify", fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                color = androidx.compose.ui.graphics.Color(0xFF1DB954),
+                modifier = Modifier.clickable {
+                    // Prefer the Spotify app; fall back to web search if it isn't installed.
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("spotify:search:$query")))
+                    } catch (e: ActivityNotFoundException) {
+                        openUrl(context, "https://open.spotify.com/search/$query")
+                    }
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ActionCard(action: ActionStepDto) {
+    CardBox(bg = SeekColors.Sage.copy(alpha = 0.08f)) {
+        Text(action.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = SeekColors.Sage)
+        Spacer(Modifier.height(10.dp))
+        action.steps.forEachIndexed { i, step ->
+            Row(verticalAlignment = Alignment.Top) {
+                Box(
+                    modifier = Modifier.size(20.dp).background(SeekColors.Sage, RoundedCornerShape(10.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("${i + 1}", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = SeekColors.Surface)
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(step, fontSize = 15.sp, color = SeekColors.TextPrimary, modifier = Modifier.weight(1f))
+            }
+            if (i < action.steps.size - 1) Spacer(Modifier.height(8.dp))
+        }
+        action.reason.takeIf { it.isNotBlank() }?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, fontSize = 13.sp, fontStyle = FontStyle.Italic, color = SeekColors.TextSecondary)
+        }
+    }
+}
+
+private fun openUrl(context: Context, url: String) {
+    try {
+        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    } catch (e: ActivityNotFoundException) {
+        // No handler available — silently ignore.
     }
 }
 

@@ -22,8 +22,8 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [x] Profile (guest sign-in CTA / authed sign-out); Chat + Library guest gates
 - [~] Google Sign-In via browser OAuth — **wired in code; needs Google client ID configured in Supabase to function**
 - [~] Sign in with Apple via browser OAuth — **wired; needs Apple OAuth Services ID + key in Supabase (iOS uses native flow, N/A here)**
-- [ ] Personalization + notifications onboarding steps (deferred)
-- [ ] Translation picker (currently static NLT), delete account
+- [x] Personalization + notifications onboarding steps (Session A9 — 5-topic multi-select + "Stay encouraged" step; verified on emulator)
+- [x] Translation picker (NLT/KJV dialog in Profile, mirrored to Supabase — Session A9) + delete account (A8)
 
 ## Phase 2 — Chat  (verified on emulator)
 - [x] Chat UI (message bubbles, verse/prayer/song/follow-up cards, input bar)
@@ -33,9 +33,10 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [x] Persist conversations + messages to Room
 - [x] **Verified: signed-in test user → "I feel anxious about the future" → full
       verse + prayer + worship + follow-up response rendered**
-- [ ] Worship song deep links (Apple Music / Spotify) — deferred
-- [ ] Staggered card reveal animation — deferred
-- [ ] Regenerate scripture — deferred
+- [x] Worship song deep links (Apple Music / Spotify) — Session A9, verified live
+- [ ] Staggered card reveal animation — deferred (iOS-only polish)
+- [x] Regenerate scripture — Session A9 ("↻ Show different scriptures"), verified live
+- [x] Favoriting verses + prayers (heart on verse cards / "Save prayer"; Favorites filter chips) — Session A9
 - [ ] Persist chat state across tab switches (currently resets if nav popped) — polish
 
 ## Phase 3 — Card Creator + Library  (verified on emulator)
@@ -50,9 +51,11 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
       History (conversations), empty states; guest gate retained
 - [x] **Verified: Home verse → creator → switch to Gold template (live) → Save
       ("Saved to your gallery") → card appears in Library Cards grid**
-- [ ] Port remaining iOS templates (18 total) — deferred
-- [ ] Favoriting verses/prayers to populate Favorites tab — deferred
-- [ ] Card delete / long-press edit mode — deferred
+- [x] Port remaining iOS templates (18 total, multi-stop gradients) — Session A9, verified live (Ocean)
+- [x] Favoriting verses/prayers populate Favorites tab (+ All/Verses/Prayers filter) — Session A9
+- [x] Card delete (long-press → confirm) + re-edit (tap → preselect template) — Session A9
+- [x] Prayer → card ("Make a card →" on the chat prayer card) — Session A9
+- [x] Profile stats (streak/best/verses/cards) + settings (Rate/Share/Privacy/Terms) + Home share capsule — Session A9
 
 ## Phase 4 — Notifications + Polish  (verified on emulator)
 - [x] Local notifications — channel, daily-verse + streak-nudge builders,

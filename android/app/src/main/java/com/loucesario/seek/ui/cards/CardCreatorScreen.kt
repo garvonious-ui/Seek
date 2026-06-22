@@ -70,7 +70,9 @@ fun CardCreatorScreen(onBack: () -> Unit, vm: CardCreatorViewModel = viewModel()
     val verseText = CardDraft.verseText
     val reference = CardDraft.reference
     val verseContext = CardDraft.context?.takeIf { it.isNotBlank() }
-    var template by remember { mutableStateOf(CardTemplates.all.first()) }
+    var template by remember {
+        mutableStateOf(CardDraft.initialTemplateId?.let { CardTemplates.byId(it) } ?: CardTemplates.all.first())
+    }
     var includeInterpretation by remember { mutableStateOf(false) }
 
     val activeInterpretation = if (includeInterpretation) verseContext else null
@@ -178,11 +180,12 @@ fun CardCreatorScreen(onBack: () -> Unit, vm: CardCreatorViewModel = viewModel()
 @Composable
 private fun TemplateSwatch(template: CardTemplate, selected: Boolean, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        val swatchStops = if (template.gradient.size == 1) template.gradient + template.gradient else template.gradient
         Box(
             modifier = Modifier
                 .size(54.dp)
                 .clip(CircleShape)
-                .background(template.topColor)
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(swatchStops))
                 .then(if (selected) Modifier.border(3.dp, SeekColors.Sage, CircleShape) else Modifier)
                 .clickable(onClick = onClick),
         )

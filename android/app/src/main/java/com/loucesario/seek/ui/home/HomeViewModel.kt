@@ -1,12 +1,17 @@
 package com.loucesario.seek.ui.home
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.loucesario.seek.data.SeekPrefs
+import com.loucesario.seek.data.StreakManager
 import com.loucesario.seek.data.remote.SeekApi
 import com.loucesario.seek.data.remote.dto.DailyVerseDto
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed interface DailyVerseState {
@@ -22,9 +27,15 @@ private val FALLBACK = DailyVerseDto(
     theme = "strength",
 )
 
-class HomeViewModel : ViewModel() {
+class HomeViewModel(app: Application) : AndroidViewModel(app) {
+    private val prefs = SeekPrefs(app)
+
     private val _state = MutableStateFlow<DailyVerseState>(DailyVerseState.Loading)
     val state: StateFlow<DailyVerseState> = _state.asStateFlow()
+
+    /** Current streak count — drives the Home capsule. */
+    val streak: StateFlow<Int> = prefs.streakCount
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     init { refresh() }
 
@@ -37,5 +48,10 @@ class HomeViewModel : ViewModel() {
                 DailyVerseState.Error(FALLBACK)
             }
         }
+    }
+
+    /** Record today's activity (opening Home), updating the streak. Auth-only. */
+    fun recordActivity() {
+        viewModelScope.launch { StreakManager.recordActivity(prefs) }
     }
 }

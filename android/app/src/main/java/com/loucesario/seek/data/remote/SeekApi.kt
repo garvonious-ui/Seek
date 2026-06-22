@@ -3,7 +3,9 @@ package com.loucesario.seek.data.remote
 import com.loucesario.seek.data.remote.dto.ChatRequest
 import com.loucesario.seek.data.remote.dto.ChatResponse
 import com.loucesario.seek.data.remote.dto.DailyVerseDto
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.functions.functions
+import io.github.jan.supabase.postgrest.from
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -42,6 +44,22 @@ object SeekApi {
     suspend fun dailyVerse(): DailyVerseDto {
         val response = SupabaseModule.client.functions.invoke("daily-verse")
         return SeekJson.decodeFromString(DailyVerseDto.serializer(), response.bodyAsText())
+    }
+
+    /**
+     * Mirrors the user's preferred translation (NLT/KJV) to Supabase
+     * `profiles.preferred_translation` so the daily-verse Edge Function and any
+     * other device pick it up. No-op for guests (no session). Best-effort —
+     * callers wrap in runCatching; the local preference is the source of truth
+     * for chat requests.
+     */
+    suspend fun updatePreferredTranslation(translation: String) {
+        val uid = SupabaseModule.client.auth.currentSessionOrNull()?.user?.id ?: return
+        SupabaseModule.client.from("profiles").update(
+            { set("preferred_translation", translation) },
+        ) {
+            filter { eq("id", uid) }
+        }
     }
 
     /**

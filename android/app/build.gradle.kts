@@ -24,8 +24,8 @@ android {
         applicationId = "com.loucesario.seek"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.0"
+        versionCode = 4
+        versionName = "1.1.0"
 
         // Same Supabase project as iOS. The anon key is public by design
         // (ships in the iOS bundle and the landing page) and is protected by RLS.

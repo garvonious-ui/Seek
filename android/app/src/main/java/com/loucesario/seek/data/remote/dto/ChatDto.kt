@@ -27,11 +27,19 @@ data class ChatResponse(
     val verses: List<VerseDto> = emptyList(),
     val prayer: String? = null,
     val worshipSong: WorshipSongDto? = null,
+    val action: ActionStepDto? = null,
     val followUp: String? = null,
     val remainingChats: Int? = null,
     // 429 payload
     val error: String? = null,
     val resetsAt: String? = null,
+)
+
+@Serializable
+data class ActionStepDto(
+    val title: String,
+    val steps: List<String> = emptyList(),
+    val reason: String = "",
 )
 
 @Serializable

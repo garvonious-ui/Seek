@@ -1,5 +1,6 @@
 package com.loucesario.seek.ui.home
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,9 +58,13 @@ fun HomeScreen(
     vm: HomeViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val streak by vm.streak.collectAsStateWithLifecycle()
     val online by com.loucesario.seek.SeekApplication.instance.connectivity.isOnline
         .collectAsStateWithLifecycle(true)
     var customPrompt by remember { mutableStateOf("") }
+
+    // Opening Home counts as activity for the day (mirrors iOS). Guests have no streak.
+    LaunchedEffect(isGuest) { if (!isGuest) vm.recordActivity() }
 
     Column(
         modifier = Modifier
@@ -78,14 +85,14 @@ fun HomeScreen(
             }
         }
 
-        if (!isGuest) {
+        if (!isGuest && streak > 0) {
             Spacer(Modifier.height(4.dp))
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = SeekColors.LightGold,
             ) {
                 Text(
-                    "🔥 Day 1",
+                    if (streak == 1) "🔥 1 day streak" else "🔥 $streak day streak",
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                     fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextPrimary,
                 )
@@ -114,6 +121,28 @@ fun HomeScreen(
         }
         Spacer(Modifier.height(6.dp))
         Text("Tap the verse to make a card", fontSize = 12.sp, color = SeekColors.TextTertiary)
+
+        // Share with a friend (mirrors iOS Home)
+        Spacer(Modifier.height(20.dp))
+        val shareCtx = LocalContext.current
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = SeekColors.Sage.copy(alpha = 0.10f),
+            modifier = Modifier.fillMaxWidth().clickable {
+                val share = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "I've been using Seek to find scripture for what's on my heart. It's quiet, beautiful, and free. I think you'd love it.\nhttps://play.google.com/store/apps/details?id=com.loucesario.seek",
+                    )
+                }
+                shareCtx.startActivity(Intent.createChooser(share, "Share Seek"))
+            },
+        ) {
+            Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+                Text("💛  Share Seek with a friend", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage)
+            }
+        }
 
         Spacer(Modifier.height(28.dp))
         Text(

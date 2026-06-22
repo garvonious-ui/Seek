@@ -10,10 +10,13 @@ object CardDraft {
     var reference: String = ""
     /** AI interpretation of the verse (chat `context`); null for daily verse / prayer. */
     var context: String? = null
+    /** When re-editing a saved card, preselect its original template. */
+    var initialTemplateId: String? = null
 
-    fun set(text: String, ref: String, context: String? = null) {
+    fun set(text: String, ref: String, context: String? = null, initialTemplateId: String? = null) {
         verseText = text
         reference = ref
         this.context = context
+        this.initialTemplateId = initialTemplateId
     }
 }

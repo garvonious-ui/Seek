@@ -50,6 +50,9 @@ interface FavoriteVerseDao {
     @Query("SELECT * FROM favorite_verse ORDER BY savedAt DESC")
     fun observeAll(): Flow<List<FavoriteVerseEntity>>
 
+    @Query("DELETE FROM favorite_verse WHERE reference = :reference")
+    suspend fun deleteByReference(reference: String)
+
     @Delete
     suspend fun delete(verse: FavoriteVerseEntity)
 }
@@ -61,6 +64,9 @@ interface SavedPrayerDao {
 
     @Query("SELECT * FROM saved_prayer ORDER BY savedAt DESC")
     fun observeAll(): Flow<List<SavedPrayerEntity>>
+
+    @Query("DELETE FROM saved_prayer WHERE text = :text")
+    suspend fun deleteByText(text: String)
 
     @Delete
     suspend fun delete(prayer: SavedPrayerEntity)
