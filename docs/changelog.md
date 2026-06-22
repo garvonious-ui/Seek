@@ -1,5 +1,122 @@
 # Changelog
 
+## 2026-06-22 — Android feature parity + Google Sign-In (full detail in `android/docs/changelog.md` Session A9)
+
+This was an Android session (no iOS app code changed). Two milestones, both shipped to Google Play.
+
+### Built
+- **Full iOS↔Android feature parity (12 gaps closed).** Action-steps card, worship Apple Music/Spotify deep links, regenerate scripture, verse + prayer favoriting (Favorites filter), KJV translation picker (mirrored to Supabase), real `StreakManager` (ported from iOS), 18 card templates w/ multi-stop gradients, prayer→card, library long-press delete + tap-to-re-edit, profile stats, settings (Rate/Share/Privacy/Terms), Home share capsule, onboarding personalization + notifications steps. New: `android/.../data/SeekPrefs.kt` + `StreakManager.kt`. All verified live on the emulator.
+- **Google Sign-In — wired end-to-end + shipped.** Built the backend browser-assisted under `lou.cesario92@gmail.com`: Google Cloud project "Seek" (`seek-500222`) → OAuth consent screen (External, **published to production**) → Web OAuth client → **Supabase Google provider enabled** with the real client id/secret (prior config held an invalid value). Android code: `handleDeeplinks` in MainActivity, manifest `launchMode=singleTask`, un-hid the "Continue with Google" button. Verified on emulator (real Google sign-in page loads, no errors).
+
+### Shipped to Google Play (org "Ask Seek Pray" / account u/2)
+- **v4 (1.1.0, parity)** — submitted → **approved + LIVE**.
+- **v5 (1.1.0 + Google Sign-In, versionCode 5)** — submitted → **in review** (auto-publishes on approval).
+- Commits: `6d84678` (parity) → `efaf9b7` (Google Sign-In) + doc commits. Android↔iOS parity is now ~100% (Apple-on-Android the only optional social gap).
+
+### Decisions / gotchas
+- **Shipped parity (v4) before Google** when the Google backend was blocked, rather than holding a finished release; folded Google in as v5 once unblocked. No dead button shipped at any point.
+- **Google Cloud now enforces 2-Step Verification** — accounts without it get "Google Cloud access blocked." Use the account that has 2SV. Skip the "Try for free" billing funnel by going straight to `console.cloud.google.com/projectcreate`.
+- **A client secret is a credential I can't type into a field** — copied it to the clipboard via the dialog and the user pasted it; the public client id was set directly. The Play AAB upload is the one browser step the extension can't do (user drag-drops from Finder).
+
+## 2026-06-17 — Session 24 (Self-replenishing IG queue)
+
+So the feed never runs dry: an `ig-replenish` Edge Function that, when future feed posts drop below a threshold, extends the R→R→C calendar from the **existing media library** (least-recently-used) with **fresh Claude-written captions**, inserted as `pending` so the approval flow still gates posting. Rendering can't run server-side, so this recycles vetted media with new copy rather than generating new video.
+
+### Built (live)
+- **`ig-replenish` Edge Function** (`verify_jwt=false`, Bearer `ig_cron_secret`). Params (JSON body): `keep_days_ahead` (14), `extend_to_days_ahead` (30), `max_new` (12), `force`, `dry_run`. Logic: if `futureFeed >= keep_days_ahead` and not forced → idle; else continue `day_index`/dates after the last feed post, assign type by `day_index % 3` (R-R-C), pick media LRU from the existing reel/carousel pools, batch-generate fresh caption bodies via Claude (`claude-sonnet-4-6`, reusing `ANTHROPIC_API_KEY`; falls back to the original hook on failure), append the right hashtag block (verse vs product, product detected by `reelsa/seek_` prefix), and insert the feed row + 2 stories (evening verse-card cycling `stories/story_NN.png`, morning repost of the new reel) all as `pending`.
+- **`pg_cron` `ig-replenish-weekly`** at `0 9 * * 1` (body `{"max_new":16}`); `app_config.ig_replenish_url` added.
+- **Tested:** dry-run produced an on-voice Claude caption; a forced real run inserted Day 31 (reel_02 LRU + morning/evening stories, all pending). Idles correctly while the queue is full (28 future feed posts > 14).
+
+### Notes
+- Recycles existing media (no new renders) — for genuinely new video, render via the `feature-reels/_render` engine and upload, then the LRU pool picks it up automatically.
+- All inserts are `pending`; nothing posts without approval. Flip to `approved` in the function if you want fully hands-off.
+
+## 2026-06-17 — Session 23 (IG performance digest — insights pipeline + live dashboard)
+
+Automated Instagram performance tracking for @askseekpray: a daily job pulls Graph API insights into Supabase, surfaced as a live dashboard. Built + deployed end-to-end.
+
+### Built (live)
+- **Tables** `public.ig_insights` (per-media) + `public.ig_account_insights` (daily account snapshot), both RLS-enabled, service-role only (migration `create_ig_insights`).
+- **`ig-insights` Edge Function** (`verify_jwt=false`, auth = `Bearer app_config['ig_cron_secret']`, Graph v21 — mirrors `ig-publish`). Fetches account `followers_count`/`media_count` (+ best-effort account reach) and, per posted row in `ig_post_queue` (where `ig_media_id` is set), basic fields (`like_count`, `comments_count`, `permalink`) + per-type insights (`reach,saved,views,shares,total_interactions`). Defensive: stores whatever the token permits, returns a diagnostic of permission gaps. Upserts keyed on `ig_media_id` / `snapshot_date`.
+- **`pg_cron` `ig-insights-daily`** at `0 12 * * *` (same `net.http_post` + Bearer pattern as `ig-autopost`); `app_config.ig_insights_url` added.
+- **Dashboard artifact `seek-ig-performance`** — Chart.js followers-over-time, KPI cards (followers, likes+comments, reach, saves, posts tracked), top-posts table with permalinks. Reads the two tables live via `callMcpTool` execute_sql.
+
+### Status / blocker
+- Live now: **14 followers**, per-post likes/comments/permalinks for the 4 posted items (Day 1 reel + 2 stories, Day 3 carousel).
+- **`instagram_manage_insights` missing** → all `/insights` calls return `(#10) Application does not have permission`. Reach/saves/views/shares are blocked; followers + likes + comments work via `instagram_basic`. **Fix (user):** regenerate the long-lived token with `instagram_manage_insights` added (grantable for an owned account without full App Review), then `update public.ig_config set access_token='<new>', token_updated_at=now() where id=1;`. The daily job backfills the rich metrics automatically afterward — no code change. Dashboard shows a banner with these steps.
+- **RESOLVED same session (browser-assisted):** The real blocker was app-level — `instagram_manage_insights` wasn't enabled on the Meta app. Added it via App Dashboard → Use cases → Instagram API → Permissions and features (now "Ready for testing" = Standard Access, no App Review needed for the owned account). Re-consented in the Graph API Explorer to mint a token carrying the scope, derived the **non-expiring Page token** (`type=PAGE`, `expires_at=0`) for "Ask Seek Pray" via `/me/accounts`, and updated `ig_config.access_token`. Backfill now returns real numbers: **account reach 330**, Day 1 reel reach 5 / views 9, Day 3 carousel reach 7. (Note: app-token's second component is NOT the client secret — the long-lived `fb_exchange_token` exchange failed with "Error validating client secret"; unnecessary anyway since the derived Page token is already non-expiring.)
+
+## 2026-06-17 — Session 22 (Feature reels — app-demo videos + ambient bed variety; wired live)
+
+Built a set of **app-feature reels** (not verse cards) on the Seek Design System animation engine — the missing "show the app *doing things*" content — plus generated **multiple ambient music beds** so the scheduled feed doesn't repeat one song. All wired into the live `ig_post_queue`.
+
+### Built (`marketing/instagram/feature-reels/`, engine in `_render/`)
+Render harness: Node + Playwright (arm64 Chromium staged locally with apt-downloaded libs via `LD_LIBRARY_PATH`), deterministic playhead in `frame.html`, `render_pw.js` frame-steps + screenshots, ffmpeg encodes. Scenes in `scenes.jsx`. All 1080×1920 H.264 + AAC, original synth bed ("Original audio").
+- **seek_chat_reel.mp4** (15s) — type a feeling → AI streams in intro, two verses, gold prayer card, worship-song card. Enlarged ~30% for legibility (per feedback); full response stays in frame (no scroll). `BigChatScreen`.
+- **seek_cardflip_reel.mp4** (19s) — one verse per template crossfading through all 18 card templates (palette ported from `CardTemplate.swift`), settling on Ocean. Slower hold + real crossfade (per feedback); intro shows Ocean once, cycle starts on the next template.
+- **seek_streak_reel.mp4** (12s) — Home screen: streak ticks 11→12 with a flame pop + gold burst, daily verse card, prompt chips, "12-day streak" toast.
+- **seek_worship_reel.mp4** (14s) — verse + a *matching* song, cycling 4 pairs (Isaiah 43:2→Oceans, Psalm 23:6→Goodness of God, Psalm 127:1→Build My Life, 1 Thess 5:18→Gratitude) with Apple Music + Spotify.
+
+### Ambient beds (`feature-reels/_render/bedgen.py`)
+- 5 distinct beds — **warm** (C), **tender** (Am), **hopeful** (D), **still** (F), **vespers** (Em) — same calm/reverent family, different key + progression. Original numpy synthesis.
+- Re-bedded all 16 scheduled verse reels (audio-only swap, `-c:v copy`) rotating beds in schedule order so no two consecutive posts share a song → `marketing/instagram/reels_music/`. Each feature reel also gets its own bed (chat=tender, cardflip=warm, streak=vespers, worship=hopeful).
+
+### Wired LIVE to ig_post_queue
+- Uploaded 4 feature reels + 16 re-bedded reels to `ig-media/reelsa/` via a **temporary token-guarded service-role Edge Function** (`media-up`) — overwrote the re-bedded reels in place (so no media_path change needed for bed variety), feature reels under new `reelsa/seek_*_reel.mp4` keys. Function then **decommissioned** (redeployed to return 410, `verify_jwt=true`, storage logic removed). Recommend deleting it from the dashboard.
+- Day 1 had already POSTED, so feature reels took the upcoming product slots: **day 7 → cardflip, 13 → streak, 19 → worship, 29 → chat**, each with a product caption; morning repost stories reuse the new reel video; evening verse-card stories untouched.
+- **Gotcha caught:** the queue stores 3 rows per `day_index` (feed + 2 stories), so a `where day_index=N` UPDATE without a `media_type` filter clobbered the story rows. Fixed by restoring the evening `stories/story_NN.png` rows and clearing leaked captions. Verified: 0 stories with captions, 4 feature feeds on days 7/13/19/29.
+- Repo records: `seed-feature-reels.sql` + `seed-bed-variations.sql` updated to match the applied live state. Idea slate for ~12 more reels in `docs/feature-reels.md`.
+
+### Heads-up
+- **Day 7 (cardflip) is `approved`** → auto-posts 2026-06-23. Review before then if wanted; day 10 onward is still `pending`.
+
+## 2026-06-17 — Session 21 (IG campaign restructure → Reel-Reel-Carousel)
+
+Reworked the Instagram campaign from daily single-cards into a daily **Reel → Reel → Carousel** rotation, expanded to a full 30-day run (20 reels + 10 carousels). Driven partly by 10 verse/prayer cards Lou exported from the app (a tender "hard seasons / healing / waiting / guard-your-mind" lane) — used for ~4 carousels + several reels, balanced with broad themes. Then added **Stories** (2/day) and an **ambient music bed** on the reels.
+
+### Stories + audio (same session)
+- **Stories support:** `ig-publish` v3 + migration `ig_stories_support` (adds `STORIES` to the type check). Stories publish via `media_type=STORIES` (image or video; videos poll like reels).
+- **60 Story rows** (`seed-stories.sql`): a **standalone evening verse Story** (7:10pm ET, 30 × 9:16 Georgia verse cards in `stories/`) + a **morning feed-repost Story** (7:10am ET — reel days reuse the reel video; carousel days use a 9:16 "new on the feed" teaser). API can't attach IG's trending/native audio (app-only) — confirmed.
+- **Ambient music bed:** synthesized from scratch (numpy/scipy — soft detuned pads on a C–G–Am–F progression, sparse music-box melody, light reverb; `outputs/generate_bed.py` → `bed.wav`). Muxed into all 20 reels (each offset to a different part of the 34s bed), re-uploaded to `reelsa/`, queue repointed. Original/synth → no licensing issues; shows as "Original audio."
+- **Dashboard:** Feed/Stories filter, STORY badges, story/teaser thumbnails.
+- **LIVE TESTS PASSED:** carousel (Day 3) and a Story both published to @askseekpray. Queue now 90 rows (20 reels + 10 carousels + 60 stories); first week of feed + stories approved.
+
+### Built
+- **40 carousel cards** (4:5) — covers + verse + prayer + verse-with-interpretation slides, rendered in real **Georgia** (now available in `Seek Design System/fonts/`) matching the app's exact card look (`outputs/render_carousels.py` → `marketing/instagram/carousels/`, bucket `ig-media/carousels/`).
+- **11 more reels** (total 20) from the same engine; new reel configs added to `outputs/reels/reel.html`.
+- **Carousel publishing** added to `ig-publish` (v2): child image containers → CAROUSEL parent → publish. Migration `ig_carousel_support` adds `media_paths text[]` + `CAROUSEL` to the type check.
+- **Queue re-seeded** (`marketing/instagram/seed-rrc.sql`, captions `captions-rrc.md`) — 30 daily R-R-C rows, 7am ET from 2026-06-17.
+- **Dashboard** updated for carousels (cover + ▦ slide-count badge).
+- **LIVE TEST PASSED:** Day 3 "Guard your mind" carousel published to @askseekpray (`ig_media_id 17989199306914063`) — validates the full carousel path end-to-end. It's the account's inaugural post.
+
+### Notes
+- Cards switched to **Georgia** (the iOS app's actual card font) now that the TTFs are available; reels already used Georgia. The earlier 21 single-card 4:5 set (`feedv2/`) is now unused by the schedule.
+- Carousels store ordered slide keys in `media_paths`; `media_path` holds the cover (for the dashboard thumbnail).
+
+## 2026-06-16 — Session 20 (Instagram content automation — non-app)
+
+Built a full Instagram marketing pipeline for **@askseekpray** (no app code changed). Lives in `marketing/instagram/`, `supabase/functions/ig-*`, and migration `20260616120000_create_ig_post_queue.sql`. Full reference: `docs/instagram-automation.md`.
+
+### Built
+- **30-day content campaign.** 21 branded verse cards + 9 motion Reels + 30 captions (NLT), 1/day at 7:00 AM ET starting 2026-06-17. Calendar/strategy in `docs/instagram-content-plan.md`.
+- **Verse cards (4:5, 1080×1350).** Rendered with `render_cards.py` (Pillow) — Lora serif (the app's bundled card font), on-brand gold/sage gradients (no grey), NLT text sourced from `supabase/seed-nlt.sql`, the **real Seek wordmark** (gold dot; light variant composited on dark cards). Started 9:16, corrected to 4:5 for feed.
+- **Motion Reels (9:16, H.264+AAC).** Rendered from the **`Seek Design System/`** promo engine via headless Chromium + ffmpeg (`outputs/reels/` harness: `reel.html` `VerseReel` template, `render.js`, `make.sh`). Real **Georgia** + official `wordmark_light.png`, animated line-by-line verse reveal, kicker + CTA.
+- **Auto-poster.** `ig_post_queue`/`ig_config`/`app_config` tables; `ig-publish` Edge Function (cron every 15 min, two-step Graph container→publish, Reel status polling) + `ig-token-refresh` (weekly). `pg_cron`+`pg_net`. Tap-to-approve gate.
+- **Meta app.** Created *Seek Scripture Companion* (`882028774961076`), Instagram content-publish use case, linked FB Page **Ask Seek Pray** → IG **@askseekpray** (`17841417170841946`); 60-day token stored in `ig_config`.
+- **Live dashboard.** Cowork artifact `seek-instagram-schedule` (+ local `admin.html`) — poster thumbnails, schedule, status, Approve/Hold, reads/writes the queue.
+
+### Decisions / gotchas
+- **Translation: NLT** on social to match the app default; "NLT" shown with each reference (Tyndale's ≤500-verse allowance).
+- **Cards = 4:5, Reels = 9:16.** Feed crops 9:16; 4:5 maximizes feed reach.
+- **Font:** iOS verse cards default to Georgia (now available in `Seek Design System/fonts/`); cards use **Lora** (the bundled cross-platform card font), Reels use **Georgia**.
+- **Storage overwrite/delete is blocked for anon** and Supabase blocks direct `storage.objects` deletes — new media goes under a fresh prefix (`feedv2/`) + a queue repoint; old objects are orphaned but harmless.
+- **Edge auth:** `ig-*` deployed `verify_jwt=false`, authenticating via `app_config.ig_cron_secret` (same class of issue as the `--no-verify-jwt` rule in CLAUDE.md).
+- **Headless render in the sandbox** needed Chromium system libs staged locally (`LD_LIBRARY_PATH`), frames to `/tmp`, and an `http://localhost` server (file:// blocks `.jsx` XHR).
+
+### Open
+- Set `META_APP_ID` + `META_APP_SECRET` Edge secrets (weekly token auto-refresh). Current token covers the campaign regardless.
+- Live smoke-test one post; optional bucket cleanup of orphaned `cards/`+`feed/` objects.
+
 ## 2026-06-11 — Session 19 (5 feature additions, iOS + Android parity)
 
 Five user-requested features built on **both** platforms before the Android Play submission, so the two stores launch at parity. iOS side below; Android counterparts in `android/docs/changelog.md`. iOS compiles clean (`xcodebuild -sdk iphonesimulator` → **BUILD SUCCEEDED**); Android verified end-to-end on the emulator.

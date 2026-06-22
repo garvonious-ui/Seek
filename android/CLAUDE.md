@@ -72,7 +72,18 @@ downloads deps + SDK. Run on an API 26+ device/emulator. See `README.md`.
   OkHttp's socket/call timeout (set via `httpEngine = OkHttp.create { config {
   callTimeout/readTimeout } }`). Raising only one still times out at the other.
   Both are set to 60s in `SupabaseModule`.
+- **Google Sign-In is browser-OAuth, not native Credential Manager.** `signInWith(Google)`
+  launches a Custom Tab; the `seek://auth-callback` redirect is consumed by
+  `SupabaseModule.client.handleDeeplinks(intent)` in MainActivity onCreate + onNewIntent,
+  and MainActivity is `launchMode="singleTask"`. No SHA-1 needed (that's only for the
+  native flow). The success path runs through the `sessionStatus` listener →
+  `SessionRepository.onAuthSuccess()`. Backend lives in Google Cloud project `seek-500222`
+  (account `lou.cesario92@gmail.com`) — Web OAuth client, redirect = the Supabase callback,
+  consent screen published to production. **Gotcha:** Google Cloud now enforces 2-Step
+  Verification (accounts without it are blocked); skip the "Try for free" billing funnel via
+  `console.cloud.google.com/projectcreate`.
 
 ## Current Phase
-Phase 0 (scaffold) — DONE. Builds to a 3-tab shell on the Seek theme with Room +
-Supabase wired. Next: Phase 1 (auth + Home live data). See `docs/build-plan.md`.
+**LIVE on Google Play with full iOS parity.** 1.0.0 + 1.1.0 (parity) published; 1.1.0 +
+Google Sign-In (versionCode 5) in review. Only remaining gap: Sign in with Apple on Android
+(optional). See `docs/build-plan.md` + `docs/changelog.md` (Session A9).

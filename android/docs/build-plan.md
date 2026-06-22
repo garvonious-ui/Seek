@@ -20,8 +20,8 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [x] Auth gate routing in SeekApp (onboarding vs shell vs guest)
 - [x] Home: live daily verse (`SeekApi.dailyVerse()`), streak capsule (auth-only), quick prompts
 - [x] Profile (guest sign-in CTA / authed sign-out); Chat + Library guest gates
-- [~] Google Sign-In via browser OAuth — **wired in code; needs Google client ID configured in Supabase to function**
-- [~] Sign in with Apple via browser OAuth — **wired; needs Apple OAuth Services ID + key in Supabase (iOS uses native flow, N/A here)**
+- [x] **Google Sign-In via browser OAuth — DONE + SHIPPED (Session A9, v5).** Google Cloud project "Seek" (`seek-500222`) → OAuth consent screen (External, published to production) → Web client (redirect = Supabase callback) → Supabase Google provider enabled. Code: MainActivity `handleDeeplinks` + manifest `launchMode=singleTask` + un-hidden button. Verified on emulator (real Google sign-in page loads).
+- [~] Sign in with Apple via browser OAuth — **wired; needs Apple OAuth Services ID + key in Supabase (iOS uses native flow, N/A here). The one remaining social gap — optional.**
 - [x] Personalization + notifications onboarding steps (Session A9 — 5-topic multi-select + "Stay encouraged" step; verified on emulator)
 - [x] Translation picker (NLT/KJV dialog in Profile, mirrored to Supabase — Session A9) + delete account (A8)
 
@@ -73,13 +73,13 @@ Full strategy + stack mapping: [`../../docs/android-plan.md`](../../docs/android
 - [ ] Notification deep links to specific screens — deferred
 - [ ] Skeleton loaders — deferred (spinners in place)
 
-## Phase 5 — Play Store ✅ SUBMITTED (2026-06-11, in review)
+## Phase 5 — Play Store ✅ LIVE (1.0.0 + 1.1.0 published; 1.1.0+Google in review)
 - [x] Google Play org account (LCIII Ventures / Ask Seek Pray) approved
 - [x] In-app account deletion + `delete-account` Edge Function + web deletion URL (Google policy)
-- [x] Google/Apple OAuth buttons hidden (no Android backend) — email + guest at launch
-- [x] Production release 3 (1.0.0): bundle + notes + 177 countries + listing + all declarations
-- [x] **Sent for review → Production, full rollout** (auto-publishes on approval; managed publishing off)
-- [ ] (post-approval) wire Google Sign-In + re-enable OAuth buttons in a future update
+- [x] Production release 3 (1.0.0): submitted → **approved + published** (first Android release live)
+- [x] **Release 4 (1.1.0, full iOS parity)** — Session A9, submitted → **approved + published**
+- [x] **Release 5 (1.1.0 + Google Sign-In)** — Session A9, submitted → **in review** (auto-publishes on approval)
+- [ ] (optional) wire Sign in with Apple on Android (Apple web Services ID + Supabase) — the only social gap left
 
 ### Earlier prep (code-side, done before submission)
 - [x] Real adaptive launcher icon (PNG mipmaps + adaptive XML + monochrome silhouette) from iOS 1024 asset
