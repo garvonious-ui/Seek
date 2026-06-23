@@ -112,6 +112,18 @@ VERSE_FOR = [
     ("grieving",    "Psalm 34:18"),
     ("discouraged", "Isaiah 40:31"),
     ("restless",    "Psalm 4:8"),
+    ("weak",        "2 Corinthians 12:9"),
+    ("lonely",      "Deuteronomy 31:6"),
+    ("heartbroken", "Psalm 147:3"),
+    ("guilty",      "1 John 1:9"),
+    ("lost",        "Proverbs 3:5-6"),
+    ("doubting",    "Hebrews 11:1"),
+    ("worried",     "Isaiah 26:3"),
+    ("hopeless",    "Jeremiah 29:11"),
+    ("thankful",    "1 Thessalonians 5:18"),
+    ("unsteady",    "Psalm 46:1"),
+    ("fearful",     "Joshua 1:9"),
+    ("hurting",     "Psalm 103:2-3"),
 ]
 
 def verse_for_card(emotion, ref):
