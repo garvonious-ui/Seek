@@ -160,6 +160,52 @@
 - [x] `MARKETING_VERSION` 1.0.0→1.0.1, `CURRENT_PROJECT_VERSION` 9→10
 - [x] Archived, uploaded, submitted → **approved. Seek is live on the App Store.**
 
+## Marketing — Instagram automation (Sessions 20–22)
+See `docs/instagram-automation.md` + `docs/instagram-content-plan.md` + `docs/feature-reels.md`. **Session 21** restructured to a daily Reel-Reel-Carousel feed + 2 daily Stories, with an ambient music bed on the reels.
+
+**Session 22 — feature reels + bed variety (wired live):**
+- [x] 4 app-demo reels (chat / cardflip / streak / worship) on the Seek Design System engine → `marketing/instagram/feature-reels/`
+- [x] 5 ambient beds (warm/tender/hopeful/still/vespers); all 16 scheduled verse reels re-bedded, rotating so no two consecutive posts share a song → `reels_music/`
+- [x] Uploaded to `ig-media/reelsa/` + queue repointed: days 7/13/19/29 → feature reels (day 1 already posted); morning stories reuse the new reels
+- [x] Temp `media-up` upload Edge Function decommissioned (returns 410) — delete from dashboard when convenient
+- [ ] Review day 7 (cardflip, `approved`, auto-posts 2026-06-23) before it goes
+- [ ] Build next feature reels from the idea slate (`docs/feature-reels.md`) — prayer spotlight + "Verse for when you're ___" series
+
+**Session 23 — IG performance digest (wired live):**
+- [x] `ig_insights` + `ig_account_insights` tables; `ig-insights` Edge Function (Graph v21 insights → Supabase)
+- [x] `pg_cron ig-insights-daily` (12:00 UTC); live dashboard artifact `seek-ig-performance`
+- [x] Live: followers + per-post likes/comments/permalinks tracking
+- [x] Add `instagram_manage_insights` scope to unlock reach/saves/views/shares — DONE (enabled on Meta app + non-expiring Page token in ig_config; insights flowing)
+
+**Session 24 — self-replenishing queue (wired live):**
+- [x] `ig-replenish` Edge Function (LRU media recycle + Claude captions, inserts `pending`) + `pg_cron ig-replenish-weekly`
+- [x] Tested (dry-run + forced insert of Day 31); idles while queue is full
+- [x] Reel-Reel-Carousel feed: 20 reels + 10 themed carousels (`reelsa/`, `carousels/`)
+- [x] Stories: 60 rows — standalone evening verse + morning feed-repost (`stories/`)
+- [x] Ambient music bed synthesized + muxed into all 20 reels (`generate_bed.py`)
+- [x] `ig-publish` v3 handles IMAGE / REELS / CAROUSEL / STORIES
+- [x] Live-tested: carousel + story both posted to @askseekpray
+- [x] First week of feed + stories approved (rest pending in dashboard)
+- [ ] Approve weeks 2–4 in the dashboard when ready
+- [x] Set `META_APP_ID` + `META_APP_SECRET` Edge secrets — **DONE 2026-06-23** (App ID `882028774961076` via supabase CLI; secret revealed in Meta dashboard + pasted into Supabase Edge Function Secrets). Both confirmed in the secrets list.
+- [ ] (Optional) hand-post any reel that wants a *trending* IG sound (API can't attach those)
+
+### Earlier (Session 20)
+See `docs/instagram-automation.md` + `docs/instagram-content-plan.md`.
+- [x] 30-day content plan (calendar, strategy, hashtags)
+- [x] 21 verse cards rendered (4:5, Lora, real wordmark, no grey) → bucket `ig-media/feedv2/`
+- [x] 9 motion Reels rendered (9:16, Georgia, from the Seek Design System engine) → bucket `ig-media/reels/`
+- [x] 30 captions written (NLT, hook + body + CTA + hashtags)
+- [x] `ig_post_queue` / `ig_config` / `app_config` migration + `pg_cron` jobs
+- [x] `ig-publish` + `ig-token-refresh` Edge Functions deployed (`verify_jwt=false`)
+- [x] Queue seeded (30 rows, 7am ET, start 2026-06-17, all `pending`)
+- [x] Meta app + Business account + FB Page→IG link; 60-day token stored in `ig_config`
+- [x] Live approval dashboard (Cowork artifact `seek-instagram-schedule` + `admin.html`)
+- [x] Set `META_APP_ID` + `META_APP_SECRET` Edge secrets (weekly token auto-refresh) — **DONE 2026-06-23**
+- [ ] Live smoke-test one post end-to-end
+- [ ] Approve Day 1 before 7am ET on launch day
+- [ ] (Optional) Clean orphaned `cards/` + `feed/` storage objects
+
 ## Pending Data / Blockers
 - Apple Developer Program enrollment ($99/year) required for App Store + push notifications
 - Supabase Pro plan may be needed for Edge Functions volume and pg_cron
