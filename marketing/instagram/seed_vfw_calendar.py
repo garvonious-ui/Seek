@@ -28,14 +28,21 @@ TAG = {"anxious": "anxiety", "overwhelmed": "rest", "afraid": "fearnot", "grievi
        "hopeful": "hope", "blessed": "blessed", "celebrating": "praise", "at peace": "peace",
        "loved": "loved", "rejoicing": "praise", "praising": "worship"}
 
-struggle = [(e, r) for (e, r, p) in EMOTIONS if p in DARK]       # 17
-positive = [(e, r) for (e, r, p) in EMOTIONS if p not in DARK]   # 10
-# AM reel order: alternate heavy/joyful for morning variety
+struggle = [(e, r) for (e, r, p) in EMOTIONS if p in DARK]       # 17 (cycle navy/forest/ocean/plum)
+positive = [(e, r) for (e, r, p) in EMOTIONS if p not in DARK]   # 10 (cycle gold/sunrise/sage/blush)
+# AM reel order: spread the 10 bright reels EVENLY across the 27 so dark/light
+# backgrounds alternate throughout (no clump of dark palettes at the tail).
 am_reels = []
-i = j = 0
-while i < len(struggle) or j < len(positive):
-    if i < len(struggle): am_reels.append(("heavy", *struggle[i])); i += 1
-    if j < len(positive): am_reels.append(("joy", *positive[j])); j += 1
+total = len(struggle) + len(positive)
+light_pos = {round(k * total / len(positive)) for k in range(len(positive))}
+hi = li = 0
+for k in range(total):
+    if k in light_pos and li < len(positive):
+        am_reels.append(("joy", *positive[li])); li += 1
+    elif hi < len(struggle):
+        am_reels.append(("heavy", *struggle[hi])); hi += 1
+    elif li < len(positive):
+        am_reels.append(("joy", *positive[li])); li += 1
 carousels = [("scr_peace", "for when anxiety won't quiet down"),
              ("scr_comfort", "for when your heart is breaking"),
              ("scr_strength", "for when you feel like you can't"),
@@ -78,13 +85,9 @@ def add(di, d, hhmm, mt, mp, mps, cap):
 
 day, date = DAY0, START
 am_i = car_i = hc = jc = story_i = 0
-first = True
 while True:
     wd = date.weekday()
-    if first:
-        mps = [f"carousels/android_launch/android_launch_{k}.png" for k in range(4)]
-        add(day, date, "11:00", "CAROUSEL", mps[0], mps, CAP_ANDROID); am_mood = "news"; first = False
-    elif wd == 2 and car_i < len(carousels):                      # Wed carousel
+    if wd == 2 and car_i < len(carousels):                        # Wed carousel
         th, hl = carousels[car_i]; car_i += 1
         mps = [f"carousels/{th}/{th}_{k}.png" for k in range(7)]
         add(day, date, "11:00", "CAROUSEL", mps[0], mps, cap_carousel(hl)); am_mood = "carousel"
