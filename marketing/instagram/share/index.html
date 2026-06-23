@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex"/>
+<title>Seek · Instagram schedule</title>
+<style>
+  :root{--bg:#FAFAF6;--surface:#fff;--ink:#1A1A1A;--muted:#6B7280;--sage:#5B7B5E;--gold:#CDA349;--line:#E5E7EB}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1040px;margin:0 auto;padding:28px 20px 64px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  header h1{font-family:Georgia,"Times New Roman",serif;font-size:26px;font-weight:600;margin:0}
+  .sub{color:var(--muted);font-size:15px;margin:0 0 20px}
+  .bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:18px}
+  .tab{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 16px;font-size:14px;cursor:pointer}
+  .tab.active{background:var(--sage);color:#fff;border-color:var(--sage)}
+  .counts{color:var(--muted);font-size:13px;margin-left:auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .12s}
+  .card:hover{transform:translateY(-2px)}
+  .media{position:relative;aspect-ratio:4/5;background:#EEE;overflow:hidden}
+  .media img,.media video{width:100%;height:100%;object-fit:cover;display:block}
+  .play{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:3px 8px;border-radius:999px}
+  .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;padding:10px}
+  .body{padding:11px 13px}
+  .row1{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+  .badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
+  .b-reel{background:#EEEDFE;color:#3C3489}.b-carousel{background:#E1F5EE;color:#085041}
+  .b-image{background:#E6F1FB;color:#0C447C}.b-story{background:#F1EFE8;color:#444441}
+  .st{margin-left:auto;font-size:11px;font-weight:600}
+  .st-approved{color:#3B6D11}.st-pending{color:#854F0B}.st-posted{color:#5F5E5A}.st-failed{color:#A32D2D}
+  .when{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .cap{font-size:13px;line-height:1.45;color:#374151;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .empty{color:var(--muted);padding:40px;text-align:center}
+  .lb{position:fixed;inset:0;background:rgba(20,20,18,.86);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .lb.open{display:flex}
+  .lb .in{max-width:440px;width:100%}
+  .lb .m{width:100%;border-radius:14px;overflow:hidden;background:#000}
+  .lb .m img,.lb .m video{width:100%;display:block}
+  .lb .cap2{color:#F3F4F6;font-size:14px;line-height:1.5;margin-top:12px;white-space:pre-wrap;max-height:38vh;overflow:auto}
+  .lb .x{position:absolute;top:16px;right:18px;color:#fff;font-size:30px;cursor:pointer;line-height:1}
+  .foot{color:var(--muted);font-size:12px;margin-top:28px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Seek</h1><span style="color:var(--gold);font-size:22px;line-height:1">·</span><span style="font-size:18px;color:var(--muted)">Instagram schedule</span></header>
+  <p class="sub">What's lined up to post on <strong>@askseekpray</strong>. View only — updates live.</p>
+  <div class="bar">
+    <button class="tab active" data-f="upcoming">Upcoming</button>
+    <button class="tab" data-f="all">Everything</button>
+    <span class="counts" id="counts"></span>
+  </div>
+  <div class="grid" id="grid"></div>
+  <p class="foot">Read-only preview · times shown in Eastern</p>
+</div>
+<div class="lb" id="lb"><span class="x" onclick="closeLb()">&times;</span><div class="in"><div class="m" id="lbm"></div><div class="cap2" id="lbc"></div></div></div>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+const URL="https://hxfiaowayrhuhzhhbaix.supabase.co", KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4Zmlhb3dheXJodWh6aGhiYWl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NzI2NDksImV4cCI6MjA5MTE0ODY0OX0.tsf-R505B_RJvO8qDI0WMlcLzyPD7xrZK8ll4SbFK2Y", BUCKET="ig-media";
+const sb=createClient(URL,KEY,{auth:{persistSession:false}});
+const $=s=>document.querySelector(s);
+let filter="upcoming", rows=[];
+const pub=p=>`${URL}/storage/v1/object/public/${BUCKET}/${p}`;
+const isVid=p=>/\.(mp4|mov)$/i.test(p||"");
+const poster=p=>{const m=(p||"").match(/^reels-vfw\/(vfw_.+)\.mp4$/);return m?pub(`cards-vfw/${m[1]}.png`):"";};
+const tag=t=>({REELS:["b-reel","Reel"],CAROUSEL:["b-carousel","Carousel"],IMAGE:["b-image","Card"],STORIES:["b-story","Story"]}[t]||["b-image",t]);
+const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const fmt=d=>new Date(d).toLocaleString("en-US",{timeZone:"America/New_York",weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});
+
+async function load(){
+  let q=sb.from("ig_schedule_public").select("*").order("scheduled_for",{ascending:true});
+  if(filter==="upcoming"){const d=new Date();d.setHours(0,0,0,0);q=q.gte("scheduled_for",d.toISOString());}
+  const {data,error}=await q;
+  if(error){$("#grid").innerHTML=`<div class="empty">${error.message}</div>`;return;}
+  rows=data||[];
+  const c={};rows.forEach(r=>c[r.status]=(c[r.status]||0)+1);
+  $("#counts").textContent=Object.entries(c).map(([k,v])=>`${v} ${k}`).join("  ·  ");
+  if(!rows.length){$("#grid").innerHTML='<div class="empty">Nothing scheduled.</div>';return;}
+  $("#grid").innerHTML=rows.map((r,i)=>{
+    const [bc,bl]=tag(r.media_type);
+    const vid=r.media_type==="REELS"||isVid(r.media_path);
+    const ps=poster(r.media_path);
+    const media=vid
+      ? `<video src="${pub(r.media_path)}#t=0.1" ${ps?`poster="${ps}"`:""} muted playsinline preload="metadata"></video><span class="play">▶ Reel</span>`
+      : `<img src="${pub(r.media_path)}" loading="lazy" onerror="this.outerHTML='<div class=ph>preview unavailable</div>'"/>`;
+    return `<div class="card" data-i="${i}">
+      <div class="media">${media}</div>
+      <div class="body">
+        <div class="row1"><span class="badge ${bc}">${bl}</span><span class="st st-${r.status}">${r.status}</span></div>
+        <div class="when">${fmt(r.scheduled_for)} ET</div>
+        ${r.caption?`<div class="cap">${esc(r.caption)}</div>`:""}
+      </div></div>`;
+  }).join("");
+  document.querySelectorAll(".card").forEach(c=>c.onclick=()=>openLb(rows[+c.dataset.i]));
+}
+window.openLb=r=>{
+  const vid=r.media_type==="REELS"||isVid(r.media_path);
+  $("#lbm").innerHTML=vid?`<video src="${pub(r.media_path)}" controls autoplay loop playsinline></video>`:`<img src="${pub(r.media_path)}"/>`;
+  $("#lbc").textContent=r.caption||"";
+  $("#lb").classList.add("open");
+};
+window.closeLb=()=>{$("#lb").classList.remove("open");$("#lbm").innerHTML="";};
+$("#lb").onclick=e=>{if(e.target.id==="lb")closeLb();};
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{filter=t.dataset.f;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===t));load();});
+load();
+</script>
+</body>
+</html>
