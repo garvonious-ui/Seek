@@ -37,8 +37,18 @@
   .lb{position:fixed;inset:0;background:rgba(20,20,18,.86);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
   .lb.open{display:flex}
   .lb .in{max-width:440px;width:100%}
-  .lb .m{width:100%;border-radius:14px;overflow:hidden;background:#000}
+  .lb .m{position:relative;width:100%;border-radius:14px;overflow:hidden;background:#000}
   .lb .m img,.lb .m video{width:100%;display:block}
+  .cz{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+  .cz::-webkit-scrollbar{display:none}
+  .cz .slide{flex:0 0 100%;scroll-snap-align:center}
+  .cz .slide img{width:100%;display:block}
+  .nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.5);color:#fff;border:none;width:38px;height:38px;border-radius:50%;font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .nav.prev{left:8px}.nav.next{right:8px}
+  .dots{position:absolute;left:0;right:0;bottom:10px;display:flex;gap:6px;justify-content:center}
+  .dots span{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.45)}
+  .dots span.on{background:#fff}
+  .ct{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;padding:3px 8px;border-radius:999px}
   .lb .cap2{color:#F3F4F6;font-size:14px;line-height:1.5;margin-top:12px;white-space:pre-wrap;max-height:38vh;overflow:auto}
   .lb .x{position:absolute;top:16px;right:18px;color:#fff;font-size:30px;cursor:pointer;line-height:1}
   .foot{color:var(--muted);font-size:12px;margin-top:28px;text-align:center}
@@ -86,8 +96,9 @@ async function load(){
     const media=vid
       ? `<video src="${pub(r.media_path)}#t=0.1" ${ps?`poster="${ps}"`:""} muted playsinline preload="metadata"></video><span class="play">▶ Reel</span>`
       : `<img src="${pub(r.media_path)}" loading="lazy" onerror="this.outerHTML='<div class=ph>preview unavailable</div>'"/>`;
+    const cnt=(r.media_type==="CAROUSEL"&&r.media_paths&&r.media_paths.length>1)?`<span class="ct">▦ ${r.media_paths.length}</span>`:"";
     return `<div class="card" data-i="${i}">
-      <div class="media">${media}</div>
+      <div class="media">${media}${cnt}</div>
       <div class="body">
         <div class="row1"><span class="badge ${bc}">${bl}</span><span class="st st-${r.status}">${r.status}</span></div>
         <div class="when">${fmt(r.scheduled_for)} ET</div>
@@ -98,10 +109,22 @@ async function load(){
 }
 window.openLb=r=>{
   const vid=r.media_type==="REELS"||isVid(r.media_path);
-  $("#lbm").innerHTML=vid?`<video src="${pub(r.media_path)}" controls autoplay loop playsinline></video>`:`<img src="${pub(r.media_path)}"/>`;
+  const slides=(r.media_type==="CAROUSEL"&&Array.isArray(r.media_paths)&&r.media_paths.length>1)?r.media_paths:null;
+  if(slides){
+    $("#lbm").innerHTML=
+      `<div class="cz" id="cz">${slides.map(p=>`<div class="slide"><img src="${pub(p)}"/></div>`).join("")}</div>`+
+      `<button class="nav prev" aria-label="Previous" onclick="czNav(-1)">‹</button>`+
+      `<button class="nav next" aria-label="Next" onclick="czNav(1)">›</button>`+
+      `<div class="dots" id="dots">${slides.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join("")}</div>`;
+    const cz=$("#cz");
+    cz.onscroll=()=>{const i=Math.round(cz.scrollLeft/cz.clientWidth);[...$("#dots").children].forEach((d,j)=>d.classList.toggle("on",j===i));};
+  } else {
+    $("#lbm").innerHTML=vid?`<video src="${pub(r.media_path)}" controls autoplay loop playsinline></video>`:`<img src="${pub(r.media_path)}"/>`;
+  }
   $("#lbc").textContent=r.caption||"";
   $("#lb").classList.add("open");
 };
+window.czNav=dir=>{const cz=$("#cz");if(cz)cz.scrollBy({left:dir*cz.clientWidth,behavior:"smooth"});};
 window.closeLb=()=>{$("#lb").classList.remove("open");$("#lbm").innerHTML="";};
 $("#lb").onclick=e=>{if(e.target.id==="lb")closeLb();};
 document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{filter=t.dataset.f;document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("active",x===t));load();});
