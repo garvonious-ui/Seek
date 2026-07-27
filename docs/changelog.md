@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-06-27 — Session 25 (Verse of the Day widget — iOS + Android)
+
+First Phase 2 feature: a Verse of the Day widget on both platforms, built at parity. No changes to the shipped app flows.
+
+### Verse source strategy (both platforms)
+The in-app daily verse comes from a **server-stateful** Edge Function (`daily-verse` picks a verse not used in 90 days and marks it used) — not reproducible offline or in a widget process. So the widget uses a **hybrid**:
+- The app writes the verse it just fetched into a shared store (iOS App Group, Android SharedPreferences), stamped with the day. The widget reads it so it shows exactly what the app shows.
+- If there's no app-written verse for today (fresh install, app not opened in a while), the widget falls back to a **deterministic-by-date** pick from a bundled **333-verse pool** (`daily_verses.json`, parsed from `supabase/seed-nlt.sql`, deduped by reference, 20 themes). Zero network, rolls over at local midnight, cycles the whole pool before repeating. Identical JSON bundled in both apps.
+
+### iOS (`SeekWidget/` + `Shared/`)
+- **`Shared/SharedVerse.swift`** (compiled into both app and widget targets): `SharedVerse` model, `SharedVerseStore` (App Group `group.com.loucesario.seek` UserDefaults read/write), `WidgetVerseProvider` (bundled pool + deterministic picker + `resolvedVerse(for:)`).
+- **WidgetKit extension** `SeekWidgetExtension` (`SeekWidgetBundle` + `DailyVerseWidget`): `TimelineProvider` emits one entry per day for a week (flips at local midnight); families **systemSmall, systemMedium, accessoryRectangular, accessoryInline, accessoryCircular**. Light theme, gold/sage, Georgia serif scripture. `widgetURL(seek://dailyverse)` deep link.
+- **`project.yml`**: added App Group entitlement to the Seek target; new `SeekWidgetExtension` app-extension target (own `Info.plist` with `NSExtensionPointIdentifier = com.apple.widgetkit-extension`, `SeekWidget.entitlements`); app target now embeds the widget. Bumped `MARKETING_VERSION` 1.1.0→1.2.0, `CURRENT_PROJECT_VERSION` 11→12.
+- **App wiring**: `HomeView.loadDailyVerse` writes the fetched verse to the App Group and calls `WidgetCenter.shared.reloadAllTimelines()` (only on a fresh fetch, never the cached path, so a stale verse is never stamped "today"). `ContentView` gains `.onOpenURL` handling `seek://dailyverse` → Home tab (other schemes untouched, so Supabase auth callbacks are unaffected).
+
+### Android (`widget/` + res)
+Android removed lock-screen/keyguard widgets in 5.0, so this is the platform-equivalent **home-screen App Widget** (classic `AppWidgetProvider` + `RemoteViews`, no new Glance dependency).
+- **`widget/WidgetVerseStore.kt`**: synchronous SharedPreferences mirror + deterministic picker reading `assets/daily_verses.json` (parsed with built-in `org.json`).
+- **`widget/DailyVerseWidget.kt`**: `AppWidgetProvider` renders the resolved verse, `setOnClickPendingIntent` → `MainActivity` via `seek://dailyverse`, and an `AlarmManager` re-armed for just-after-midnight so the verse rolls over daily without the app running.
+- Layout (`widget_daily_verse.xml`, serif verse, gold label, sage reference), `widget_background.xml` (white card), `daily_verse_widget_info.xml` (resizable 4×2 home widget), manifest receiver, strings. `HomeViewModel` writes the verse + calls `DailyVerseWidget.refresh()` after a successful fetch. Bumped versionCode 5→6, versionName 1.2.0.
+
+### Verified
+- JSON valid and byte-identical across both bundles (333 verses, 20 themes).
+- `project.yml` parses with both targets; all Android XML, `Info.plist`, and entitlements well-formed.
+- Could not run `xcodebuild`/`gradle` in this environment (no macOS toolchain / Android SDK). Compile + on-device verification is on the user.
+
+### Pending — user actions
+- **iOS:** register App Group `group.com.loucesario.seek` in the Apple Developer portal and regenerate provisioning profiles (XcodeGen resets the signing team — re-select in Xcode), then `xcodegen generate` → verify build number = 12 → Archive → upload. Add the widget to a Home/Lock Screen to smoke-test; confirm it matches the in-app verse after opening Home.
+- **Android:** gradle build, place the widget, verify rollover, then Play upload (v6 / 1.2.0).
+
 ## 2026-06-22 — Android feature parity + Google Sign-In (full detail in `android/docs/changelog.md` Session A9)
 
 This was an Android session (no iOS app code changed). Two milestones, both shipped to Google Play.

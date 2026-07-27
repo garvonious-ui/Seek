@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 struct HomeView: View {
     @Environment(AuthManager.self) private var authManager
@@ -353,6 +354,15 @@ struct HomeView: View {
             dailyVerse = verse
             isShowingCachedVerse = false
             DailyVerseCache.save(verse)
+
+            // Mirror today's verse to the App Group so the Verse of the Day
+            // widget shows exactly what the app shows, then nudge WidgetKit to
+            // refresh its timelines. (We only write on a fresh fetch — never the
+            // cached path — so the widget never stamps a stale verse as "today".)
+            SharedVerseStore.save(
+                SharedVerse(reference: verse.reference, text: verse.text, theme: verse.theme)
+            )
+            WidgetCenter.shared.reloadAllTimelines()
         } catch {
             print("Failed to load daily verse: \(error)")
             // Leave the cached verse (if any) in place and fall back to the

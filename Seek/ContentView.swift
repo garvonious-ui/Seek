@@ -31,6 +31,13 @@ struct ContentView: View {
                 .tag(Tab.library)
         }
         .tint(Color(hex: "5B7B5E"))
+        // Verse of the Day widget deep links here. Other schemes (e.g. Supabase
+        // auth callbacks) are left untouched.
+        .onOpenURL { url in
+            if url.scheme == "seek", url.host == "dailyverse" {
+                selectedTab = .home
+            }
+        }
     }
 }
 

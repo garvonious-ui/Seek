@@ -14,8 +14,8 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MARKETING_VERSION: "1.1.0"
-    CURRENT_PROJECT_VERSION: 11
+    MARKETING_VERSION: "1.2.0"
+    CURRENT_PROJECT_VERSION: 12
     GENERATE_INFOPLIST_FILE: YES
     INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
     INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
@@ -35,6 +35,9 @@ targets:
       - path: Seek
         excludes:
           - "**/.DS_Store"
+      - path: Shared
+        excludes:
+          - "**/.DS_Store"
     resources:
       - path: Seek/Resources
         excludes:
@@ -43,6 +46,7 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
+      - target: SeekWidgetExtension
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.loucesario.seek
@@ -56,3 +60,32 @@ targets:
       properties:
         com.apple.developer.applesignin:
           - Default
+        com.apple.security.application-groups:
+          - group.com.loucesario.seek
+
+  SeekWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SeekWidget
+        excludes:
+          - "**/.DS_Store"
+      - path: Shared
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.loucesario.seek.SeekWidget
+        DEVELOPMENT_TEAM: 6QU295KVS2
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: SeekWidget/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: "Seek"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_EMIT_LOC_STRINGS: YES
+        # Widgets cannot be light-mode-locked via the app plist key, so we set
+        # explicit colors in code and don't force UIUserInterfaceStyle here.
+    entitlements:
+      path: SeekWidget/SeekWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.loucesario.seek

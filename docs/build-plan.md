@@ -122,7 +122,7 @@
 
 ## Phase 2 — Expansion
 - [x] ~~ESV API integration~~ Multi-translation support (NLT default, KJV switchable) — done in Phase 1
-- [ ] Verse of the Day widget (iOS home screen / lock screen)
+- [x] Verse of the Day widget (iOS home + lock screen; Android home) — built Session 25. iOS WidgetKit extension (systemSmall/Medium + accessoryRectangular/Inline/Circular) + Android AppWidget. Hybrid verse source: App Group / SharedPrefs mirror of the app's fetched verse, with a deterministic-by-date fallback from a bundled 333-verse pool. **User actions remaining: register `group.com.loucesario.seek` App Group in Apple Developer portal + regenerate provisioning, then Xcode archive (iOS). Android: gradle build + Play upload (versionCode 6 / 1.2.0).**
 - [ ] Search/browse Bible by book and chapter
 - [ ] Topical verse index (pre-curated lists)
 - [ ] Journaling feature (personal notes tied to verses)

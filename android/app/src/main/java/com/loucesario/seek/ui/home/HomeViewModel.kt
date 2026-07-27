@@ -7,6 +7,8 @@ import com.loucesario.seek.data.SeekPrefs
 import com.loucesario.seek.data.StreakManager
 import com.loucesario.seek.data.remote.SeekApi
 import com.loucesario.seek.data.remote.dto.DailyVerseDto
+import com.loucesario.seek.widget.DailyVerseWidget
+import com.loucesario.seek.widget.WidgetVerseStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,7 +45,17 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             _state.value = DailyVerseState.Loading
             _state.value = try {
-                DailyVerseState.Loaded(SeekApi.dailyVerse())
+                val verse = SeekApi.dailyVerse()
+                // Mirror today's verse to the widget store and refresh any placed
+                // widgets so the home-screen Verse of the Day matches the app.
+                WidgetVerseStore.save(
+                    getApplication(),
+                    reference = verse.reference,
+                    text = verse.text,
+                    theme = verse.theme ?: "",
+                )
+                DailyVerseWidget.refresh(getApplication())
+                DailyVerseState.Loaded(verse)
             } catch (t: Throwable) {
                 DailyVerseState.Error(FALLBACK)
             }

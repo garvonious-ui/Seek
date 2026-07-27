@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Seek</string>
+    <string name="widget_daily_verse_label">DAILY VERSE</string>
+    <string name="widget_description">A fresh scripture verse on your Home Screen each day.</string>
 </resources>
