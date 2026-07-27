@@ -18,14 +18,14 @@ val keystoreProps: Properties? = run {
 
 android {
     namespace = "com.loucesario.seek"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.loucesario.seek"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 5
-        versionName = "1.1.0"
+        targetSdk = 36
+        versionCode = 6
+        versionName = "1.2.0"
 
         // Same Supabase project as iOS. The anon key is public by design
         // (ships in the iOS bundle and the landing page) and is protected by RLS.
