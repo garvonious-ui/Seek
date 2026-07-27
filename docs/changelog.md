@@ -1,5 +1,92 @@
 # Changelog
 
+## 2026-07-27 — Session 26 (Production triage: chat outage, IG publish, password reset, Android 16)
+
+Started as `/start`; became incident response. Four production bugs, three
+server-side fixes deployed live, one Play deadline defused. No app build required
+for any of the fixes.
+
+### Chat was down for 2 days (core feature, all users)
+Reported by a user's mother; a screenshot showed "Something went wrong finding
+scripture for you." `debug_logs` had 49 identical crashes:
+`TypeError: Cannot read properties of undefined (reading 'trim')`.
+
+- **Root cause:** `chat` v18 was deployed 07-23 (undocumented — not in this
+  changelog) switching the model to `claude-sonnet-5`. Sonnet 5 has **adaptive
+  thinking always on**, so responses can lead with a `{type:"thinking"}` block.
+  `claudeData.content[0]?.text` yielded `undefined` on those, and `.trim()` threw
+  into the outer catch as a 500. ~60% of requests. Anthropic returned **200** every
+  time — the existing retry/fallback machinery never fired because nothing failed
+  at the HTTP layer.
+- **Fixed (v19, live, confirmed working):** scan `content[]` for `type === "text"`
+  and join, instead of assuming index 0. Added a `chat_no_text_block` sink that
+  logs `stop_reason` / `usage` / block types and returns a clean 502 rather than
+  crashing. Added `chat_unparseable_json` so truncation stops failing silently.
+- **`max_tokens` 3000 → 8000.** Thinking tokens count against `max_tokens`, so even
+  the requests that *did* return text were at risk of truncating into the JSON
+  salvage path.
+- **`usage_logs` upsert moved after successful parse** — failures were burning the
+  user's 50/day quota. (Not refunded: heaviest user was at 11/50, nobody was
+  actually blocked.)
+- **Fallback `claude-sonnet-4-6` → `claude-opus-5`.** 4-6 is not in the current
+  models table; third invalid fallback ID shipped. It had never been exercised
+  because the fallback path only fires on a non-OK HTTP status.
+
+### ig-publish: 7 posts silently dead
+3 carousels + 4 image stories failed 06-21 → 07-22, all with graph
+`9007 / 2207027 "Media ID is not available"`.
+
+- **Root cause:** `pollFinished` ran only for REELS and *video* stories. Carousel
+  children, the carousel parent, image stories, and plain IMAGE posts were
+  published the instant they were created, before Instagram finished processing.
+- **Fixed (v6, live):** every container type now waits, with a fast 1s loop for
+  image-ish containers vs 6s for video. Carousel children are polled before the
+  parent references them.
+- **Failures now retry.** The old code marked the very first failure terminal;
+  rows now return to `approved` and get picked up by the next 15-min tick, sticking
+  at `failed` only after 3 attempts.
+- Also found: **43 pending posts are past due** — the approval gate works, but
+  nobody is tending it.
+
+### Password reset has never worked
+`resetPasswordForEmail` returns 200 for any email; the app treated that as "sent"
+and showed "Check your email." 95 of 157 users are Apple/Google with no password,
+so no email is ever sent. Exactly one recovery email has been sent in the app's
+lifetime. There is also no `type=recovery` handling and no new-password screen, so
+even a delivered link goes nowhere.
+
+- **Shipped:** `auth-preflight` Edge Function returning `oauth_only` /
+  `no_account` / `sent` / `rate_limited`, backed by service-role-only SQL
+  (`auth_preflight_lookup`, `auth_preflight_allow`). Two-tier throttle: 5/15min per
+  email (tight), 60/15min per IP (loose — Seek is mobile, carrier NAT shares egress
+  IPs). Emails SHA-256'd as throttle keys. All branches verified live.
+- **Outstanding (needs a build):** client must call the pre-flight and branch on
+  status, and the reset-completion flow must be built. See `docs/password-reset.md`.
+- Also hardened `handle_new_user` (pinned `search_path`, revoked EXECUTE from
+  anon/authenticated) per the security advisor.
+
+### Android 16 — Play deadline 2026-08-31
+Play notice: `targetSdk` must be 36 from 08-31 or **all updates are rejected**
+(not delisted — 35 still meets the stay-available bar). Bumped compileSdk/targetSdk
+to 36, AGP 8.7.3 → 8.13.2 (API 36 needs ≥8.9), Gradle 8.11.1 → 8.13. Compatibility
+reviewed and low-risk: `enableEdgeToEdge()` already called, the opt-out Android 16
+removes was never used, widget alarm is inexact so it dodges `SCHEDULE_EXACT_ALARM`.
+See `docs/android-16-upgrade.md`. **Not compiled** — no Android SDK available.
+
+### The reason a month of work never shipped
+`.git/index.lock`, `.git/HEAD.lock` and `.git/refs/heads/main.lock` were all
+**zero bytes, dated 2026-06-25** — a crashed git process left three stale locks
+that silently blocked every commit since. Session 25's entire Verse of the Day
+feature (both platforms) was sitting untracked in the working tree, which is why
+v6 and build 12 never shipped. Locks cleared to `.git/_stale_locks/`; the widget
+work is now committed.
+
+### Still open for the user
+- iOS build 12 archive + upload; Android gradle build → Play (v6/1.2.0 + API 36).
+- Sessions 20–24 marketing/IG work is still uncommitted (~30 paths).
+- **No alerting.** This outage was found because a family member texted. A
+  `debug_logs` row count is one cron away from a push notification.
+
 ## 2026-06-27 — Session 25 (Verse of the Day widget — iOS + Android)
 
 First Phase 2 feature: a Verse of the Day widget on both platforms, built at parity. No changes to the shipped app flows.
