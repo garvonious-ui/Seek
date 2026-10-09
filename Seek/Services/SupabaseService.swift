@@ -63,8 +63,48 @@ class SupabaseService {
         )
     }
 
-    func resetPassword(email: String) async throws {
-        try await client.auth.resetPasswordForEmail(email)
+    /// Asks the auth-preflight Edge Function what's true about this email
+    /// before promising a reset. resetPasswordForEmail() returns 200 for any
+    /// address, so it can't tell Apple-only accounts (no password) or unknown
+    /// emails apart from real ones — see docs/password-reset.md.
+    func preflightReset(email: String) async throws -> PreflightResult {
+        do {
+            return try await client.functions.invoke(
+                "auth-preflight",
+                options: .init(body: ["email": email])
+            )
+        } catch FunctionsError.httpError(_, let data) {
+            // 4xx/5xx (rate_limited, send_failed, …) still carry {status, message}.
+            if let result = try? JSONDecoder().decode(PreflightResult.self, from: data) {
+                return result
+            }
+            throw FunctionsError.httpError(code: 0, data: data)
+        }
+    }
+
+    /// Signs in from the seek://password-reset link in the reset email.
+    /// auth-preflight sends that email server-side with supabase-js's default
+    /// implicit flow, so the tokens arrive in the URL fragment. This client is
+    /// PKCE, and `auth.session(from:)` rejects implicit URLs, so the tokens are
+    /// read here and handed to `setSession` directly.
+    func recoverSession(from url: URL) async throws -> Session {
+        var params: [String: String] = [:]
+        for part in [url.query, url.fragment].compactMap({ $0 }) {
+            for item in URLComponents(string: "?\(part)")?.queryItems ?? [] {
+                params[item.name] = item.value
+            }
+        }
+        if let message = params["error_description"] {
+            throw RecoveryLinkError(message: message.replacingOccurrences(of: "+", with: " "))
+        }
+        guard let accessToken = params["access_token"], let refreshToken = params["refresh_token"] else {
+            throw RecoveryLinkError(message: "No session in reset link")
+        }
+        return try await client.auth.setSession(accessToken: accessToken, refreshToken: refreshToken)
+    }
+
+    func updatePassword(_ newPassword: String) async throws {
+        _ = try await client.auth.update(user: UserAttributes(password: newPassword))
     }
 
     func signOut() async throws {
@@ -210,6 +250,18 @@ struct ChatResponse: Codable {
     let followUp: String?
     let action: ActionStep?
     let remainingChats: Int?
+}
+
+/// Response from the auth-preflight Edge Function.
+/// status: sent | oauth_only | no_account | rate_limited | invalid_email | send_failed | server_error
+struct PreflightResult: Decodable {
+    let status: String
+    let provider: String?
+    let message: String?
+}
+
+struct RecoveryLinkError: Error {
+    let message: String
 }
 
 struct ActionStep: Codable {

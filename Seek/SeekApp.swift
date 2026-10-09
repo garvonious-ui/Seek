@@ -51,6 +51,7 @@ struct SeekApp: App {
                     }
                 }
             }
+            .modifier(PasswordRecoveryHandler())
             .preferredColorScheme(.light)
             .environment(authManager)
             .environment(networkMonitor)

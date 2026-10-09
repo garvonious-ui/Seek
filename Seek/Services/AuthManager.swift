@@ -14,9 +14,22 @@ final class AuthManager {
         case authenticated
     }
 
+    /// What auth-preflight said about a Forgot Password request — drives the
+    /// SignInView alert. Errors (rate limit, send failure) go to errorMessage.
+    enum PasswordResetOutcome: Equatable {
+        case sent(message: String)
+        case oauthOnly(provider: String, message: String)
+        case noAccount(message: String)
+    }
+
     var authState: AuthState = .loading
     var errorMessage: String?
-    var resetPasswordSent = false
+    var passwordResetOutcome: PasswordResetOutcome?
+
+    /// True after the user opens the reset link — presents SetNewPasswordView.
+    var isRecoveringPassword = false
+    /// Set when a reset link is expired / already used.
+    var recoveryLinkError: String?
 
     // Stored property so @Observable can track changes and trigger SwiftUI re-renders.
     // Also persisted to UserDefaults so it survives app restarts.
@@ -336,15 +349,74 @@ final class AuthManager {
     // MARK: - Reset Password
 
     func resetPassword(email: String) async {
-        await MainActor.run { errorMessage = nil }
+        await MainActor.run {
+            errorMessage = nil
+            passwordResetOutcome = nil
+        }
         do {
-            try await SupabaseService.shared.resetPassword(email: email)
-            await MainActor.run { resetPasswordSent = true }
-        } catch {
-            print("[Auth] Reset password failed: \(error)")
+            let result = try await SupabaseService.shared.preflightReset(email: email)
+            print("[Auth] Reset preflight: \(result.status)")
             await MainActor.run {
-                errorMessage = "Failed to send reset email: \(error.localizedDescription)"
+                // Render the server's message rather than duplicating copy here.
+                switch result.status {
+                case "sent":
+                    passwordResetOutcome = .sent(message: result.message ?? "Check your email for a password reset link.")
+                case "oauth_only":
+                    passwordResetOutcome = .oauthOnly(
+                        provider: result.provider ?? "",
+                        message: result.message ?? "This account doesn't use a password."
+                    )
+                case "no_account":
+                    passwordResetOutcome = .noAccount(message: result.message ?? "We couldn't find an account with that email.")
+                case "invalid_email":
+                    errorMessage = "Enter a valid email address."
+                default:
+                    errorMessage = result.message ?? "Something went wrong. Please try again."
+                }
             }
+        } catch {
+            print("[Auth] Reset preflight failed: \(error)")
+            await MainActor.run {
+                errorMessage = "Couldn't reach Seek. Check your connection and try again."
+            }
+        }
+    }
+
+    /// Handles seek://password-reset from the reset email: signs the user in
+    /// with the recovery session, then presents SetNewPasswordView. Anyone
+    /// resetting a password is a returning user, so onboarding is skipped —
+    /// same flags as signInWithEmail.
+    func handlePasswordRecovery(url: URL, modelContext: ModelContext) async {
+        do {
+            let session = try await SupabaseService.shared.recoverSession(from: url)
+            await MainActor.run {
+                createLocalProfileIfNeeded(
+                    userId: session.user.id.uuidString,
+                    email: session.user.email ?? "",
+                    modelContext: modelContext
+                )
+                authState = .authenticated
+                hasCompletedOnboarding = true
+                hasOptedForGuest = false
+                isRecoveringPassword = true
+            }
+        } catch {
+            print("[Auth] Password recovery link failed: \(error)")
+            await MainActor.run {
+                recoveryLinkError = "This reset link has expired or was already used. Request a new one from Sign In."
+            }
+        }
+    }
+
+    /// Returns nil on success, or a user-facing error message. The caller
+    /// clears isRecoveringPassword after showing its confirmation.
+    func updatePassword(_ newPassword: String) async -> String? {
+        do {
+            try await SupabaseService.shared.updatePassword(newPassword)
+            return nil
+        } catch {
+            print("[Auth] Update password failed: \(error)")
+            return "Couldn't update your password: \(error.localizedDescription)"
         }
     }
 

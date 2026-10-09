@@ -8,7 +8,7 @@ struct SignInView: View {
     @State private var password = ""
     @State private var isSignUp = false
     @State private var isLoading = false
-    @State private var showResetAlert = false
+    @State private var isSendingReset = false
     @FocusState private var focusedField: Field?
     var onAuthenticated: ((_ isNewUser: Bool) -> Void)?
 
@@ -80,17 +80,17 @@ struct SignInView: View {
                                 authManager.errorMessage = "Enter your email address first."
                                 return
                             }
+                            isSendingReset = true
                             Task {
                                 await authManager.resetPassword(email: email)
-                                if authManager.resetPasswordSent {
-                                    showResetAlert = true
-                                }
+                                isSendingReset = false
                             }
                         } label: {
                             Text("Forgot Password?")
                                 .font(.subheadline)
                                 .foregroundStyle(Color(hex: "5B7B5E"))
                         }
+                        .disabled(isSendingReset)
                     }
                 }
 
@@ -182,12 +182,36 @@ struct SignInView: View {
                     .fontWeight(.semibold)
             }
         }
-        .alert("Reset Email Sent", isPresented: $showResetAlert) {
-            Button("OK", role: .cancel) {
-                authManager.resetPasswordSent = false
+        .alert(
+            resetAlertTitle,
+            isPresented: Binding(
+                get: { authManager.passwordResetOutcome != nil },
+                set: { if !$0 { authManager.passwordResetOutcome = nil } }
+            ),
+            presenting: authManager.passwordResetOutcome
+        ) { outcome in
+            switch outcome {
+            case .sent:
+                Button("OK", role: .cancel) {}
+            case .oauthOnly(let provider, _):
+                if provider == "apple" {
+                    Button("Continue with Apple") {
+                        isLoading = true
+                        authManager.startAppleSignIn(modelContext: modelContext)
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } else {
+                    Button("OK", role: .cancel) {}
+                }
+            case .noAccount:
+                Button("Create Account") {
+                    isSignUp = true
+                    authManager.errorMessage = nil
+                }
+                Button("Cancel", role: .cancel) {}
             }
-        } message: {
-            Text("Check your email for a password reset link.")
+        } message: { outcome in
+            Text(resetAlertMessage(outcome))
         }
         .onChange(of: authManager.authState) { _, newState in
             isLoading = false
@@ -199,6 +223,27 @@ struct SignInView: View {
             // Reset spinner on any auth error (Apple, email, etc.) so the
             // user can retry.
             if newValue != nil { isLoading = false }
+        }
+    }
+
+    private var resetAlertTitle: String {
+        switch authManager.passwordResetOutcome {
+        case .sent: "Reset Email Sent"
+        case .oauthOnly: "No Password to Reset"
+        case .noAccount: "No Account Found"
+        case nil: ""
+        }
+    }
+
+    private func resetAlertMessage(_ outcome: AuthManager.PasswordResetOutcome) -> String {
+        switch outcome {
+        case .sent(let message), .noAccount(let message):
+            return message
+        case .oauthOnly(let provider, let message):
+            // The server copy says "Tap Continue with <Provider>", but iOS only
+            // offers Apple — Google accounts come from the Android app.
+            if provider == "apple" { return message }
+            return "This account signs in with \(provider.capitalized), so there's no password to reset. Sign in from the Seek app on Android, where \(provider.capitalized) sign-in is available."
         }
     }
 }

@@ -18,6 +18,7 @@
 		2DD4EB10C1A6EC72132A9948 /* WidgetTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25AD5240CBF7ABC8738CA721 /* WidgetTheme.swift */; };
 		30FE45F422E25E888A5C473B /* WebContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675EF979B9F03611C1BA0A7E /* WebContentView.swift */; };
 		32B23A70411A456E5E618634 /* SubscriptionManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30EB2963A0C15BE4EC87A90C /* SubscriptionManagementView.swift */; };
+		3A5AFD3BE90EEBF097A1AA94 /* SetNewPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17CDCBA640FFA2EAE1CD165F /* SetNewPasswordView.swift */; };
 		420115F8CA1F04537744619D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D7415D95463F6BC217019DA7 /* Assets.xcassets */; };
 		512EAED3490139C9F9FCAE97 /* SavedPrayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BAD92E98E45FF5ACB66B8F /* SavedPrayer.swift */; };
 		53D8CFAF9B454433ECF60C1E /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937F10171702BCE24D38D097 /* AuthManager.swift */; };
@@ -88,6 +89,7 @@
 		0A67C5DC56A82F78FDED7D58 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		0A69E39476DCE0152C599D42 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		1323B3E69FD0B3F582727ADA /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		17CDCBA640FFA2EAE1CD165F /* SetNewPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetNewPasswordView.swift; sourceTree = "<group>"; };
 		18DA92189B90BBA039FA720B /* FavoriteVerse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteVerse.swift; sourceTree = "<group>"; };
 		1E165487157E7265F6405B19 /* CopyButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CopyButton.swift; sourceTree = "<group>"; };
 		2414D0CBEED548A87A86B20C /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
@@ -187,6 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				A6BE2E404635C19F7B9BA965 /* OnboardingView.swift */,
+				17CDCBA640FFA2EAE1CD165F /* SetNewPasswordView.swift */,
 				0A69E39476DCE0152C599D42 /* SignInView.swift */,
 			);
 			path = Onboarding;
@@ -490,6 +493,7 @@
 				EE37DDD4CDE80E4605EFD8F5 /* SavedCard.swift in Sources */,
 				512EAED3490139C9F9FCAE97 /* SavedPrayer.swift in Sources */,
 				0BD5F868B38038EB84B4DBA1 /* SeekApp.swift in Sources */,
+				3A5AFD3BE90EEBF097A1AA94 /* SetNewPasswordView.swift in Sources */,
 				25D9D197D15A43E7439B7057 /* SharedVerse.swift in Sources */,
 				D9584D32F45E2C011755F788 /* SignInView.swift in Sources */,
 				6CB64850F2A12F853B2FCDA3 /* StoreManager.swift in Sources */,
