@@ -1,5 +1,82 @@
 # Changelog
 
+## 2026-10-09 — Session 28 (Reality check, backup, security fix, copy buttons, honest password reset → 1.3.0)
+
+Ten weeks after Session 27. Started by checking what actually shipped; several
+"done" items weren't.
+
+### What the stores actually say
+- **iOS: 1.2.1 (13) was never submitted.** It sits in TestFlight only (1 install,
+  expires ~10-28). App Review history ends at 1.2.0 (Jun 29). Session 27's
+  "submitted → waiting for App Review" was wrong. App Store still serves 1.2.0.
+- **Android: API 36 never reached Play.** Production is still 5 (1.1.0, Jun 22);
+  the console says updates are blocked until targetSdk 36. An empty draft
+  release exists on the production track. The local AAB was the Jun 22 v1.1.0.
+- Production is healthy: chat working (207 chats / 42 users in 30 days), 190
+  users (+32 since 07-30), IG autoposting daily.
+
+### Git was stuck again
+- `.git/index.lock` — zero bytes, dated **07-27 18:59** — same crash pattern as
+  Session 26. Session 27 was never committed because of it. Moved to
+  `.git/_stale_locks/index.lock.2026-07-27`. Check for this first if commits
+  silently fail.
+- 18 commits had never been pushed (origin stuck at 06-22). All pushed after a
+  secret scan (repo is **public**). Committed in groups: production backup,
+  security fix, Facebook SDK (as its own commit), docs/marketing, features.
+
+### Production backup
+- 4 deployed Edge Functions existed only in Supabase (media-up, ig-insights,
+  ig-replenish, auth-preflight); chat and ig-publish on disk were behind prod.
+  All pulled into `supabase/functions/`.
+- Migrations now mirror `supabase_migrations.schema_migrations` (15 added; two
+  local files with wrong timestamps replaced).
+
+### Security: ig_schedule_public was writable by anyone
+postgres-owned view over `ig_post_queue` without `security_invoker` (bypasses
+RLS), auto-updatable, and anon/authenticated held INSERT/UPDATE/DELETE. With the
+public anon key anyone could rewrite a caption, set `status='approved'`, and the
+cron would post it. **Revoked all but SELECT** (migration
+`20261009180145_ig_schedule_public_read_only`). No sign of tampering in captions.
+Advisor still flags it as a SECURITY DEFINER view — intentional (the public
+schedule page reads through it), now read-only.
+
+### IG
+- The 10 Session 27 reels were never uploaded; all 10 failed in Aug ("reel
+  processing error" — IG couldn't fetch the file). Uploaded to `ig-media/`
+  (`reels-carousel/`, `series/`), verified public + H.264/AAC/faststart. Their
+  re-queued Oct 15–25 rows will now post. `reel_comfort` REELS (Oct 14) is still
+  `pending`.
+- 30 pending reels past due (Aug 17 → Oct 5) are all duplicates of media that
+  already posted. Proposed: cancel. Awaiting OK.
+
+### App: copy buttons (iOS + Android)
+`CopyButton` on the Daily Verse card and every chat output except the worship
+song: each verse, prayer, action card, intro bubble (after the typewriter
+finishes). Verses copy as `text\n— reference` (matches Library).
+
+### App: honest Forgot Password + completion flow (iOS + Android)
+Client half of `docs/password-reset.md`. Forgot Password calls `auth-preflight`
+and branches (sent / Apple-only → "Continue with Apple" / Google-only / no
+account → Create Account / rate limit). New set-new-password screen.
+- **The reset link is implicit-flow** (sent server-side by supabase-js), but the
+  iOS client is PKCE, so `auth.session(from:)` would have rejected it — tokens
+  are read from the fragment and passed to `setSession`.
+- **iOS never registered the `seek://` URL scheme** — the widget works without
+  it, links from Mail don't. Added `CFBundleURLTypes`.
+- Handled at the app root, not ContentView (the user is signed out).
+- **Blocking, not yet done:** Supabase Auth → URL Configuration has Site URL and
+  the redirect allowlist set to `127.0.0.1:3000`. `seek://password-reset` must be
+  allowlisted or reset links land on localhost.
+
+### Ops: health-alert (written, not deployed)
+`supabase/functions/health-alert` + migration: every 15 min, push via ntfy on a
+`debug_logs` spike, approved IG posts >60 min late, or IG posts failed in the
+last day; throttled 6h per alert. Needs `ALERT_NTFY_TOPIC` + deploy.
+
+### Versions
+iOS **1.3.0 (14)** (Facebook SDK + copy + reset). Android **1.3.0 (6)**
+(widget + API 36 + copy + reset). API 36 build verified: compiles and signs.
+
 ## 2026-07-30 — Session 27 (IG performance overhaul + Meta Ads foundation + Facebook SDK integration)
 
 Started as "review the IG data and tweak," expanded into three big workstreams:

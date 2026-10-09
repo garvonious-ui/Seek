@@ -25,7 +25,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = 6
-        versionName = "1.2.0"
+        versionName = "1.3.0"
 
         // Same Supabase project as iOS. The anon key is public by design
         // (ships in the iOS bundle and the landing page) and is protected by RLS.
