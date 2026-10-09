@@ -2,13 +2,20 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const CLAUDE_API_URL = "https://api.anthropic.com/v1/messages";
-// Primary: latest Sonnet (Sonnet 4.6). Fallback: Sonnet 4.5 — same family,
-// same price, listed under "Legacy models" but still supported. The previous
-// fallback ID `claude-sonnet-4-5-20241022` was a hallucination — that exact
-// date string never existed and the fallback would have 4xx'd if it ever
-// fired. Always cross-check against docs.anthropic.com before pinning.
-const CLAUDE_MODEL = "claude-sonnet-4-6";
-const CLAUDE_MODEL_FALLBACK = "claude-sonnet-4-5-20250929";
+// Primary: Sonnet 5. Fallback: Opus 5 — both verified present in the current
+// models table at platform.claude.com/docs/en/about-claude/models/overview
+// (checked 2026-07-25). The previous fallback `claude-sonnet-4-6` was NOT in
+// that table; it had never been exercised because the fallback path only fires
+// on a non-OK HTTP status, and every real-world failure so far has been a 200
+// that we mis-parsed. Do not pin an unverified ID here.
+const CLAUDE_MODEL = "claude-sonnet-5";
+const CLAUDE_MODEL_FALLBACK = "claude-opus-5";
+
+// Sonnet 5 / Opus 5 have adaptive thinking always on. Thinking tokens count
+// against max_tokens, so the old 3000 left too little headroom for a full
+// response (3-5 verses + prayer + song + action) once the model decided to
+// think — which showed up as truncated JSON hitting the salvage path.
+const MAX_TOKENS = 8000;
 
 function buildSystemPrompt(translation: string): string {
   const t = ["KJV", "NLT"].includes(translation) ? translation : "NLT";
@@ -64,8 +71,6 @@ The action should feel doable, not overwhelming. 2-3 concrete steps. Match the u
 
 IMPORTANT: Return ONLY the raw JSON object. Do NOT wrap it in markdown code fences or any other formatting. Just the raw JSON.`;
 }
-
-const SYSTEM_PROMPT = buildSystemPrompt("NLT");
 
 serve(async (req: Request) => {
   try {
@@ -179,7 +184,7 @@ serve(async (req: Request) => {
         },
         body: JSON.stringify({
           model,
-          max_tokens: 3000,
+          max_tokens: MAX_TOKENS,
           system: systemPrompt,
           messages,
         }),
@@ -266,18 +271,49 @@ serve(async (req: Request) => {
     }
 
     const claudeData = await claudeResponse.json();
-    const assistantMessage = claudeData.content[0]?.text;
 
-    // Upsert usage count
-    await supabase.from("usage_logs").upsert(
-      {
-        user_id: user.id,
-        log_date: today,
-        chat_count: chatCount + 1,
-        last_chat_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,log_date" },
-    );
+    // Extract the assistant's text by scanning for text blocks rather than
+    // assuming content[0] is one. Sonnet 5 / Opus 5 have adaptive thinking
+    // always on, so a response may lead with a {type:"thinking"} block that
+    // has no `.text` — the old `claudeData.content[0]?.text` yielded undefined
+    // on those, and the following `.trim()` threw a TypeError that fell to the
+    // outer catch as a 500. That was ~60% of chat requests from 2026-07-23
+    // (v18 deploy) until this fix. Concatenate all text blocks in order.
+    const contentBlocks: any[] = Array.isArray(claudeData?.content)
+      ? claudeData.content
+      : [];
+    const assistantMessage = contentBlocks
+      .filter((b) => b?.type === "text" && typeof b.text === "string")
+      .map((b) => b.text)
+      .join("");
+
+    // No usable text at all — log the block shape so we can see exactly what
+    // came back, and return a real 502 rather than crashing into the 500 path.
+    // Note: usage is NOT incremented here, so a failure doesn't burn quota.
+    if (!assistantMessage.trim()) {
+      await supabase.from("debug_logs").insert({
+        context: "chat_no_text_block",
+        payload: {
+          user_id: user.id,
+          model: CLAUDE_MODEL,
+          stop_reason: claudeData?.stop_reason ?? null,
+          stop_sequence: claudeData?.stop_sequence ?? null,
+          usage: claudeData?.usage ?? null,
+          blockTypes: contentBlocks.map((b) => b?.type ?? null),
+          blockCount: contentBlocks.length,
+          history_length: (conversationHistory ?? []).length,
+        },
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: "ai_error",
+          message:
+            "Something went wrong finding scripture for you. Please try again.",
+        }),
+        { status: 502 },
+      );
+    }
 
     // Parse Claude's JSON response — strip markdown fences if present
     let cleanedMessage = assistantMessage.trim();
@@ -309,6 +345,18 @@ serve(async (req: Request) => {
       try {
         parsed = JSON.parse(salvaged);
       } catch {
+        // Truncation we couldn't salvage — record it (stop_reason tells us if
+        // we're hitting max_tokens) but still return what we have.
+        await supabase.from("debug_logs").insert({
+          context: "chat_unparseable_json",
+          payload: {
+            user_id: user.id,
+            stop_reason: claudeData?.stop_reason ?? null,
+            usage: claudeData?.usage ?? null,
+            preview: cleanedMessage.slice(0, 1000),
+            length: cleanedMessage.length,
+          },
+        });
         parsed = {
           message: assistantMessage,
           verses: [],
@@ -317,6 +365,18 @@ serve(async (req: Request) => {
         };
       }
     }
+
+    // Upsert usage count — only AFTER we have a usable response, so failed
+    // requests don't consume the user's daily quota.
+    await supabase.from("usage_logs").upsert(
+      {
+        user_id: user.id,
+        log_date: today,
+        chat_count: chatCount + 1,
+        last_chat_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,log_date" },
+    );
 
     return new Response(
       JSON.stringify({

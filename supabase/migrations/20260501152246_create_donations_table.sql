@@ -1,6 +1,3 @@
--- Records of completed Stripe donations from the Support Seek flow.
--- Inserted by the stripe-webhook Edge Function on checkout.session.completed.
--- Operator reads donor data via Supabase dashboard (service_role).
 create table public.donations (
   id uuid primary key default gen_random_uuid(),
   stripe_session_id text unique not null,
@@ -17,12 +14,13 @@ create index donations_created_at_idx on public.donations (created_at desc);
 
 alter table public.donations enable row level security;
 
--- No public-facing policies. RLS enabled with no policies = anon and
--- authenticated roles get zero access. Webhook Edge Function uses the
--- service_role key, which bypasses RLS automatically.
+-- No public-facing policies. RLS-enabled with no policies means anon and
+-- authenticated roles get zero access. The webhook Edge Function uses the
+-- service_role key, which bypasses RLS automatically. Operator reads donor
+-- data via the Supabase dashboard (also service_role).
 
 comment on table public.donations is
-  'Records of completed Stripe donations from the Support Seek flow.';
+  'Records of completed Stripe donations from the Support Seek flow. Inserted by the stripe-webhook Edge Function.';
 comment on column public.donations.amount_cents is
   'Stripe sends amounts in the smallest currency unit. Divide by 100 for USD display.';
 comment on column public.donations.status is
