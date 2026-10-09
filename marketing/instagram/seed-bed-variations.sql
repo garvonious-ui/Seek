@@ -1,0 +1,28 @@
+-- ============================================================================
+-- Ambient bed variety across the scheduled reels  [APPLIED LIVE 2026-06-17]
+-- ----------------------------------------------------------------------------
+-- NO QUEUE CHANGES NEEDED. The 16 scheduled verse reels were re-bedded (audio
+-- swapped to rotating ambient beds: warm/tender/hopeful/still/vespers, in
+-- schedule order so no two consecutive posts share a song) and the new files
+-- were uploaded OVER the existing keys in ig-media/reelsa/ via the service
+-- role, so the queue's media_path values are unchanged and already correct.
+--
+-- The re-bedded source files live in marketing/instagram/reels_music/.
+-- Bed assignments (schedule order):
+--   day2 reel_31 warm    | day14 reel_35 tender
+--   day4 reel_04 tender  | day16 reel_18 hopeful
+--   day5 reel_32 hopeful | day17 reel_36 still
+--   day8 reel_33 still   | day20 reel_37 vespers
+--   day10 reel_11 vespers| day22 reel_25 warm
+--   day11 reel_34 warm   | day23 reel_38 tender
+--                          day25 reel_39 hopeful
+--                          day26 reel_40 still
+--                          day28 reel_41 vespers
+--                          day29 reel_30 warm  (note: day29 feed is now the
+--                                               chat feature reel; reel_30's
+--                                               re-bed is unused but harmless)
+--
+-- Bed generator + the 5 .wav beds: marketing/instagram/feature-reels/_render/
+-- (bedgen.py). The 4 feature reels also each carry a distinct bed
+-- (chat=tender, cardflip=warm, streak=vespers, worship=hopeful).
+-- ============================================================================

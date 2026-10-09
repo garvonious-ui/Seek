@@ -23,6 +23,7 @@ landing/.vercel/
 
 # Claude Code
 .claude/plans/
+.claude/settings.local.json
 
 # Build prompt (not needed in repo)
 Seek_Build_Prompt.md
@@ -31,3 +32,10 @@ Claude_Code_Project_Structure_Guide.md
 
 # Claude Code local agent workspaces
 .claude/worktrees/
+
+# Personal task/memory notes (productivity plugin) — local only; this repo is public
+productivity/
+
+# Packaged Claude skills
+*.skill
+ig-autopilot-skill.zip

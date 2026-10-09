@@ -1,0 +1,33 @@
+# marketing/instagram — keep SOURCE in git, keep generated MEDIA out.
+#
+# Everything here is regenerable: PNG/JPEG/MP4/WAV are produced by the
+# render_*.py scripts and the feature-reels/_render engine. We version the
+# code + copy (*.py, *.js, *.jsx, *.html, *.sql, *.md) and a handful of
+# example renders so the repo carries visual reference without the ~84MB
+# of binary output. See ASSETS.md for how to regenerate the full set.
+
+# ── Generated media (ignored by default) ──
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.wav
+
+# ── …but keep a representative example of each format ──
+# Carousel (4:5, 1080x1350) — one full 4-slide set
+!carousels/car01_0.png
+!carousels/car01_1.png
+!carousels/car01_2.png
+!carousels/car01_3.png
+# "Verse for when you're ___" cards (warm gold, 1080x1350)
+!verse-for/vfw_anxious.png
+!verse-for/vfw_at_peace.png
+# Story (9:16, 1080x1920)
+!stories/story_01.png
+# Verse card (photo style)
+!cards/IMG_4058.jpeg
+# Feature reel (9:16, H.264) — smallest example of the video engine output
+!feature-reels/seek_streak_reel.mp4
+
+# ── Local-only ──
+admin.html

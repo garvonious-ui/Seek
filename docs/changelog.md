@@ -1,5 +1,113 @@
 # Changelog
 
+## 2026-07-30 — Session 27 (IG performance overhaul + Meta Ads foundation + Facebook SDK integration)
+
+Started as "review the IG data and tweak," expanded into three big workstreams:
+an IG content/pipeline overhaul, standing up the entire Meta Ads foundation for
+iOS install ads, and — because iOS ads required it — integrating the Facebook SDK
+into the app. No app flows changed for existing users; the SDK addition is
+invisible (SKAN-only, no ATT prompt).
+
+### Part 1 — IG performance analysis (72 posts)
+- **Diagnosis:** content quality is fine; distribution mechanics are the problem.
+  Reels avg **67.5** reach vs carousels **5.3** vs static images **3.1**. Followers
+  flat (14→22 in 43 days). Across 31 reels: only **5 comments, 1 share, 8 saves** —
+  so reels get a small cold-audience test, nobody engages, distribution stops ~140.
+  No reason to follow (no series), reach never converts to follows.
+- Delivered two strategy docs (content refresh + ads plan) and a 6-reel ad set.
+
+### Part 2 — IG pipeline changes (all live)
+- **Added `cancelled` status** to `ig_post_queue` check constraint (migration
+  `ig_queue_add_cancelled_status`).
+- **Killed dead formats:** cancelled 21 non-posted static IMAGE + 5 CAROUSEL rows
+  (~3 and ~5 avg reach). Patched **`ig-replenish` → v5** so `isCar = false` — it
+  never regenerates carousels; feed is reels-only now.
+- **Stories root cause found & fixed:** stories didn't break — they were never
+  *approved*. `ig-replenish` inserts everything `pending`; only manual dashboard
+  approval promotes to `approved`. 67 stories sat at `pending`/`attempts:0`,
+  untouched. Cancelled 52 stale/past-due, approved the 19 future ones, and added a
+  **`ig-approve-stories` pg_cron** (`*/30 * * * *`) that auto-approves upcoming
+  pending stories (`scheduled_for >= now() - 30min`) so they never stall again.
+  Reels stay manually gated.
+- **Redeployed `media-up` (v5)** — authenticated (Bearer `ig_cron_secret`) storage
+  upload Edge Function into `ig-media`. Was decommissioned (410); now active.
+
+### Part 3 — New IG content (rendered in-cloud, ffmpeg/Pillow)
+- **5 carousel sets → 9:16 reels** (comfort/hope/peace/strength/trust): edge-extended
+  bg to 1080×1920, Ken Burns + crossfades, ambient bed, **4.5s/slide (~31s)**.
+  In repo at `marketing/instagram/reels-carousel/`. Queued `pending` (day 67–71,
+  8/18–8/22). **STILL NEED UPLOAD to storage `reels-carousel/` then approve.**
+- **5-part "Anxious Nights" series reels** (Lora serif, deep-night palette,
+  "NIGHT x/5" badge, per-episode save/comment/follow CTA; Phil 4:6, Ps 4:8,
+  Matt 11:28, Ps 34:4, Isa 26:3). In repo `marketing/instagram/series-anxious-nights/`.
+  Queued `pending` (day 72–76, 8/25–8/29). **STILL NEED UPLOAD to storage `series/`.**
+- **4 app-demo feature reels** (chat/cardflip/streak/worship, already in
+  `reelsa/seek_*`) queued **approved**, weekly Thu 18:00 ET (day 63–66).
+- Render scripts live only in the cloud sandbox (`render_carousel_reel.py`,
+  `render_series.py`) — re-create from the same approach if needed. Note the
+  cloud sandbox can't upload to Supabase storage (classifier blocks outbound
+  POST); that's why the 10 new reels await a manual dashboard upload.
+
+### Part 4 — Meta Ads foundation (Lean $10/day, iOS)
+- **Structural fix:** the Seek app (`882028774961076`) lives in the **Seek -
+  Scripture Companion** business portfolio (`business_id 1397648395755717`), which
+  had **0 ad accounts** — the first campaign was built in a personal ad account, so
+  the app read "not connected." Created a dedicated ad account **"Seek Ads"
+  (`act=28085607991055964`)** inside the portfolio (Eastern/USD) and **connected the
+  app** to it.
+- Built App Promotion campaign **"Seek - App Installs (Lean Test)"**: Advantage+ app
+  campaign, **$10/day**, app = Seek - Scripture Companion, goal = maximize installs.
+  **Saved as a draft (In draft, NOT published).**
+- **The real iOS wall:** Events Manager → the app's "Facebook SDK" tab said *"Your
+  app is out of date. To run on iOS 14, update to the latest Facebook SDK for iOS"* +
+  Release the app. The Meta app had only ever been used for the IG Graph API — no ad
+  SDK, 0 events. iOS 14+/SKAN campaigns require the SDK in the app + an App Store
+  release. Not a browser toggle.
+
+### Part 5 — Facebook SDK integration (code, shipped for review)
+- **`project.yml`:** added `facebook-ios-sdk` SPM package (product **FacebookCore**
+  only; no Login/Share), added it as a Seek target dependency, pointed the target at
+  a partial `Seek/Info.plist` via `INFOPLIST_FILE` (kept `GENERATE_INFOPLIST_FILE: YES`
+  so Xcode 16 merges generated keys on top).
+- **`Seek/SeekApp.swift`:** added a minimal `AppDelegate` (`@UIApplicationDelegateAdaptor`)
+  that runs `ApplicationDelegate.shared.application(...)` + `AppEvents.shared.activateApp()`.
+  **Deliberately no `application(_:open:options:)`** so Supabase auth deep links and
+  the `seek://` widget scheme keep flowing through SwiftUI `.onOpenURL`.
+- **`Seek/Info.plist` (new):** `FacebookAppID 882028774961076`, `FacebookClientToken
+  ae74749f2118f7f01c5c3fa2ea09c2ae`, `FacebookDisplayName Seek`,
+  `NSAdvertisingAttributionReportEndpoint https://www.facebook.com`, `SKAdNetworkItems`
+  (Meta IDs `v9wttpbfk9`, `n38lu8286q` — expand from Meta's list later).
+  SKAN-only, no ATT prompt (keeps App Review simple).
+- **Versioning:** `1.2.0 (12)` had already shipped to the App Store (Organizer showed
+  "Uploaded to Apple" — Session 26's "build 12 pending" was wrong). Upload of 1.2.0
+  bounced (**90186** train closed, **90062** must be higher). Bumped
+  **MARKETING_VERSION 1.2.0 → 1.2.1**, CURRENT_PROJECT_VERSION 12 → 13.
+- `xcodegen generate` re-run; FB package resolved & checked out; archived
+  **1.2.1 (13)**, uploaded, **submitted → waiting for App Review.**
+- **Gotcha:** a plain build failed with "No Account for Team 6QU295KVS2 / No profiles
+  for com.loucesario.seek" — Apple ID not signed into Xcode → Settings → Accounts.
+  Separate from the SDK; archiving still worked.
+
+### Open for next session (pick up here)
+1. **When 1.2.1 (13) is approved & LIVE**, the iOS 14+ ad path unlocks. Finish the
+   **Seek Ads** campaign (`act=28085607991055964`): enable iOS 14+ / switch ad set to
+   the modern App Store, finish any SKAN schema prompt in Events Manager, **add
+   billing**, add the 6 creatives + the Seek Page, and **publish** ($10/day).
+2. **Upload the 10 new reels** to Supabase storage (`reels-carousel/` ×5,
+   `series/` ×5), then flip those `ig_post_queue` rows `pending → approved`.
+3. IG backlog: tend the approval dashboard (past-due/pending posts).
+4. Optional/risky: switching the Meta app to **Live mode** may improve event
+   coverage but could affect the IG automation token — verify before touching.
+5. Still pending from Session 26 (separate build): **password-reset client flow**
+   (`docs/password-reset.md`) and the Android 16 target-SDK upload (Play deadline
+   2026-08-31).
+
+### Reference IDs
+- Business portfolio: `1397648395755717` (Seek - Scripture Companion)
+- Ad account: `28085607991055964` (Seek Ads)
+- Meta app: `882028774961076`  ·  iOS App Store ID: `6761785270`
+- Campaign: "Seek - App Installs (Lean Test)" (draft, App Promotion, $10/day)
+
 ## 2026-07-27 — Session 26 (Production triage: chat outage, IG publish, password reset, Android 16)
 
 Started as `/start`; became incident response. Four production bugs, three

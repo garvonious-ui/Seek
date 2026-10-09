@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Seek reel frame</title>
+  <link rel="stylesheet" href="assets/colors_and_type.css" />
+  <style>
+    html, body { margin: 0; padding: 0; background: #F4F1E9; }
+    #stage { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #F4F1E9; }
+    #root { position: absolute; inset: 0; }
+  </style>
+</head>
+<body>
+  <div id="stage"><div id="root"></div></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+
+  <script type="text/babel" src="assets/animations.jsx"></script>
+  <script type="text/babel" src="assets/seek-screens.jsx"></script>
+  <script type="text/babel" src="assets/video-components.jsx"></script>
+  <script type="text/babel" src="assets/scenes.jsx"></script>
+
+  <script type="text/babel">
+    const params = new URLSearchParams(location.search);
+    const sceneName = params.get('scene') || 'chat';
+    const duration = parseFloat(params.get('dur') || '15');
+    const SCENES = { chat: window.ChatReel, cardflip: window.CardFlipReel, streak: window.StreakReel, worship: window.WorshipReel };
+    const SceneC = SCENES[sceneName] || window.ChatReel;
+
+    function RenderHost() {
+      const [t, setT] = React.useState(0);
+      React.useEffect(() => {
+        window.__setT = (v) => setT(v);
+        window.__ready = true;
+      }, []);
+      return (
+        <TimelineContext.Provider value={{ time: t, duration, playing: false, setTime: setT, setPlaying: () => {} }}>
+          <Sprite start={0} end={duration} keepMounted>
+            <SceneC />
+          </Sprite>
+        </TimelineContext.Provider>
+      );
+    }
+    ReactDOM.createRoot(document.getElementById('root')).render(<RenderHost />);
+  </script>
+</body>
+</html>
