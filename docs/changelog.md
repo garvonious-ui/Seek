@@ -99,6 +99,22 @@ last day; throttled 6h per alert (`ops_alerts`). Topic in the
   will retry part 1" (~250 MB re-sent). Cancel + retry fixed it; Transporter with
   the exported .ipa is the fallback.
 
+### Seek Ads — campaign set up (not published)
+- Ad set still targets **"Apple App Store (iOS 13.7 or earlier)"** (legacy, ~500k
+  audience; Seek needs iOS 17). The iOS 14+ store option stays locked until Meta
+  sees the SDK in a live App Store release — Events Manager: "Update the Facebook
+  SDK… 2. Release the app". 1.3.0 carries the SDK; TestFlight builds already send
+  events ("Active, last received 1 hour ago").
+- Identity: Page **Ask Seek Pray**, Instagram **@askseekpray**.
+- 6 ads (drafts): Demo - Chat / Card Flip / Worship (feature reels) + Verse - Lost /
+  Lonely / Restless (top-engagement "Verse for when you're ___" reels, 11–13%).
+  Videos uploaded to the ad account library (1080x1920). Copy: 2 primary texts +
+  2 headlines, CTA Install now. All Meta AI creative enhancements and AI-generated
+  variants OFF (would accept Meta's gen-AI terms; brand risk for scripture copy).
+- **No payment method** on the ad account yet (Lou).
+- Remaining: billing → after 1.3.0 live switch ad set store to "Apple App Store"
+  → review & publish.
+
 ### Weekly summary (built, in 1.3.0 on both platforms)
 Mockups: https://claude.ai/artifact/UqxmfArigjw4McVvJCnYHT — shipped B "Evening"
 (dark, verse-led) as the 1080x1920 share image and A "Morning" (light,
