@@ -266,6 +266,8 @@ struct HomeView: View {
                         .font(.subheadline.bold())
                         .foregroundStyle(Color(hex: "5B7B5E"))
                     Spacer()
+                    CopyButton(text: CopyButton.verseText(verse.text, reference: verse.reference), style: .iconOnly, tint: Color(hex: "CDA349"))
+                        .padding(.trailing, 12)
                     Button {
                         toggleFavorite(reference: verse.reference, text: verse.text, source: "daily_verse")
                     } label: {
@@ -294,6 +296,8 @@ struct HomeView: View {
                         .font(.subheadline.bold())
                         .foregroundStyle(Color(hex: "5B7B5E"))
                     Spacer()
+                    CopyButton(text: CopyButton.verseText("God is our refuge and strength, a very present help in trouble.", reference: "Psalm 46:1"), style: .iconOnly, tint: Color(hex: "CDA349"))
+                        .padding(.trailing, 12)
                     Button {
                         toggleFavorite(reference: "Psalm 46:1", text: "God is our refuge and strength, a very present help in trouble.", source: "daily_verse")
                     } label: {

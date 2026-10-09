@@ -235,16 +235,26 @@ struct ChatView: View {
             // row that scrolls off-screen and recycles snaps straight to the
             // finished text instead of re-typing and fighting the scroll
             // anchor.
-            TypewriterText(
-                fullText: text,
-                messageID: messageID,
-                alreadyRevealed: revealedIntroIDs.contains(messageID),
-                onReveal: { revealedIntroIDs.insert(messageID) }
-            )
-                .foregroundStyle(Color(hex: "1A1A1A"))
-                .padding(12)
-                .background(Color(hex: "F3F4F6"))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+            VStack(alignment: .leading, spacing: 6) {
+                TypewriterText(
+                    fullText: text,
+                    messageID: messageID,
+                    alreadyRevealed: revealedIntroIDs.contains(messageID),
+                    onReveal: { revealedIntroIDs.insert(messageID) }
+                )
+                    .foregroundStyle(Color(hex: "1A1A1A"))
+                    .padding(12)
+                    .background(Color(hex: "F3F4F6"))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+
+                // Appears once the typewriter finishes so it doesn't sit
+                // under half-typed text. Copies plain text, not markdown.
+                if revealedIntroIDs.contains(messageID) {
+                    CopyButton(text: String(Self.renderMarkdown(text).characters), tint: Color(hex: "6B7280"))
+                        .padding(.leading, 4)
+                        .transition(.opacity)
+                }
+            }
             Spacer(minLength: 60)
         }
     }
@@ -277,6 +287,12 @@ struct ChatView: View {
         return AttributedString(string)
     }
 
+    /// Clipboard text for an action card: title, numbered steps, then the reason.
+    static func actionCopyText(_ action: ActionStep) -> String {
+        let steps = action.steps.enumerated().map { "\($0.offset + 1). \($0.element)" }
+        return ([action.title] + steps + ["", action.reason]).joined(separator: "\n")
+    }
+
     private func versesCard(_ verses: [VerseResult]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(verses) { verse in
@@ -296,6 +312,8 @@ struct ChatView: View {
 
                     HStack(spacing: 16) {
                         Spacer()
+                        CopyButton(text: CopyButton.verseText(verse.text, reference: verse.reference))
+
                         Button {
                             toggleFavorite(verse)
                         } label: {
@@ -338,6 +356,8 @@ struct ChatView: View {
 
             HStack(spacing: 16) {
                 Spacer()
+                CopyButton(text: text)
+
                 Button {
                     togglePrayerFavorite(text)
                 } label: {
@@ -446,6 +466,11 @@ struct ChatView: View {
                 .font(.caption)
                 .foregroundStyle(Color(hex: "6B7280"))
                 .italic()
+
+            HStack {
+                Spacer()
+                CopyButton(text: Self.actionCopyText(action))
+            }
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
