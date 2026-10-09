@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.loucesario.seek.data.SeekPrefs
 import com.loucesario.seek.data.StreakManager
+import com.loucesario.seek.data.WeeklySummary
+import com.loucesario.seek.data.WeeklySummaryBuilder
 import com.loucesario.seek.data.remote.SeekApi
 import com.loucesario.seek.data.remote.dto.DailyVerseDto
 import com.loucesario.seek.widget.DailyVerseWidget
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 sealed interface DailyVerseState {
     data object Loading : DailyVerseState
@@ -39,6 +42,14 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     val streak: StateFlow<Int> = prefs.streakCount
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
+    private val _recap = MutableStateFlow<WeeklySummary?>(null)
+    /** The "Your week is ready" tile's week, when one is on offer (see [loadWeeklyRecap]). */
+    val recap: StateFlow<WeeklySummary?> = _recap.asStateFlow()
+
+    private val _presentedSummary = MutableStateFlow<WeeklySummary?>(null)
+    /** The week open in the recap sheet, if any. */
+    val presentedSummary: StateFlow<WeeklySummary?> = _presentedSummary.asStateFlow()
+
     init { refresh() }
 
     fun refresh() {
@@ -62,8 +73,49 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Record today's activity (opening Home), updating the streak. Auth-only. */
+    /** Record today's activity (opening Home), updating the streak, then offer the weekly recap. Auth-only. */
     fun recordActivity() {
-        viewModelScope.launch { StreakManager.recordActivity(prefs) }
+        viewModelScope.launch {
+            StreakManager.recordActivity(prefs)
+            loadWeeklyRecap()
+        }
+    }
+
+    /**
+     * Offer the recap tile when it's recap time (Sunday noon – Tuesday), the
+     * user hasn't dismissed this week's, and they showed up at least once.
+     */
+    private suspend fun loadWeeklyRecap() {
+        val start = WeeklySummaryBuilder.recapWeekStart()
+        if (start == null || StreakManager.dayKey(start) == prefs.dismissedRecapWeek()) {
+            _recap.value = null
+            return
+        }
+        val summary = WeeklySummaryBuilder.build(getApplication(), start)
+        _recap.value = summary.takeIf { it.daysActive > 0 }
+    }
+
+    fun openRecap() {
+        _presentedSummary.value = _recap.value
+    }
+
+    fun dismissRecap() {
+        val recap = _recap.value ?: return
+        _recap.value = null
+        viewModelScope.launch { prefs.setDismissedRecapWeek(recap.id) }
+    }
+
+    /** Tapping the streak opens this week so far, any day. */
+    fun openCurrentWeek() {
+        viewModelScope.launch {
+            _presentedSummary.value = WeeklySummaryBuilder.build(
+                getApplication(),
+                WeeklySummaryBuilder.weekStart(LocalDate.now()),
+            )
+        }
+    }
+
+    fun closeSummary() {
+        _presentedSummary.value = null
     }
 }

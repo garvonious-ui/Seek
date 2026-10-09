@@ -55,6 +55,17 @@ object WidgetVerseStore {
         return deterministic(context)
     }
 
+    /**
+     * The last verse the app fetched, whatever day it was for (the iOS
+     * DailyVerseCache) — the weekly summary's fallback featured verse.
+     */
+    fun lastSaved(context: Context): Verse? {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val ref = prefs.getString(KEY_REF, null) ?: return null
+        val text = prefs.getString(KEY_TEXT, null) ?: return null
+        return Verse(ref, text, prefs.getString(KEY_THEME, "") ?: "")
+    }
+
     // Bundled pool, parsed once and cached in memory.
     @Volatile private var poolCache: List<Verse>? = null
 

@@ -38,7 +38,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +49,8 @@ import com.loucesario.seek.ui.components.CopyButton
 import com.loucesario.seek.ui.components.verseCopyText
 import com.loucesario.seek.ui.theme.ScriptureTextStyle
 import com.loucesario.seek.ui.theme.SeekColors
+import com.loucesario.seek.ui.weekly.WeeklyRecapTile
+import com.loucesario.seek.ui.weekly.WeeklySummarySheet
 
 private val QUICK_PROMPTS = listOf("Anxious", "Grateful", "Lonely", "Hopeful", "Tired", "Seeking")
 
@@ -61,6 +65,8 @@ fun HomeScreen(
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val streak by vm.streak.collectAsStateWithLifecycle()
+    val recap by vm.recap.collectAsStateWithLifecycle()
+    val presentedSummary by vm.presentedSummary.collectAsStateWithLifecycle()
     val online by com.loucesario.seek.SeekApplication.instance.connectivity.isOnline
         .collectAsStateWithLifecycle(true)
     var customPrompt by remember { mutableStateOf("") }
@@ -89,7 +95,11 @@ fun HomeScreen(
 
         if (!isGuest && streak > 0) {
             Spacer(Modifier.height(4.dp))
+            // Tapping the streak opens this week so far.
             Surface(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable(onClickLabel = "Show your week", role = Role.Button, onClick = vm::openCurrentWeek),
                 shape = RoundedCornerShape(20.dp),
                 color = SeekColors.LightGold,
             ) {
@@ -110,6 +120,13 @@ fun HomeScreen(
                     fontSize = 12.sp, fontWeight = FontWeight.Medium, color = SeekColors.TextSecondary,
                 )
             }
+        }
+
+        // "Your week is ready" — Sunday noon through Tuesday (HomeViewModel.loadWeeklyRecap).
+        val tileSummary = recap
+        if (!isGuest && tileSummary != null) {
+            Spacer(Modifier.height(20.dp))
+            WeeklyRecapTile(tileSummary, onOpen = vm::openRecap, onDismiss = vm::dismissRecap)
         }
 
         Spacer(Modifier.height(20.dp))
@@ -208,6 +225,8 @@ fun HomeScreen(
         }
         Spacer(Modifier.height(24.dp))
     }
+
+    presentedSummary?.let { WeeklySummarySheet(it, onDismiss = vm::closeSummary) }
 }
 
 @Composable

@@ -38,6 +38,10 @@ interface SavedCardDao {
     @Query("SELECT * FROM saved_card ORDER BY createdAt DESC")
     fun observeAll(): Flow<List<SavedCardEntity>>
 
+    /** Cards made in [start, end) epoch-millis — the weekly summary. */
+    @Query("SELECT * FROM saved_card WHERE createdAt >= :start AND createdAt < :end")
+    suspend fun createdBetween(start: Long, end: Long): List<SavedCardEntity>
+
     @Delete
     suspend fun delete(card: SavedCardEntity)
 }
@@ -49,6 +53,10 @@ interface FavoriteVerseDao {
 
     @Query("SELECT * FROM favorite_verse ORDER BY savedAt DESC")
     fun observeAll(): Flow<List<FavoriteVerseEntity>>
+
+    /** Favorites saved in [start, end) epoch-millis, newest first — the weekly summary. */
+    @Query("SELECT * FROM favorite_verse WHERE savedAt >= :start AND savedAt < :end ORDER BY savedAt DESC")
+    suspend fun savedBetween(start: Long, end: Long): List<FavoriteVerseEntity>
 
     @Query("DELETE FROM favorite_verse WHERE reference = :reference")
     suspend fun deleteByReference(reference: String)
@@ -64,6 +72,10 @@ interface SavedPrayerDao {
 
     @Query("SELECT * FROM saved_prayer ORDER BY savedAt DESC")
     fun observeAll(): Flow<List<SavedPrayerEntity>>
+
+    /** Prayers saved in [start, end) epoch-millis — the weekly summary. */
+    @Query("SELECT * FROM saved_prayer WHERE savedAt >= :start AND savedAt < :end")
+    suspend fun savedBetween(start: Long, end: Long): List<SavedPrayerEntity>
 
     @Query("DELETE FROM saved_prayer WHERE text = :text")
     suspend fun deleteByText(text: String)
@@ -90,4 +102,8 @@ interface ChatDao {
 
     @Query("DELETE FROM chat_conversation WHERE id = :id")
     suspend fun deleteConversation(id: String)
+
+    /** Messages (all conversations) sent in [start, end) epoch-millis, oldest first — the weekly summary. */
+    @Query("SELECT * FROM chat_message WHERE timestamp >= :start AND timestamp < :end ORDER BY timestamp")
+    suspend fun messagesBetween(start: Long, end: Long): List<ChatMessageEntity>
 }

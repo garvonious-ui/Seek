@@ -26,8 +26,9 @@ object CardRenderer {
      * Scripture typeface — Lora, bundled in assets/fonts. Loaded once on first
      * card render. Falls back to Typeface.SERIF (Noto Serif) if the asset is
      * missing for any reason — defensive, shouldn't trigger in normal builds.
+     * Shared with [WeeklyCardRenderer].
      */
-    private val loraRegular: Typeface by lazy {
+    internal val loraRegular: Typeface by lazy {
         runCatching {
             Typeface.createFromAsset(SeekApplication.instance.assets, "fonts/Lora-Regular.ttf")
         }.getOrElse { Typeface.create(Typeface.SERIF, Typeface.NORMAL) }

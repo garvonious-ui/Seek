@@ -17,6 +17,7 @@ private val Context.seekDataStore by preferencesDataStore(name = "seek_prefs")
  * App-level preferences stored locally:
  *  - preferred Bible translation (NLT / KJV), mirrored to Supabase profiles
  *  - streak counters (drives the Home capsule; mirrors the iOS StreakManager)
+ *  - the active-day log + dismissed recap week (weekly summary)
  */
 class SeekPrefs(private val context: Context) {
     private val translationKey = stringPreferencesKey("preferred_translation")
@@ -70,6 +71,28 @@ class SeekPrefs(private val context: Context) {
             it[longestKey] = longest
             it[lastActiveKey] = lastActiveDay
         }
+    }
+
+    private val activeDaysKey = stringSetPreferencesKey("active_day_keys") // "yyyy-MM-dd"
+    private val recapDismissedKey = stringPreferencesKey("weekly_recap_dismissed_week")
+
+    suspend fun activeDayKeys(): Set<String> =
+        context.seekDataStore.data.first()[activeDaysKey] ?: emptySet()
+
+    /** Adds [dayKey] to the active-day log, keeping only the most recent [keep] days. */
+    suspend fun addActiveDay(dayKey: String, keep: Int) {
+        context.seekDataStore.edit {
+            // Keys sort chronologically as strings.
+            it[activeDaysKey] = ((it[activeDaysKey] ?: emptySet()) + dayKey).sorted().takeLast(keep).toSet()
+        }
+    }
+
+    /** Week key (its Monday's day key) of the Home recap tile the user dismissed. */
+    suspend fun dismissedRecapWeek(): String? =
+        context.seekDataStore.data.first()[recapDismissedKey]
+
+    suspend fun setDismissedRecapWeek(weekKey: String) {
+        context.seekDataStore.edit { it[recapDismissedKey] = weekKey }
     }
 }
 
