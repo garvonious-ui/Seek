@@ -3,7 +3,10 @@ package com.loucesario.seek.data.remote
 import com.loucesario.seek.data.remote.dto.ChatRequest
 import com.loucesario.seek.data.remote.dto.ChatResponse
 import com.loucesario.seek.data.remote.dto.DailyVerseDto
+import com.loucesario.seek.data.remote.dto.PreflightRequest
+import com.loucesario.seek.data.remote.dto.PreflightResult
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.functions.functions
 import io.github.jan.supabase.postgrest.from
 import io.ktor.client.request.setBody
@@ -39,6 +42,30 @@ object SeekApi {
             contentType(ContentType.Application.Json)
         }
         return SeekJson.decodeFromString(ChatResponse.serializer(), response.bodyAsText())
+    }
+
+    /**
+     * Asks `auth-preflight` what's true about this email before promising a
+     * reset. resetPasswordForEmail() returns success for ANY address, so it
+     * can't tell Google/Apple-only accounts (no password) or unknown emails
+     * apart from real ones; this function sends the reset itself when it's real.
+     *
+     * supabase-kt throws a [RestException] on non-2xx with the raw body in
+     * `error` — rate_limited / send_failed / … still carry {status, message}.
+     * Network failures propagate to the caller.
+     */
+    suspend fun authPreflight(email: String): PreflightResult {
+        val payload = SeekJson.encodeToString(PreflightRequest.serializer(), PreflightRequest(email))
+        return try {
+            val response = SupabaseModule.client.functions.invoke("auth-preflight") {
+                setBody(payload)
+                contentType(ContentType.Application.Json)
+            }
+            SeekJson.decodeFromString(PreflightResult.serializer(), response.bodyAsText())
+        } catch (e: RestException) {
+            runCatching { SeekJson.decodeFromString(PreflightResult.serializer(), e.error) }
+                .getOrElse { PreflightResult(status = "server_error") }
+        }
     }
 
     suspend fun dailyVerse(): DailyVerseDto {

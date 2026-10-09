@@ -35,6 +35,15 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="seek" android:host="auth-callback" />
             </intent-filter>
+
+            <!-- Password reset email link (sent by the auth-preflight Edge Function);
+                 handled in MainActivity, not by supabase-kt's handleDeeplinks. -->
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="seek" android:host="password-reset" />
+            </intent-filter>
         </activity>
 
         <receiver

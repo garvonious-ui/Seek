@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.loucesario.seek.ui.auth.AuthViewModel
+import com.loucesario.seek.ui.auth.PasswordResetOutcome
 import com.loucesario.seek.ui.theme.SeekColors
 
 @Composable
@@ -83,6 +85,7 @@ fun SignInScreen(authVm: AuthViewModel) {
         if (!isSignUp) {
             TextButton(
                 onClick = { authVm.resetPassword(email) },
+                enabled = !ui.loading,
                 modifier = Modifier.align(Alignment.End),
             ) {
                 Text("Forgot password?", color = SeekColors.Sage, fontSize = 13.sp)
@@ -93,10 +96,6 @@ fun SignInScreen(authVm: AuthViewModel) {
 
         ui.error?.let {
             Text(it, color = SeekColors.Warning, fontSize = 13.sp, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(8.dp))
-        }
-        if (ui.resetEmailSent) {
-            Text("Check your email for a reset link.", color = SeekColors.Sage, fontSize = 13.sp)
             Spacer(Modifier.height(8.dp))
         }
 
@@ -150,4 +149,79 @@ fun SignInScreen(authVm: AuthViewModel) {
             Text("Continue without an account", color = SeekColors.MidSage, fontWeight = FontWeight.Medium)
         }
     }
+
+    ui.resetOutcome?.let { outcome ->
+        PasswordResetDialog(
+            outcome = outcome,
+            onDismiss = { authVm.clearResetOutcome() },
+            onContinueWithGoogle = {
+                authVm.clearResetOutcome()
+                authVm.signInWithGoogle()
+            },
+            onCreateAccount = {
+                authVm.clearResetOutcome()
+                isSignUp = true
+                authVm.clearError()
+            },
+        )
+    }
+}
+
+/**
+ * Forgot Password result from `auth-preflight` (mirrors the iOS alert). Only
+ * offers a sign-in button Android actually has — Google, not Apple.
+ */
+@Composable
+private fun PasswordResetDialog(
+    outcome: PasswordResetOutcome,
+    onDismiss: () -> Unit,
+    onContinueWithGoogle: () -> Unit,
+    onCreateAccount: () -> Unit,
+) {
+    val title = when (outcome) {
+        is PasswordResetOutcome.Sent -> "Reset Email Sent"
+        is PasswordResetOutcome.OAuthOnly -> "No Password to Reset"
+        is PasswordResetOutcome.NoAccount -> "No Account Found"
+    }
+    // The server copy says 'Tap "Continue with Apple"', but Android has no
+    // Apple button — point Apple-only users at the iPhone app instead.
+    val message = if (outcome is PasswordResetOutcome.OAuthOnly && outcome.provider == "apple") {
+        "This account signs in with Apple, so there's no password to reset. " +
+            "Sign in from the Seek app on iPhone, where Apple sign-in is available."
+    } else {
+        outcome.message
+    }
+    val primary: Pair<String, () -> Unit>? = when {
+        outcome is PasswordResetOutcome.OAuthOnly && outcome.provider == "google" ->
+            "Continue with Google" to onContinueWithGoogle
+        outcome is PasswordResetOutcome.NoAccount -> "Create Account" to onCreateAccount
+        else -> null
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = SeekColors.Surface,
+        title = { Text(title, color = SeekColors.TextPrimary) },
+        text = { Text(message, color = SeekColors.TextSecondary) },
+        confirmButton = {
+            if (primary != null) {
+                TextButton(onClick = primary.second) {
+                    Text(primary.first, color = SeekColors.Sage, fontWeight = FontWeight.SemiBold)
+                }
+            } else {
+                TextButton(onClick = onDismiss) {
+                    Text("OK", color = SeekColors.Sage, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        },
+        dismissButton = if (primary != null) {
+            {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel", color = SeekColors.TextSecondary)
+                }
+            }
+        } else {
+            null
+        },
+    )
 }

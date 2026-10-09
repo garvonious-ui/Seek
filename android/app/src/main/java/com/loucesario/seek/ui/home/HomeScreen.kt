@@ -43,6 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.loucesario.seek.data.remote.dto.DailyVerseDto
+import com.loucesario.seek.ui.components.CopyButton
+import com.loucesario.seek.ui.components.verseCopyText
 import com.loucesario.seek.ui.theme.ScriptureTextStyle
 import com.loucesario.seek.ui.theme.SeekColors
 
@@ -233,11 +235,21 @@ private fun VerseCard(verse: DailyVerseDto, showSavedBadge: Boolean = false, onC
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(verse.text, style = ScriptureTextStyle, color = SeekColors.TextPrimary)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 Text(verse.reference, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage)
                 if (showSavedBadge) {
                     Text("· offline", fontSize = 12.sp, color = SeekColors.TextTertiary)
                 }
+                Spacer(Modifier.weight(1f))
+                CopyButton(
+                    text = verseCopyText(verse.text, verse.reference),
+                    iconOnly = true,
+                    tint = SeekColors.TextTertiary,
+                )
             }
         }
     }

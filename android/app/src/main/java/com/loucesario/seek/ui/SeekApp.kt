@@ -6,6 +6,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.loucesario.seek.data.AuthState
 import com.loucesario.seek.ui.auth.AuthViewModel
+import com.loucesario.seek.ui.auth.PasswordRecoveryDialogs
 import com.loucesario.seek.ui.onboarding.OnboardingFlow
 
 /**
@@ -27,4 +28,6 @@ fun SeekApp() {
     } else {
         OnboardingFlow(authVm)
     }
+    // Password-reset link (seek://password-reset) can land on either branch.
+    PasswordRecoveryDialogs(authVm)
 }

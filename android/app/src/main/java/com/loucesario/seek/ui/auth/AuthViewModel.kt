@@ -1,6 +1,7 @@
 package com.loucesario.seek.ui.auth
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.loucesario.seek.SeekApplication
@@ -12,7 +13,11 @@ import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Apple
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
+import io.github.jan.supabase.auth.status.SessionSource
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserSession
+import io.github.jan.supabase.exceptions.HttpRequestException
+import io.github.jan.supabase.exceptions.RestException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,8 +28,20 @@ import kotlinx.coroutines.withContext
 data class AuthUiState(
     val loading: Boolean = false,
     val error: String? = null,
-    val resetEmailSent: Boolean = false,
+    val resetOutcome: PasswordResetOutcome? = null,
 )
+
+/** What Forgot Password learned from `auth-preflight` — each shown as a dialog. */
+sealed interface PasswordResetOutcome {
+    val message: String
+
+    data class Sent(override val message: String) : PasswordResetOutcome
+    data class OAuthOnly(val provider: String, override val message: String) : PasswordResetOutcome
+    data class NoAccount(override val message: String) : PasswordResetOutcome
+}
+
+/** Dialogs driven by the seek://password-reset link from the reset email. */
+enum class RecoveryDialog { SET_PASSWORD, PASSWORD_UPDATED, LINK_EXPIRED }
 
 /**
  * Drives all auth. Per the iOS gotcha (cost Builds 8 & 9): every success path
@@ -41,6 +58,11 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _ui = MutableStateFlow(AuthUiState())
     val ui: StateFlow<AuthUiState> = _ui.asStateFlow()
+
+    // Separate from [ui] — every auth action resets AuthUiState, and these must
+    // survive it (they're shown app-wide, signed in or not).
+    private val _recoveryDialog = MutableStateFlow<RecoveryDialog?>(null)
+    val recoveryDialog: StateFlow<RecoveryDialog?> = _recoveryDialog.asStateFlow()
 
     init {
         // Cold-start restoration: load persisted flags + trust the keychain.
@@ -78,9 +100,119 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun resetPassword(email: String) = run("Couldn't send reset email.") {
-        SupabaseModule.client.auth.resetPasswordForEmail(email.trim())
-        _ui.value = AuthUiState(resetEmailSent = true)
+    /**
+     * Forgot Password. Goes through `auth-preflight` instead of
+     * resetPasswordForEmail(), which claims success for ANY email — including
+     * Google/Apple-only accounts that have no password, and nonexistent ones.
+     * Renders the server's message rather than duplicating copy here.
+     */
+    fun resetPassword(email: String) {
+        if (email.isBlank()) {
+            _ui.value = AuthUiState(error = "Enter your email address first.")
+            return
+        }
+        viewModelScope.launch {
+            _ui.value = AuthUiState(loading = true)
+            _ui.value = try {
+                val result = SeekApi.authPreflight(email.trim())
+                when (result.status) {
+                    "sent" -> AuthUiState(
+                        resetOutcome = PasswordResetOutcome.Sent(
+                            result.message ?: "Check your email for a password reset link."
+                        )
+                    )
+                    "oauth_only" -> AuthUiState(
+                        resetOutcome = PasswordResetOutcome.OAuthOnly(
+                            provider = result.provider.orEmpty().lowercase(),
+                            message = result.message ?: "This account doesn't use a password.",
+                        )
+                    )
+                    "no_account" -> AuthUiState(
+                        resetOutcome = PasswordResetOutcome.NoAccount(
+                            result.message ?: "We couldn't find an account with that email."
+                        )
+                    )
+                    "invalid_email" -> AuthUiState(error = "Enter a valid email address.")
+                    else -> AuthUiState(error = result.message ?: GENERIC_ERROR)
+                }
+            } catch (e: HttpRequestException) {
+                AuthUiState(error = "Couldn't reach Seek. Check your connection and try again.")
+            } catch (t: Throwable) {
+                AuthUiState(error = GENERIC_ERROR)
+            }
+        }
+    }
+
+    fun clearResetOutcome() {
+        _ui.value = _ui.value.copy(resetOutcome = null)
+    }
+
+    /**
+     * Handles seek://password-reset from the reset email. auth-preflight sends
+     * it server-side with supabase-js's default implicit flow, so the tokens
+     * arrive in the URL fragment (errors may be in the fragment or the query).
+     *
+     * The user is fetched with the link's access token BEFORE the session is
+     * imported, so a dead link never half-signs anyone in (or replaces an
+     * existing session). Anyone resetting a password is a returning user, so
+     * success takes the same path as email sign-in, then asks for the new
+     * password.
+     */
+    fun handlePasswordRecovery(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val params = recoveryLinkParams(uri)
+                check(params["error"] == null && params["error_code"] == null) {
+                    "Reset link error: ${params["error_code"] ?: params["error"]}"
+                }
+                val accessToken = checkNotNull(params["access_token"]) { "No access token in reset link" }
+                val refreshToken = checkNotNull(params["refresh_token"]) { "No refresh token in reset link" }
+
+                val auth = SupabaseModule.client.auth
+                // A cold-start import must not race the stored-session load.
+                auth.awaitInitialization()
+                val user = auth.retrieveUser(accessToken)
+                auth.importSession(
+                    UserSession(
+                        accessToken = accessToken,
+                        refreshToken = refreshToken,
+                        expiresIn = params["expires_in"]?.toLongOrNull() ?: 3600,
+                        tokenType = params["token_type"] ?: "bearer",
+                        user = user,
+                        type = params["type"] ?: "recovery",
+                    ),
+                    source = SessionSource.External,
+                )
+                sessionRepo.onAuthSuccess()
+                _recoveryDialog.value = RecoveryDialog.SET_PASSWORD
+            } catch (t: Throwable) {
+                _recoveryDialog.value = RecoveryDialog.LINK_EXPIRED
+            }
+        }
+    }
+
+    /** Sets the new password on the recovery session. [onResult] gets null on success, else an error. */
+    fun updatePassword(newPassword: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                SupabaseModule.client.auth.updateUser { password = newPassword }
+                _recoveryDialog.value = RecoveryDialog.PASSWORD_UPDATED
+                onResult(null)
+            } catch (t: Throwable) {
+                // RestException.description is GoTrue's own message (e.g. "New password
+                // should be different from the old password."); `message` adds the URL + headers.
+                val reason = (t as? RestException)?.description
+                onResult(
+                    if (reason != null) "Couldn't update your password: $reason"
+                    else "Couldn't update your password. Please try again."
+                )
+            }
+        }
+    }
+
+    /** "Not now" / OK — the user stays signed in either way. */
+    fun dismissRecoveryDialog() {
+        _recoveryDialog.value = null
     }
 
     /** Browser OAuth — works once the Google provider is configured in Supabase. */
@@ -148,4 +280,22 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    private companion object {
+        const val GENERIC_ERROR = "Something went wrong. Please try again."
+    }
 }
+
+/**
+ * Query + fragment params of a recovery link, URL-decoded (fragment wins).
+ * seek://password-reset#access_token=…&refresh_token=…&type=recovery, or
+ * …#error=access_denied&error_code=otp_expired&… for a used/expired link.
+ */
+private fun recoveryLinkParams(uri: Uri): Map<String, String> =
+    listOfNotNull(uri.encodedQuery, uri.encodedFragment)
+        .flatMap { it.split('&') }
+        .mapNotNull { part ->
+            val eq = part.indexOf('=')
+            if (eq <= 0) null else Uri.decode(part.substring(0, eq)) to Uri.decode(part.substring(eq + 1))
+        }
+        .toMap()

@@ -55,7 +55,9 @@ import com.loucesario.seek.data.SeekPrefs
 import com.loucesario.seek.data.remote.dto.ActionStepDto
 import com.loucesario.seek.data.remote.dto.VerseDto
 import com.loucesario.seek.data.remote.dto.WorshipSongDto
+import com.loucesario.seek.ui.components.CopyButton
 import com.loucesario.seek.ui.components.GuestGate
+import com.loucesario.seek.ui.components.verseCopyText
 import com.loucesario.seek.ui.theme.ScriptureTextStyle
 import com.loucesario.seek.ui.theme.SeekColors
 
@@ -213,7 +215,12 @@ private fun ChatRow(
             }
         }
 
-        is ChatItem.Intro -> Text(item.text, fontSize = 16.sp, color = SeekColors.TextPrimary)
+        // Copied as shown — Android renders the intro as plain text, not markdown.
+        is ChatItem.Intro -> Column {
+            Text(item.text, fontSize = 16.sp, color = SeekColors.TextPrimary)
+            Spacer(Modifier.height(6.dp))
+            CopyButton(text = item.text, tint = SeekColors.TextSecondary)
+        }
 
         is ChatItem.Verses -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             item.verses.forEach { v ->
@@ -246,6 +253,8 @@ private fun ChatRow(
                     Spacer(Modifier.width(6.dp))
                     Text(if (saved) "Saved" else "Save prayer", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.Gold)
                 }
+                Spacer(Modifier.width(18.dp))
+                CopyButton(text = item.text)
                 Spacer(Modifier.weight(1f))
                 Text(
                     "Make a card →", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage,
@@ -282,6 +291,12 @@ private fun VerseCard(verse: VerseDto, isFavorite: Boolean, onTap: () -> Unit, o
                 verse.reference, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = SeekColors.Sage,
                 modifier = Modifier.weight(1f),
             )
+            CopyButton(
+                text = verseCopyText(verse.text, verse.reference),
+                iconOnly = true,
+                tint = SeekColors.TextTertiary,
+            )
+            Spacer(Modifier.width(16.dp))
             Icon(
                 imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
                 contentDescription = if (isFavorite) "Unfavorite" else "Favorite",
@@ -355,7 +370,17 @@ private fun ActionCard(action: ActionStepDto) {
             Spacer(Modifier.height(10.dp))
             Text(it, fontSize = 13.sp, fontStyle = FontStyle.Italic, color = SeekColors.TextSecondary)
         }
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            CopyButton(text = actionCopyText(action))
+        }
     }
+}
+
+/** Clipboard text for an action card — identical to iOS: title, numbered steps, blank line, reason. */
+private fun actionCopyText(action: ActionStepDto): String {
+    val steps = action.steps.mapIndexed { i, step -> "${i + 1}. $step" }
+    return (listOf(action.title) + steps + listOf("", action.reason)).joinToString("\n")
 }
 
 private fun openUrl(context: Context, url: String) {
