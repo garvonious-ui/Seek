@@ -122,6 +122,8 @@ struct WeeklyShareCardView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     WeeklyShareCardView(summary: .sample, renderSize: CGSize(width: 360, height: 640))
 }
+#endif

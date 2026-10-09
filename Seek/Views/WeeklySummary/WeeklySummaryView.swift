@@ -208,6 +208,8 @@ private struct GoldIconLabelStyle: LabelStyle {
     }
 }
 
+#if DEBUG
 #Preview {
     WeeklySummaryView(summary: .sample)
 }
+#endif

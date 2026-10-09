@@ -93,8 +93,10 @@ struct WeeklyRecapTile: View {
     }
 }
 
+#if DEBUG
 #Preview {
     WeeklyRecapTile(summary: .sample, onOpen: {}, onDismiss: {})
         .padding()
         .background(Color(hex: "FAFAF6"))
 }
+#endif
