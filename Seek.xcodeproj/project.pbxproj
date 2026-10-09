@@ -407,10 +407,10 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					766540943A9A1D865D7E6836 = {
-						DevelopmentTeam = 6QU295KVS2;
+						DevelopmentTeam = A3W539C4C3;
 					};
 					7C2B59A2F6B0212930FD9483 = {
-						DevelopmentTeam = 6QU295KVS2;
+						DevelopmentTeam = A3W539C4C3;
 					};
 				};
 			};
@@ -535,7 +535,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Seek/Seek.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 6QU295KVS2;
+				DEVELOPMENT_TEAM = A3W539C4C3;
 				INFOPLIST_FILE = Seek/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -554,7 +554,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SeekWidget/SeekWidget.entitlements;
-				DEVELOPMENT_TEAM = 6QU295KVS2;
+				DEVELOPMENT_TEAM = A3W539C4C3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SeekWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Seek;
@@ -575,7 +575,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SeekWidget/SeekWidget.entitlements;
-				DEVELOPMENT_TEAM = 6QU295KVS2;
+				DEVELOPMENT_TEAM = A3W539C4C3;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SeekWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Seek;
@@ -673,7 +673,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Seek/Seek.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = 6QU295KVS2;
+				DEVELOPMENT_TEAM = A3W539C4C3;
 				INFOPLIST_FILE = Seek/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
