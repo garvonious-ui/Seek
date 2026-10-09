@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Meta (Facebook) SDK configuration for app-install ad measurement. -->
+	<key>FacebookAppID</key>
+	<string>882028774961076</string>
+	<key>FacebookClientToken</key>
+	<string>ae74749f2118f7f01c5c3fa2ea09c2ae</string>
+	<key>FacebookDisplayName</key>
+	<string>Seek</string>
+	<!-- SKAdNetwork 4 postback copy sent to Meta for install attribution. -->
+	<key>NSAdvertisingAttributionReportEndpoint</key>
+	<string>https://www.facebook.com</string>
+	<!-- Meta's SKAdNetwork ad-network identifiers. Meta occasionally publishes an
+	     expanded partner list at developers.facebook.com/docs/SKAdNetwork —
+	     paste the current full list here to maximize attribution coverage. -->
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>v9wttpbfk9.skadnetwork</string>
+		</dict>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>n38lu8286q.skadnetwork</string>
+		</dict>
+	</array>
+</dict>
+</plist>

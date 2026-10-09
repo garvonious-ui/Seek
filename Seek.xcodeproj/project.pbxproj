@@ -33,6 +33,7 @@
 		95FF8F374DCDB53F213A8BE5 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = E7235F0C9B1BBBBF06BDF49C /* Supabase */; };
 		9EA7EB70324742D90E2ECE07 /* FavoriteVerse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18DA92189B90BBA039FA720B /* FavoriteVerse.swift */; };
 		A58CD6E853CAE3FD49B3E639 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BFD3C915A42C67679D076C4 /* NetworkMonitor.swift */; };
+		AC2D39B3BCF6D746C0A24EC1 /* FacebookCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5DB7B29609E4E93670E128A3 /* FacebookCore */; };
 		B2B71EDD9BAFB550DFF4B882 /* SupabaseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3477F498DF685933489DA4D /* SupabaseService.swift */; };
 		B676FB639C47F71CD4AD0693 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E2FD2990F68632F4168020 /* ContentView.swift */; };
 		BCF583188479A515ECFEF6B7 /* SeekWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 085DD2D139D3A1D09C17A25E /* SeekWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -81,7 +82,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		085DD2D139D3A1D09C17A25E /* SeekWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SeekWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		085DD2D139D3A1D09C17A25E /* SeekWidgetExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SeekWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A4F124F5B12CA08A707EC8F /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
 		0A67C5DC56A82F78FDED7D58 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		0A69E39476DCE0152C599D42 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
@@ -89,7 +90,7 @@
 		18DA92189B90BBA039FA720B /* FavoriteVerse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteVerse.swift; sourceTree = "<group>"; };
 		2414D0CBEED548A87A86B20C /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		25AD5240CBF7ABC8738CA721 /* WidgetTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetTheme.swift; sourceTree = "<group>"; };
-		25D80CCDB51FA0F6E2DD2F9C /* Seek.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Seek.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		25D80CCDB51FA0F6E2DD2F9C /* Seek.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Seek.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2EB5EB05F2F5117730354338 /* PremiumUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumUpgradeView.swift; sourceTree = "<group>"; };
 		30EB2963A0C15BE4EC87A90C /* SubscriptionManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManagementView.swift; sourceTree = "<group>"; };
 		3B791B857162E203CDE7CB1A /* BibleTranslation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleTranslation.swift; sourceTree = "<group>"; };
@@ -100,7 +101,7 @@
 		48EF3AEB98357E3DD79F9F14 /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		529A6C69B9D04D4999458511 /* DailyVerseCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyVerseCache.swift; sourceTree = "<group>"; };
 		568EA48F819F652BFE346C3D /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
-		56FE18F2835B793752F588D9 /* SeekProducts.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SeekProducts.storekit; sourceTree = "<group>"; };
+		56FE18F2835B793752F588D9 /* SeekProducts.storekit */ = {isa = PBXFileReference; path = SeekProducts.storekit; sourceTree = "<group>"; };
 		6138CC96248B4F0DB8A6D986 /* kjv.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = kjv.json; sourceTree = "<group>"; };
 		675EF979B9F03611C1BA0A7E /* WebContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContentView.swift; sourceTree = "<group>"; };
 		75C138E835CC868B78432878 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -130,6 +131,7 @@
 		E6657BE45558E7BB4AD91FDE /* AppleSignInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInButton.swift; sourceTree = "<group>"; };
 		F3477F498DF685933489DA4D /* SupabaseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseService.swift; sourceTree = "<group>"; };
 		F535B0E189CDC33835DD6AC3 /* SeekWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeekWidgetBundle.swift; sourceTree = "<group>"; };
+		FD35A7139708078E9C01EBF6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +140,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				95FF8F374DCDB53F213A8BE5 /* Supabase in Frameworks */,
+				AC2D39B3BCF6D746C0A24EC1 /* FacebookCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -192,6 +195,7 @@
 			children = (
 				D7415D95463F6BC217019DA7 /* Assets.xcassets */,
 				A1E2FD2990F68632F4168020 /* ContentView.swift */,
+				FD35A7139708078E9C01EBF6 /* Info.plist */,
 				BCCE4721B5F33104CF2EBCEB /* Seek.entitlements */,
 				D2D0A7482B49100DFAE1CD8E /* SeekApp.swift */,
 				70471D23867464DB01465C9E /* CardTemplates */,
@@ -381,6 +385,7 @@
 			name = Seek;
 			packageProductDependencies = (
 				E7235F0C9B1BBBBF06BDF49C /* Supabase */,
+				5DB7B29609E4E93670E128A3 /* FacebookCore */,
 			);
 			productName = Seek;
 			productReference = 25D80CCDB51FA0F6E2DD2F9C /* Seek.app */;
@@ -394,6 +399,14 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					766540943A9A1D865D7E6836 = {
+						DevelopmentTeam = 6QU295KVS2;
+					};
+					7C2B59A2F6B0212930FD9483 = {
+						DevelopmentTeam = 6QU295KVS2;
+					};
+				};
 			};
 			buildConfigurationList = 4D3E49C9FBCDC05C4363F70B /* Build configuration list for PBXProject "Seek" */;
 			developmentRegion = en;
@@ -405,6 +418,7 @@
 			mainGroup = 2E883D7AF4654E924F763B72;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				C1909AF8F05181578005F8FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */,
 				069F8EBCCDD4CB1D22631419 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -513,7 +527,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Seek/Seek.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = A3W539C4C3;
+				DEVELOPMENT_TEAM = 6QU295KVS2;
+				INFOPLIST_FILE = Seek/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -531,7 +546,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SeekWidget/SeekWidget.entitlements;
-				DEVELOPMENT_TEAM = A3W539C4C3;
+				DEVELOPMENT_TEAM = 6QU295KVS2;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SeekWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Seek;
@@ -552,7 +567,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = SeekWidget/SeekWidget.entitlements;
-				DEVELOPMENT_TEAM = A3W539C4C3;
+				DEVELOPMENT_TEAM = 6QU295KVS2;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = SeekWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Seek;
@@ -602,7 +617,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -631,7 +646,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -650,7 +665,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Seek/Seek.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = A3W539C4C3;
+				DEVELOPMENT_TEAM = 6QU295KVS2;
+				INFOPLIST_FILE = Seek/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -697,7 +713,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -720,7 +736,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UIUserInterfaceStyle = Light;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -772,9 +788,22 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		C1909AF8F05181578005F8FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/facebook-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 17.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		5DB7B29609E4E93670E128A3 /* FacebookCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C1909AF8F05181578005F8FA /* XCRemoteSwiftPackageReference "facebook-ios-sdk" */;
+			productName = FacebookCore;
+		};
 		E7235F0C9B1BBBBF06BDF49C /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 069F8EBCCDD4CB1D22631419 /* XCRemoteSwiftPackageReference "supabase-swift" */;
