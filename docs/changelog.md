@@ -80,15 +80,34 @@ last day; throttled 6h per alert (`ops_alerts`). Topic in the
 `ALERT_NTFY_TOPIC` secret. Verified: 200, 3 checks, test push delivered.
 
 ### Versions / release status
-- Android **1.3.0 (6)** (widget + API 36 + copy + reset): bundle uploaded to the
-  production track with release notes and saved; awaiting the "Send changes for
-  review" click.
-- iOS **1.3.0 (14)** (Facebook SDK + copy + reset): compiles; archive blocked —
-  Xcode isn't signed into the Apple ID ("No Account for Team 6QU295KVS2").
+- **iOS 1.3.0 (15) submitted to App Review** 2026-10-09 15:28 (Facebook SDK + copy +
+  password reset + weekly summary). Build 14 (same minus weekly summary) was
+  uploaded too but not used.
+- **project.yml DEVELOPMENT_TEAM was wrong** (`6QU295KVS2`, no account/profile
+  has it). Every Seek profile is team **A3W539C4C3** (Casual Solutions LLC). That's
+  why command-line archives always failed and the team had to be re-picked in
+  Xcode after each xcodegen run. Fixed on main.
+- **App Privacy label updated** for the Facebook SDK (its manifest declares
+  tracking + Device ID for third-party advertising): added Device ID (linked;
+  third-party + developer advertising, analytics, app functionality), Product
+  Interaction purposes (+ advertising, analytics), Crash Data and Other Data (not
+  linked). All "not used for tracking" — no ATT prompt, SKAN-only, per Lou.
+- **Android 1.3.0 (7)** (widget + API 36 + copy + reset + weekly summary): signed
+  AAB built. Needs a new production release in Play Console replacing the unsent
+  1.3.0 (6) — creating it was blocked for the agent; Lou to do.
+- Upload gotcha: Organizer upload of build 15 looped on "Checksums do not match,
+  will retry part 1" (~250 MB re-sent). Cancel + retry fixed it; Transporter with
+  the exported .ipa is the fallback.
 
-### Weekly summary card — mockups
-Three directions (Morning/stats-led, Evening/verse-led, Rhythm/week-as-shape)
-plus the Home "Your week is ready" tile: https://claude.ai/artifact/UqxmfArigjw4McVvJCnYHT
+### Weekly summary (built, in 1.3.0 on both platforms)
+Mockups: https://claude.ai/artifact/UqxmfArigjw4McVvJCnYHT — shipped B "Evening"
+(dark, verse-led) as the 1080x1920 share image and A "Morning" (light,
+stats-led) as the in-app recap, plus the Home "Your week is ready" tile (Sunday
+noon – Tuesday, dismissible per week) and streak-flame tap → current week.
+All on-device: active-day log + timestamps, verses decoded from saved chat
+responses, keyword themes from the user's own messages (only theme names reach
+the card). Verified with sample data in the iOS simulator and an Android
+emulator; not yet seen with a real account's history.
 
 ## 2026-07-30 — Session 27 (IG performance overhaul + Meta Ads foundation + Facebook SDK integration)
 
