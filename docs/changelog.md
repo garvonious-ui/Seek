@@ -44,10 +44,10 @@ schedule page reads through it), now read-only.
 - The 10 Session 27 reels were never uploaded; all 10 failed in Aug ("reel
   processing error" — IG couldn't fetch the file). Uploaded to `ig-media/`
   (`reels-carousel/`, `series/`), verified public + H.264/AAC/faststart. Their
-  re-queued Oct 15–25 rows will now post. `reel_comfort` REELS (Oct 14) is still
-  `pending`.
-- 30 pending reels past due (Aug 17 → Oct 5) are all duplicates of media that
-  already posted. Proposed: cancel. Awaiting OK.
+  re-queued Oct 14–25 rows will now post.
+- 30 pending reels past due (Aug 17 → Oct 5) were all duplicates of media that
+  already posted — cancelled. `reel_comfort` approved; the 10 failed Aug rows
+  retired (superseded by the Oct re-queue).
 
 ### App: copy buttons (iOS + Android)
 `CopyButton` on the Daily Verse card and every chat output except the worship
@@ -64,18 +64,31 @@ account → Create Account / rate limit). New set-new-password screen.
 - **iOS never registered the `seek://` URL scheme** — the widget works without
   it, links from Mail don't. Added `CFBundleURLTypes`.
 - Handled at the app root, not ContentView (the user is signed out).
-- **Blocking, not yet done:** Supabase Auth → URL Configuration has Site URL and
-  the redirect allowlist set to `127.0.0.1:3000`. `seek://password-reset` must be
-  allowlisted or reset links land on localhost.
+- **Supabase Auth URL config was never set:** Site URL and the redirect
+  allowlist were both `127.0.0.1:3000`. Set Site URL → `https://askseekpray.app`;
+  allowlisted `seek://password-reset` and `seek://auth-callback`.
+- **This also means Android Google sign-in never worked.** `seek://auth-callback`
+  wasn't allowlisted, so GoTrue fell back to the localhost Site URL after Google
+  consent. All 8 Google sign-ups since 06-22 have 0 chats (Apple: 27/36) and 6
+  retried. The account got created server-side; the app never got a session.
+  Fixed server-side for every installed version.
 
-### Ops: health-alert (written, not deployed)
+### Ops: health-alert (live)
 `supabase/functions/health-alert` + migration: every 15 min, push via ntfy on a
 `debug_logs` spike, approved IG posts >60 min late, or IG posts failed in the
-last day; throttled 6h per alert. Needs `ALERT_NTFY_TOPIC` + deploy.
+last day; throttled 6h per alert (`ops_alerts`). Topic in the
+`ALERT_NTFY_TOPIC` secret. Verified: 200, 3 checks, test push delivered.
 
-### Versions
-iOS **1.3.0 (14)** (Facebook SDK + copy + reset). Android **1.3.0 (6)**
-(widget + API 36 + copy + reset). API 36 build verified: compiles and signs.
+### Versions / release status
+- Android **1.3.0 (6)** (widget + API 36 + copy + reset): bundle uploaded to the
+  production track with release notes and saved; awaiting the "Send changes for
+  review" click.
+- iOS **1.3.0 (14)** (Facebook SDK + copy + reset): compiles; archive blocked —
+  Xcode isn't signed into the Apple ID ("No Account for Team 6QU295KVS2").
+
+### Weekly summary card — mockups
+Three directions (Morning/stats-led, Evening/verse-led, Rhythm/week-as-shape)
+plus the Home "Your week is ready" tile: https://claude.ai/artifact/UqxmfArigjw4McVvJCnYHT
 
 ## 2026-07-30 — Session 27 (IG performance overhaul + Meta Ads foundation + Facebook SDK integration)
 
