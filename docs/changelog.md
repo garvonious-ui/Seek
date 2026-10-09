@@ -92,9 +92,9 @@ last day; throttled 6h per alert (`ops_alerts`). Topic in the
   third-party + developer advertising, analytics, app functionality), Product
   Interaction purposes (+ advertising, analytics), Crash Data and Other Data (not
   linked). All "not used for tracking" — no ATT prompt, SKAN-only, per Lou.
-- **Android 1.3.0 (7)** (widget + API 36 + copy + reset + weekly summary): signed
-  AAB built. Needs a new production release in Play Console replacing the unsent
-  1.3.0 (6) — creating it was blocked for the agent; Lou to do.
+- **Android 1.3.0 (7) submitted to Google Play review** 2026-10-09 ~15:36 (widget +
+  API 36 + copy + reset + weekly summary), full rollout, managed publishing off.
+  Replaced the unsent 1.3.0 (6) release.
 - Upload gotcha: Organizer upload of build 15 looped on "Checksums do not match,
   will retry part 1" (~250 MB re-sent). Cancel + retry fixed it; Transporter with
   the exported .ipa is the fallback.
