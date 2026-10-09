@@ -10,6 +10,7 @@ struct StreakManager {
         guard let profile = fetchProfile(modelContext: modelContext) else { return }
 
         let today = Calendar.current.startOfDay(for: .now)
+        recordActiveDay(today)
 
         // Already recorded today
         if let lastActive = profile.lastActiveDate,
@@ -54,6 +55,33 @@ struct StreakManager {
         }
 
         try? modelContext.save()
+    }
+
+    // MARK: - Active-day log
+    //
+    // The profile only keeps lastActiveDate + a running streak, which can't
+    // answer "which days this week?". The weekly summary reads this log
+    // (plus timestamps on chats, favorites, prayers and cards for days before
+    // the log existed). Day keys are local-calendar "yyyy-MM-dd".
+
+    private static let activeDaysKey = "activeDayKeys"
+    private static let activeDaysRetention = 70
+
+    static func dayKey(_ date: Date) -> String {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+    }
+
+    static func recordActiveDay(_ date: Date = .now) {
+        var keys = Set(UserDefaults.standard.stringArray(forKey: activeDaysKey) ?? [])
+        keys.insert(dayKey(date))
+        // Keys sort chronologically as strings; keep the most recent ~10 weeks.
+        let trimmed = keys.sorted().suffix(activeDaysRetention)
+        UserDefaults.standard.set(Array(trimmed), forKey: activeDaysKey)
+    }
+
+    static var activeDayKeys: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: activeDaysKey) ?? [])
     }
 
     /// Check if user hit a milestone

@@ -15,6 +15,9 @@ struct HomeView: View {
     @State private var customPrompt: String = ""
     @State private var chatTarget: ChatTarget?
     @State private var showSignIn = false
+    @State private var weeklyRecap: WeeklySummary?
+    @State private var presentedSummary: WeeklySummary?
+    @AppStorage("weeklyRecapDismissedWeek") private var dismissedRecapWeek = ""
     @FocusState private var isCustomPromptFocused: Bool
 
     /// Hashable wrapper so we can drive navigationDestination(item:) with a typed value.
@@ -72,12 +75,23 @@ struct HomeView: View {
                             // Streak only shown for signed-in users — guests
                             // don't have a profile to track activity against.
                             if !authManager.isGuest {
-                                Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
-                                    .font(.headline)
-                                    .foregroundStyle(Color(hex: "CDA349"))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Color(hex: "CDA349").opacity(0.12), in: Capsule())
+                                // Tapping the streak opens this week so far.
+                                Button {
+                                    presentedSummary = WeeklySummaryBuilder.build(
+                                        weekStart: WeeklySummaryBuilder.weekStart(containing: .now),
+                                        modelContext: modelContext
+                                    )
+                                } label: {
+                                    Label("\(profile?.streakCount ?? 0)", systemImage: "flame.fill")
+                                        .font(.headline)
+                                        .foregroundStyle(Color(hex: "CDA349"))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(Color(hex: "CDA349").opacity(0.12), in: Capsule())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(profile?.streakCount ?? 0)-day streak")
+                                .accessibilityHint("Shows your week")
                             }
 
                             if !networkMonitor.isConnected {
@@ -91,6 +105,19 @@ struct HomeView: View {
                         }
                     }
                     .padding(.horizontal)
+
+                    if let recap = weeklyRecap, !authManager.isGuest {
+                        WeeklyRecapTile(
+                            summary: recap,
+                            onOpen: { presentedSummary = recap },
+                            onDismiss: {
+                                dismissedRecapWeek = recap.id
+                                withAnimation { weeklyRecap = nil }
+                            }
+                        )
+                        .padding(.horizontal)
+                        .transition(.opacity)
+                    }
 
                     // Daily Verse Card
                     dailyVerseCard
@@ -192,6 +219,9 @@ struct HomeView: View {
             .sheet(isPresented: $showSignIn) {
                 GuestSignInSheet(isPresented: $showSignIn)
             }
+            .sheet(item: $presentedSummary) { summary in
+                WeeklySummaryView(summary: summary)
+            }
             .navigationDestination(item: $chatTarget) { target in
                 ChatView(initialMessage: target.message)
             }
@@ -203,6 +233,7 @@ struct HomeView: View {
                 // Streak only meaningful for signed-in users.
                 if !authManager.isGuest {
                     StreakManager.recordActivity(modelContext: modelContext)
+                    loadWeeklyRecap()
                 }
             }
             // Re-fetch as soon as we come back online so the user doesn't have
@@ -214,6 +245,20 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Weekly recap
+
+    /// Offer the recap tile when it's recap time (Sunday noon – Tuesday), the
+    /// user hasn't dismissed this week's, and they showed up at least once.
+    private func loadWeeklyRecap() {
+        guard let start = WeeklySummaryBuilder.recapWeekStart(),
+              StreakManager.dayKey(start) != dismissedRecapWeek else {
+            weeklyRecap = nil
+            return
+        }
+        let summary = WeeklySummaryBuilder.build(weekStart: start, modelContext: modelContext)
+        weeklyRecap = summary.daysActive > 0 ? summary : nil
     }
 
     // MARK: - Custom prompt submission
