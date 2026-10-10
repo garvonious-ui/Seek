@@ -46,7 +46,6 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - `@Observable` CANNOT track computed properties that read from UserDefaults — use a stored property with `didSet` to persist
 - `scaleEffect()` on large views (1080x1920) does NOT work for previews — the layout engine still allocates full size. Use inline screen-sized preview instead.
 - `.sheet(item:)` is more reliable than `.sheet(isPresented:)` when the sheet content depends on state set at tap time
-- `xcodegen generate` resets the signing team — user must re-select in Xcode
 - Integer division in Swift: `250/255 = 0` not `0.98`. Use `250.0/255.0` for UIColor
 - Claude API may return JSON wrapped in markdown fences — always strip them server-side
 - Claude chat Edge Function `max_tokens` must be ≥3000 — full responses (3-5 verses + prayer + song + action) easily exceed 1500 tokens, causing truncated JSON that displays as raw text
