@@ -612,6 +612,7 @@ struct ChatView: View {
         userMsg.conversation = currentConversation
         modelContext.insert(userMsg)
         try? modelContext.save()
+        SyncService.shared.requestSync()
 
         // Update conversation history for context
         conversationHistory.append(["role": "user", "content": truncated])
@@ -749,6 +750,7 @@ struct ChatView: View {
         assistantMsg.conversation = currentConversation
         modelContext.insert(assistantMsg)
         try? modelContext.save()
+        SyncService.shared.requestSync()
 
         conversationHistory.append(["role": "assistant", "content": fullContent])
 
@@ -861,18 +863,19 @@ struct ChatView: View {
 
     private func toggleFavorite(_ verse: VerseResult) {
         if let existing = favoriteVerses.first(where: { $0.reference == verse.reference }) {
-            modelContext.delete(existing)
+            SyncService.shared.delete(existing, in: modelContext)
         } else {
             modelContext.insert(FavoriteVerse(reference: verse.reference, text: verse.text, source: "chat"))
         }
         try? modelContext.save()
+        SyncService.shared.requestSync()
     }
 
     // MARK: - Favorite Prayer
 
     private func togglePrayerFavorite(_ prayerText: String) {
         if let existing = savedPrayers.first(where: { $0.text == prayerText }) {
-            modelContext.delete(existing)
+            SyncService.shared.delete(existing, in: modelContext)
         } else {
             modelContext.insert(
                 SavedPrayer(
@@ -883,6 +886,7 @@ struct ChatView: View {
             )
         }
         try? modelContext.save()
+        SyncService.shared.requestSync()
     }
 
     // MARK: - Load Existing Conversation

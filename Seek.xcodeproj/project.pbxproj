@@ -30,6 +30,7 @@
 		7BA25CF1D0F7376821D41170 /* CardCreatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9BD5993170166B3B8D401C2 /* CardCreatorView.swift */; };
 		7C10C430549792F4D18191F7 /* WeeklySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 808BB077BFC341A4ED3A8616 /* WeeklySummaryView.swift */; };
 		8020A273254D6E6619481CF5 /* ErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A134D8BB570ED20CC70491AC /* ErrorView.swift */; };
+		84231115564CC9AAF202B339 /* SyncTombstone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65ED69357F694F4B7DFB9E42 /* SyncTombstone.swift */; };
 		887574577B03E7556151985F /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B40059C79FEC650C1412AC07 /* HomeView.swift */; };
 		8A55BAE70E0972583DC1D252 /* CopyButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E165487157E7265F6405B19 /* CopyButton.swift */; };
 		8C3BFCCA3CB468396CACC84D /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48EF3AEB98357E3DD79F9F14 /* UserProfile.swift */; };
@@ -60,6 +61,7 @@
 		F496D6EC7B175CE18BBB6B33 /* SeekProducts.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 56FE18F2835B793752F588D9 /* SeekProducts.storekit */; };
 		F61A7C562AA06A752068CB7F /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E401C5BA46EEA339C6D832A /* ChatMessage.swift */; };
 		F75DF2C6763784999B4906FE /* VerseCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABA5AC610BB9D76E64199671 /* VerseCardView.swift */; };
+		FD0FAF968CE8640DA74DEEB7 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBAB34CA904921B1E7DD4826 /* SyncService.swift */; };
 		FDD7DDCCA3ED7F0B51CA0EA0 /* ChatConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A46FE0B1F5B96078CCE1037A /* ChatConversation.swift */; };
 /* End PBXBuildFile section */
 
@@ -112,6 +114,7 @@
 		568EA48F819F652BFE346C3D /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		56FE18F2835B793752F588D9 /* SeekProducts.storekit */ = {isa = PBXFileReference; path = SeekProducts.storekit; sourceTree = "<group>"; };
 		6138CC96248B4F0DB8A6D986 /* kjv.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = kjv.json; sourceTree = "<group>"; };
+		65ED69357F694F4B7DFB9E42 /* SyncTombstone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncTombstone.swift; sourceTree = "<group>"; };
 		675EF979B9F03611C1BA0A7E /* WebContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebContentView.swift; sourceTree = "<group>"; };
 		75C138E835CC868B78432878 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		771EC80BB192095AD18D4D44 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -138,6 +141,7 @@
 		D91DF269EFF2AFEB6BABD92D /* SavedCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedCard.swift; sourceTree = "<group>"; };
 		D96E020A355A91F2A3F06E5A /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		D9BD5993170166B3B8D401C2 /* CardCreatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCreatorView.swift; sourceTree = "<group>"; };
+		DBAB34CA904921B1E7DD4826 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		E5078B4A2C7B2CB99D5C53B8 /* DailyVerseWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyVerseWidget.swift; sourceTree = "<group>"; };
 		E5BBEB9484A66090C3AB09D3 /* DonationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonationView.swift; sourceTree = "<group>"; };
 		E6657BE45558E7BB4AD91FDE /* AppleSignInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInButton.swift; sourceTree = "<group>"; };
@@ -179,6 +183,7 @@
 				0A67C5DC56A82F78FDED7D58 /* StoreManager.swift */,
 				D6F0FF9F69872AF91291CA6A /* StreakManager.swift */,
 				F3477F498DF685933489DA4D /* SupabaseService.swift */,
+				DBAB34CA904921B1E7DD4826 /* SyncService.swift */,
 				1DC903503586BFD9E540046B /* WeeklySummary.swift */,
 			);
 			path = Services;
@@ -307,6 +312,7 @@
 				18DA92189B90BBA039FA720B /* FavoriteVerse.swift */,
 				D91DF269EFF2AFEB6BABD92D /* SavedCard.swift */,
 				94BAD92E98E45FF5ACB66B8F /* SavedPrayer.swift */,
+				65ED69357F694F4B7DFB9E42 /* SyncTombstone.swift */,
 				48EF3AEB98357E3DD79F9F14 /* UserProfile.swift */,
 			);
 			path = Models;
@@ -520,6 +526,8 @@
 				CDCCEC2A19E5FBBD8622F819 /* StreakManager.swift in Sources */,
 				32B23A70411A456E5E618634 /* SubscriptionManagementView.swift in Sources */,
 				B2B71EDD9BAFB550DFF4B882 /* SupabaseService.swift in Sources */,
+				FD0FAF968CE8640DA74DEEB7 /* SyncService.swift in Sources */,
+				84231115564CC9AAF202B339 /* SyncTombstone.swift in Sources */,
 				8C3BFCCA3CB468396CACC84D /* UserProfile.swift in Sources */,
 				F75DF2C6763784999B4906FE /* VerseCardView.swift in Sources */,
 				30FE45F422E25E888A5C473B /* WebContentView.swift in Sources */,

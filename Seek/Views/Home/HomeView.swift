@@ -424,11 +424,12 @@ struct HomeView: View {
 
     private func toggleFavorite(reference: String, text: String, source: String) {
         if let existing = favoriteVerses.first(where: { $0.reference == reference }) {
-            modelContext.delete(existing)
+            SyncService.shared.delete(existing, in: modelContext)
         } else {
             modelContext.insert(FavoriteVerse(reference: reference, text: text, source: source))
         }
         try? modelContext.save()
+        SyncService.shared.requestSync()
     }
 }
 

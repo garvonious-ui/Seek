@@ -115,6 +115,23 @@ CREATE TABLE usage_logs (
 );
 ```
 
+### Cloud sync tables (Session 29 — see docs/cloud-sync.md)
+Mirror the local content models. Shared columns on every table: `id uuid PK` (= local id),
+`user_id uuid → auth.users ON DELETE CASCADE, default auth.uid()`,
+`updated_at timestamptz` (trigger-stamped, pull cursor), `deleted_at timestamptz` (soft delete).
+RLS: authenticated users select/insert/update/delete only `user_id = auth.uid()`; no anon access.
+
+| Table | Columns (besides the shared ones) |
+|-------|-----------------------------------|
+| saved_cards | verse_reference, verse_text, template_id, is_favorite, context_note, created_at |
+| favorite_verses | reference, text, source, saved_at |
+| saved_prayers | text, source, context_note, saved_at |
+| chat_conversations | summary, started_at |
+| chat_messages | conversation_id → chat_conversations ON DELETE CASCADE, role ('user'/'assistant'), content, sent_at |
+
+Local side: each synced model has `needsSync: Bool = true` (Room: `needsSync INTEGER NOT NULL DEFAULT 1`),
+plus a `SyncTombstone` / `sync_tombstone` table holding deletes that haven't been pushed.
+
 ### Row Level Security
 ```sql
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;

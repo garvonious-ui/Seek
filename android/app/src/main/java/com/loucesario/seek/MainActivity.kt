@@ -30,6 +30,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Cloud sync: back up / catch up whenever the app comes to the foreground.
+        // No-op while signed out.
+        (application as SeekApplication).sync.requestSync()
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)

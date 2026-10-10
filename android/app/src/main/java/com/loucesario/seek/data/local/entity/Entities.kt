@@ -1,5 +1,6 @@
 package com.loucesario.seek.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -39,6 +40,8 @@ data class SavedCardEntity(
     val createdAt: Long,
     val isFavorite: Boolean = false,
     val contextNote: String? = null,
+    /** True until pushed to Supabase (cloud sync). Default 1 matches MIGRATION_1_2. */
+    @ColumnInfo(defaultValue = "1") val needsSync: Boolean = true,
 )
 
 @Entity(tableName = "chat_conversation")
@@ -46,6 +49,8 @@ data class ChatConversationEntity(
     @PrimaryKey val id: String,
     val startedAt: Long,
     val summary: String? = null,
+    /** True until pushed to Supabase (cloud sync). Default 1 matches MIGRATION_1_2. */
+    @ColumnInfo(defaultValue = "1") val needsSync: Boolean = true,
 )
 
 @Entity(
@@ -66,6 +71,8 @@ data class ChatMessageEntity(
     val role: String, // "user" | "assistant"
     val content: String, // raw text for user, JSON for assistant
     val timestamp: Long,
+    /** True until pushed to Supabase (cloud sync). Default 1 matches MIGRATION_1_2. */
+    @ColumnInfo(defaultValue = "1") val needsSync: Boolean = true,
 )
 
 @Entity(tableName = "favorite_verse")
@@ -75,6 +82,8 @@ data class FavoriteVerseEntity(
     val text: String,
     val savedAt: Long,
     val source: String, // "chat" | "daily_verse"
+    /** True until pushed to Supabase (cloud sync). Default 1 matches MIGRATION_1_2. */
+    @ColumnInfo(defaultValue = "1") val needsSync: Boolean = true,
 )
 
 @Entity(tableName = "saved_prayer")
@@ -83,4 +92,17 @@ data class SavedPrayerEntity(
     val text: String,
     val contextNote: String? = null, // the prompt that produced it
     val savedAt: Long,
+    /** True until pushed to Supabase (cloud sync). Default 1 matches MIGRATION_1_2. */
+    @ColumnInfo(defaultValue = "1") val needsSync: Boolean = true,
+)
+
+/**
+ * A local delete that still has to reach Supabase (sets the remote row's
+ * deleted_at so other devices drop it too). Removed once pushed.
+ */
+@Entity(tableName = "sync_tombstone")
+data class SyncTombstoneEntity(
+    @PrimaryKey val id: String,
+    val remoteTable: String, // Supabase table, e.g. "saved_cards"
+    val deletedAt: Long = System.currentTimeMillis(),
 )

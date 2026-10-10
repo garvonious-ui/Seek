@@ -160,12 +160,12 @@ footer {
 
 <main class="container">
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated April 30, 2026</p>
+  <p class="updated">Last updated October 10, 2026</p>
 
   <p class="lede">Seek is built around a quiet kind of trust — you tell it what's on your heart, it points to scripture. This page explains, in plain language, what data Seek handles, why, and how to remove it.</p>
 
   <div class="callout">
-    <strong>The short version.</strong> We collect the minimum needed to sign you in and sync your streak across devices. Your chat messages are sent to an AI provider to find verses, but Seek does not store the messages on its own servers. We do not run ads, analytics, or third-party trackers, and Seek is free with no in-app purchases. You can delete your account from inside the app, which removes your profile data permanently.
+    <strong>The short version.</strong> We collect the minimum needed to sign you in and sync your streak across devices. Your chat messages are sent to an AI provider to find verses. When you're signed in, your chat history, saved cards, favorites, and prayers are backed up to your account so they come back on a new phone or after a reinstall. We do not run ads, analytics, or third-party trackers, and Seek is free with no in-app purchases. You can delete your account from inside the app, which removes your profile data permanently.
   </div>
 
   <h2>1. Who we are</h2>
@@ -197,13 +197,13 @@ footer {
   <h3>Chat content</h3>
   <p>When you use scripture chat, the message you send and the previous turns of that conversation are forwarded to our AI provider (Anthropic) so it can return relevant verses, a prayer, and a worship song suggestion. Important details:</p>
   <ul>
-    <li><strong>Seek's servers do not persist the contents of your chat messages.</strong> Our backend logs only a per-day chat count and the timestamp of your most recent chat — used solely to enforce rate limits.</li>
-    <li>The full chat history is stored <strong>on your device</strong> using Apple's SwiftData. It does not sync to our cloud. Reinstalling the app or signing out clears it.</li>
+    <li><strong>Your chat history is backed up to your account.</strong> Each conversation (your messages and the verses, prayer, and song returned) is stored on your device and in Seek's database so it's restored when you sign in on a new phone or reinstall. Only you can read it — access is restricted to your signed-in account.</li>
+    <li>Separately, our backend keeps a per-day chat count and the timestamp of your most recent chat to enforce rate limits.</li>
     <li>Anthropic's processing of those messages is governed by Anthropic's commercial API terms, which prohibit using API inputs to train models and apply standard trust-and-safety retention. See <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">Anthropic's Privacy Policy</a>.</li>
   </ul>
 
   <h3>Saved cards, favorites, and prayers</h3>
-  <p>Verse cards you create, verses you favorite, and prayers you save are stored only on your device. They are not uploaded to Seek's servers.</p>
+  <p>Verse cards you create, verses you favorite, and prayers you save are stored on your device and backed up to your account, the same way as chat history.</p>
 
   <h3>Information we do not collect</h3>
   <ul>
@@ -218,6 +218,7 @@ footer {
   <ul>
     <li>Sign you in and keep you signed in</li>
     <li>Sync your streak and preferences across devices</li>
+    <li>Back up your chat history, saved cards, favorites, and prayers so they're restored on a new device</li>
     <li>Send daily verse and streak notifications you've opted into</li>
     <li>Process scripture chat requests through our AI provider</li>
     <li>Enforce the daily chat limit (50 chats per user per day)</li>
@@ -234,7 +235,7 @@ footer {
     <tbody>
       <tr>
         <td>Supabase</td>
-        <td>Authentication, profile and preference storage, edge functions, push notifications</td>
+        <td>Authentication, profile and preference storage, backup of your chat history and saved items, edge functions, push notifications</td>
         <td>United States (East US)</td>
       </tr>
       <tr>
@@ -265,7 +266,7 @@ footer {
   <h2>7. Your choices and rights</h2>
   <ul>
     <li><strong>Edit or delete your data:</strong> Profile &rarr; Delete Account inside the app permanently removes your profile, sync data, and usage logs from our servers.</li>
-    <li><strong>Sign out:</strong> Profile &rarr; Sign Out clears your session on the device.</li>
+    <li><strong>Sign out:</strong> Profile &rarr; Sign Out clears your session and removes your chat history and saved items from the device. They stay backed up to your account and return when you sign back in.</li>
     <li><strong>Turn off notifications:</strong> Profile &rarr; Notifications, or in iOS Settings.</li>
   </ul>
 
@@ -275,7 +276,7 @@ footer {
   <ul>
     <li>Profile and sync data: kept while your account is active. Deleted when you delete your account.</li>
     <li>Usage logs (rate-limit counters): retained for up to 90 days and then automatically pruned.</li>
-    <li>Chat content: not stored on our servers. Stored on your device until you sign out, delete the app, or delete your account.</li>
+    <li>Chat history and saved items: kept with your account while it's active. Items you delete in the app are removed from your library everywhere; everything is permanently deleted when you delete your account.</li>
     <li>Push notification token: deleted when you disable notifications or delete your account.</li>
   </ul>
 

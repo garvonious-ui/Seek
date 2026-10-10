@@ -425,6 +425,10 @@ final class AuthManager {
     func signOut() async {
         do {
             try await SupabaseService.shared.signOut()
+            // The library lives in the cloud now — wipe this device's copy so the
+            // next account to sign in here doesn't see (or upload) it. ProfileView
+            // runs a final sync first and warns if anything didn't make it.
+            try? await SyncService.shared.clearLocalData()
             // Explicit reset on user-initiated sign-out. The auth listener no
             // longer touches these flags (Build 8 rejection bug), so we own
             // them here.
@@ -442,13 +446,11 @@ final class AuthManager {
 
     func deleteAccount(modelContext: ModelContext) async {
         do {
-            // Clear local data
+            // Clear local data. The cloud copy goes with the account: every sync
+            // table cascades from auth.users.
             try modelContext.delete(model: UserProfile.self)
-            try modelContext.delete(model: SavedCard.self)
-            try modelContext.delete(model: ChatConversation.self)
-            try modelContext.delete(model: ChatMessage.self)
-            try modelContext.delete(model: FavoriteVerse.self)
             try modelContext.save()
+            try await SyncService.shared.clearLocalData()
 
             try await SupabaseService.shared.deleteAccount()
             // Explicit reset on user-initiated delete. Mirror signOut().

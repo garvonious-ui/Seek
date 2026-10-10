@@ -26,6 +26,25 @@ struct SeekApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var authManager = AuthManager()
     @State private var networkMonitor = NetworkMonitor()
+    @Environment(\.scenePhase) private var scenePhase
+    private let modelContainer: ModelContainer
+
+    init() {
+        do {
+            modelContainer = try ModelContainer(for:
+                UserProfile.self,
+                SavedCard.self,
+                ChatConversation.self,
+                ChatMessage.self,
+                FavoriteVerse.self,
+                SavedPrayer.self,
+                SyncTombstone.self
+            )
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+        SyncService.shared.configure(container: modelContainer)
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -55,14 +74,18 @@ struct SeekApp: App {
             .preferredColorScheme(.light)
             .environment(authManager)
             .environment(networkMonitor)
+            // Cloud sync: restore/back up on sign-in, and catch up whenever the
+            // app comes to the foreground or the connection returns.
+            .task(id: authManager.authState) {
+                if authManager.authState == .authenticated { await SyncService.shared.syncNow() }
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active, authManager.authState == .authenticated { SyncService.shared.requestSync() }
+            }
+            .onChange(of: networkMonitor.isConnected) { _, connected in
+                if connected, authManager.authState == .authenticated { SyncService.shared.requestSync() }
+            }
         }
-        .modelContainer(for: [
-            UserProfile.self,
-            SavedCard.self,
-            ChatConversation.self,
-            ChatMessage.self,
-            FavoriteVerse.self,
-            SavedPrayer.self
-        ])
+        .modelContainer(modelContainer)
     }
 }

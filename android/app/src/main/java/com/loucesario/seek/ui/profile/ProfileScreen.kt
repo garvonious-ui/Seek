@@ -200,9 +200,10 @@ private fun ColumnScope.AuthenticatedProfile(authVm: AuthViewModel) {
     LinkRow("Privacy Policy") { openWeb(context, "https://askseekpray.app/privacy") }
     LinkRow("Terms of Service") { openWeb(context, "https://askseekpray.app/terms") }
 
+    var showUnsyncedDialog by remember { mutableStateOf(false) }
     Spacer(Modifier.height(24.dp))
     OutlinedButton(
-        onClick = { authVm.signOut() },
+        onClick = { authVm.signOut(onUnsynced = { showUnsyncedDialog = true }) },
         modifier = Modifier.fillMaxWidth().height(50.dp),
         shape = RoundedCornerShape(25.dp),
     ) { Text("Sign Out", color = SeekColors.TextPrimary) }
@@ -219,6 +220,31 @@ private fun ColumnScope.AuthenticatedProfile(authVm: AuthViewModel) {
 
     ui.error?.let {
         Text(it, color = deleteRed, fontSize = 13.sp, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp))
+    }
+
+    if (showUnsyncedDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnsyncedDialog = false },
+            containerColor = SeekColors.Surface,
+            title = { Text("Not backed up yet", color = SeekColors.TextPrimary) },
+            text = {
+                Text(
+                    "Some of your saved cards, favorites, or chats haven't reached the cloud yet. Signing out now removes them from this device. Connect to the internet and try again to keep them.",
+                    color = SeekColors.TextSecondary,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUnsyncedDialog = false
+                    authVm.signOut(force = true)
+                }) { Text("Sign Out Anyway", color = deleteRed, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnsyncedDialog = false }) {
+                    Text("Stay Signed In", color = SeekColors.TextSecondary)
+                }
+            },
+        )
     }
 
     if (showDeleteDialog) {

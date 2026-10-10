@@ -9,6 +9,7 @@ struct ProfileView: View {
     @Query private var profiles: [UserProfile]
     @State private var showDeleteConfirmation = false
     @State private var showSignIn = false
+    @State private var showUnsyncedSignOut = false
 
     private var profile: UserProfile? { profiles.first }
 
@@ -182,8 +183,15 @@ struct ProfileView: View {
                 Section {
                     Button {
                         Task {
-                            await authManager.signOut()
-                            dismiss()
+                            // Signing out clears this device's library, so make
+                            // sure the cloud has everything first.
+                            await SyncService.shared.syncNow()
+                            if SyncService.shared.hasPendingChanges() {
+                                showUnsyncedSignOut = true
+                            } else {
+                                await authManager.signOut()
+                                dismiss()
+                            }
                         }
                     } label: {
                         Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
@@ -215,6 +223,17 @@ struct ProfileView: View {
                 }
             } message: {
                 Text("This will permanently delete your account and all data. This cannot be undone.")
+            }
+            .alert("Not backed up yet", isPresented: $showUnsyncedSignOut) {
+                Button("Stay Signed In", role: .cancel) {}
+                Button("Sign Out Anyway", role: .destructive) {
+                    Task {
+                        await authManager.signOut()
+                        dismiss()
+                    }
+                }
+            } message: {
+                Text("Some of your saved cards, favorites, or chats haven't reached the cloud yet. Signing out now removes them from this device. Connect to the internet and try again to keep them.")
             }
         }
     }

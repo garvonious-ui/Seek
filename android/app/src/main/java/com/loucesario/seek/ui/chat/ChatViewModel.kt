@@ -47,6 +47,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val chatDao = db.chatDao()
     private val favoriteDao = db.favoriteVerseDao()
     private val prayerDao = db.savedPrayerDao()
+    private val sync = (app as SeekApplication).sync
     private val seekPrefs = SeekPrefs(app)
 
     private val _items = MutableStateFlow<List<ChatItem>>(emptyList())
@@ -168,7 +169,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     fun toggleFavorite(verse: VerseDto) {
         viewModelScope.launch {
             if (favoritedRefs.value.contains(verse.reference)) {
-                favoriteDao.deleteByReference(verse.reference)
+                sync.deleteFavoritesByReference(verse.reference)
             } else {
                 favoriteDao.insert(
                     FavoriteVerseEntity(
@@ -179,6 +180,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                         source = "chat",
                     )
                 )
+                sync.requestSync()
             }
         }
     }
@@ -187,7 +189,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     fun togglePrayer(text: String) {
         viewModelScope.launch {
             if (savedPrayerTexts.value.contains(text)) {
-                prayerDao.deleteByText(text)
+                sync.deletePrayersByText(text)
             } else {
                 prayerDao.insert(
                     SavedPrayerEntity(
@@ -197,6 +199,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                         savedAt = System.currentTimeMillis(),
                     )
                 )
+                sync.requestSync()
             }
         }
     }
@@ -227,5 +230,6 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 timestamp = System.currentTimeMillis(),
             )
         )
+        sync.requestSync()
     }
 }

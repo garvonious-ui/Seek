@@ -4,6 +4,10 @@ import SwiftData
 @Model
 final class FavoriteVerse {
     @Attribute(.unique) var id: UUID
+    /// True until this row has been pushed to Supabase (cloud sync). Declaration
+    /// default is required so SwiftData can migrate existing stores — existing
+    /// rows start dirty, which is what uploads them on the first sync.
+    var needsSync: Bool = true
     var reference: String
     var text: String
     var savedAt: Date

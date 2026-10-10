@@ -110,8 +110,9 @@ struct CardsGridView: View {
             Button("Cancel", role: .cancel) { pendingDeleteCard = nil }
             Button("Delete", role: .destructive) {
                 if let card = pendingDeleteCard {
-                    modelContext.delete(card)
+                    SyncService.shared.delete(card, in: modelContext)
                     try? modelContext.save()
+                    SyncService.shared.requestSync()
                 }
                 pendingDeleteCard = nil
             }
@@ -438,12 +439,13 @@ struct FavoritesListView: View {
         for index in offsets {
             switch current[index] {
             case .verse(let verse):
-                modelContext.delete(verse)
+                SyncService.shared.delete(verse, in: modelContext)
             case .prayer(let prayer):
-                modelContext.delete(prayer)
+                SyncService.shared.delete(prayer, in: modelContext)
             }
         }
         try? modelContext.save()
+        SyncService.shared.requestSync()
     }
 }
 

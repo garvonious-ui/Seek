@@ -20,6 +20,6 @@ class LibraryViewModel(app: Application) : AndroidViewModel(app) {
     val conversations: Flow<List<ConversationWithMessages>> = db.chatDao().observeConversations()
 
     fun deleteCard(card: SavedCardEntity) {
-        viewModelScope.launch { db.savedCardDao().delete(card) }
+        viewModelScope.launch { (getApplication() as SeekApplication).sync.deleteCard(card.id) }
     }
 }

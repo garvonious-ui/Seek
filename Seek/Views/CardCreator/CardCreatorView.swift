@@ -307,6 +307,7 @@ struct CardCreatorView: View {
             profile.totalCardsCreated += 1
         }
         try? modelContext.save()
+        SyncService.shared.requestSync()
     }
 }
 

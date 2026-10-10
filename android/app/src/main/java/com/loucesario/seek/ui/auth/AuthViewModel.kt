@@ -238,7 +238,20 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { sessionRepo.setOnboardingComplete(true) }
     }
 
-    fun signOut() = run("Couldn't sign out.") {
+    /**
+     * Signing out clears this device's library, so push everything first. If
+     * something still hasn't reached the cloud (offline), [onUnsynced] fires
+     * instead and the caller asks before calling again with force = true.
+     */
+    fun signOut(force: Boolean = false, onUnsynced: () -> Unit = {}) = run("Couldn't sign out.") {
+        val sync = (getApplication() as SeekApplication).sync
+        if (!force) {
+            sync.syncNow()
+            if (sync.hasPendingChanges()) {
+                onUnsynced()
+                return@run
+            }
+        }
         sessionRepo.signOut()
     }
 
@@ -254,6 +267,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
                 SeekApi.deleteAccount() // token still valid here
                 withContext(Dispatchers.IO) {
                     (getApplication() as SeekApplication).database.clearAllTables()
+                    (getApplication() as SeekApplication).sync.clearLocalData() // sync cursors + owner
                 }
                 sessionRepo.deleteAccountReset()
                 _ui.value = AuthUiState()

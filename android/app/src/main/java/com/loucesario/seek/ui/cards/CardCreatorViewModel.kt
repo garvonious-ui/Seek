@@ -24,5 +24,6 @@ class CardCreatorViewModel(app: Application) : AndroidViewModel(app) {
             )
         )
         seekPrefs.incrementCardsCreated()
+        (getApplication() as SeekApplication).sync.requestSync()
     }
 }

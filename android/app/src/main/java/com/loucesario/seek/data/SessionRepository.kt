@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
+import com.loucesario.seek.SeekApplication
 import com.loucesario.seek.data.remote.SupabaseModule
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -115,6 +116,10 @@ class SessionRepository(private val appContext: Context) {
     /** Explicit user-initiated sign-out owns its own reset (not the listener). */
     suspend fun signOut() {
         SupabaseModule.client.auth.signOut()
+        // The library lives in the cloud now — wipe this device's copy so the next
+        // account to sign in here doesn't see (or upload) it. ProfileScreen runs a
+        // final sync first and warns if anything didn't make it.
+        SeekApplication.instance.sync.clearLocalData()
         appContext.authDataStore.edit {
             it[hasGuestKey] = false
             it[hasOnboardedKey] = false
