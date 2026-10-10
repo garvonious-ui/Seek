@@ -71,6 +71,8 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - **Production health alerts are live: a `health-alert` Edge Function pushes to the owner's phone when production breaks. Check it before assuming a quiet phone means a healthy backend.**
 - **`ig_schedule_public` must stay read-only. Never grant it write access.**
 - **Weekly summary (Home recap tile, in-app recap, shareable story card) shipped in 1.3.0 on iOS and Android. Previews for it must be wrapped in `#if DEBUG`.**
+- **Cloud sync (Session 29, `docs/cloud-sync.md`): delete synced rows through `SyncService.shared.delete(_:in:)` (iOS) / `SyncRepository.delete*` (Android), and call `requestSync()` after local writes.** A bare `modelContext.delete` / DAO delete leaves no tombstone, so the row comes back on the next pull. On Android, pull writes must use `@Upsert`, never `REPLACE` — REPLACE is delete+insert and cascades away a conversation's messages.
+- **Sign in with Apple fails in the Simulator with `AKAuthenticationError -7022` / `ASAuthorizationError 1000` when no Apple ID is signed in on the simulator.** Not a code or entitlement bug (simulator builds embed the entitlements). Sign the simulator into an Apple ID (Settings) or test with an email account. The `appreview@askseekpray.app` password lives only in App Store Connect → App Review Information.
 - **`DEVELOPMENT_TEAM` is A3W539C4C3 (Casual Solutions LLC); the old 6QU295KVS2 matched no account, which is why the team reset after every xcodegen run.**
 
 ## Supabase Project

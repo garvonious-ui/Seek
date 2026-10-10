@@ -62,7 +62,7 @@
 - [x] Streak calculation logic (daily reset, grace period)
 - [x] Milestone detection (7, 30, 90, 365)
 - [x] Streak display on home screen
-- [ ] Weekly summary card generation
+- [x] Weekly summary card generation — Home recap tile, in-app recap, shareable story card; shipped in 1.3.0 (iOS + Android), Session 28
 
 ### Push Notifications
 
@@ -122,11 +122,20 @@
 
 ## Phase 2 — Expansion
 - [x] ~~ESV API integration~~ Multi-translation support (NLT default, KJV switchable) — done in Phase 1
-- [x] Verse of the Day widget (iOS home + lock screen; Android home) — built Session 25. iOS WidgetKit extension (systemSmall/Medium + accessoryRectangular/Inline/Circular) + Android AppWidget. Hybrid verse source: App Group / SharedPrefs mirror of the app's fetched verse, with a deterministic-by-date fallback from a bundled 333-verse pool. **User actions remaining: register `group.com.loucesario.seek` App Group in Apple Developer portal + regenerate provisioning, then Xcode archive (iOS). Android: gradle build + Play upload (versionCode 6 / 1.2.0).**
+- [x] Verse of the Day widget (iOS home + lock screen; Android home) — built Session 25. iOS WidgetKit extension (systemSmall/Medium + accessoryRectangular/Inline/Circular) + Android AppWidget. Hybrid verse source: App Group / SharedPrefs mirror of the app's fetched verse, with a deterministic-by-date fallback from a bundled 333-verse pool. Shipped: iOS 1.2.0, Android in 1.3.0 (7).
 - [ ] Search/browse Bible by book and chapter
 - [ ] Topical verse index (pre-curated lists)
 - [ ] Journaling feature (personal notes tied to verses)
-- [ ] Cloud sync of all local data via Supabase
+- [ ] Cloud sync of all local data via Supabase — **built Session 29 on branch `feature/cloud-sync` (not merged, not pushed); see `docs/cloud-sync.md`**
+  - [x] Supabase tables + RLS (`saved_cards`, `favorite_verses`, `saved_prayers`, `chat_conversations`, `chat_messages`) — live in production, unused until release
+  - [x] iOS `SyncService` (push dirty + tombstones, paged pull by cursor) + `needsSync` on models + `SyncTombstone`
+  - [x] Android `SyncRepository` + `SyncDao` + Room v2 `MIGRATION_1_2`
+  - [x] Sign-out: final sync, "Not backed up yet" warning, clear device library; restore on sign-in
+  - [x] Privacy policy + support FAQ wording (on branch — deploy with the release)
+  - [ ] End-to-end test: simulator (sign in → save/delete → verify rows → reinstall → restore → sign-out clears) and Android emulator (same account → content appears)
+  - [ ] Test SwiftData upgrade path: install 1.3.0 with data → upgrade to sync build → existing data uploads
+  - [ ] App Store privacy label: add User Content (Linked, App Functionality); Play data-safety form
+  - [ ] Bump to 1.4.0 (after 1.3.0 approved), merge, release, deploy privacy page
 - [ ] Advanced analytics via Supabase + PostHog
 - [ ] Additional card template packs
 

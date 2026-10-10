@@ -1,5 +1,79 @@
 # Changelog
 
+## 2026-10-10 — Session 29 (CLAUDE.md refresh, cloud sync built, Meta SDK privacy disclosure)
+
+### CLAUDE.md refresh (main, pushed)
+Applied the Brain's drafted fixes after checking each against the repo: Current
+Phase rewritten (1.3.0 in review on both stores; stores serve iOS 1.2.0 / Android
+1.1.0 (5)), plus rules for the Supabase backups, health-alert, `ig_schedule_public`
+read-only, weekly-summary `#if DEBUG` previews. Rejected the drafted
+`DEVELOPMENT_TEAM` line's reasoning (xcodegen never edits project.yml); wrote a
+corrected one and removed the stale "xcodegen resets the signing team" gotcha.
+Commits `941d785`, `dfc908b`.
+
+### Cloud sync — built, NOT yet tested end-to-end (branch `feature/cloud-sync`, `51a4f26` + merge `c7116b3`, not pushed)
+Cards, favorites, prayers and chat history were device-only; a reinstall or new
+phone lost them. Now backed up to Supabase, shared by iOS and Android.
+- **Server (LIVE in production):** migration `20261010221436_cloud_sync_tables` —
+  `saved_cards`, `favorite_verses`, `saved_prayers`, `chat_conversations`,
+  `chat_messages`. Own-rows RLS, `user_id default auth.uid()`, trigger-stamped
+  `updated_at` (`clock_timestamp()`) as pull cursor, soft-delete `deleted_at`,
+  cascade from `auth.users`. Verified by impersonating two users in a rolled-back
+  transaction (own rows only, upsert merges, soft delete). No new advisor findings.
+  Empty until a sync build ships.
+- **iOS:** `SyncService` (push dirty rows + tombstones, paged pull with 2-min cursor
+  overlap), `needsSync: Bool = true` on the 5 models (declaration default → existing
+  rows upload on first sync), `SyncTombstone` model, shared `ModelContainer` in
+  `SeekApp`, triggers on sign-in / foreground / reconnect / every write.
+- **Android:** Room v2 (`MIGRATION_1_2`, verified against Room's generated schema),
+  `SyncDao`, `SyncRepository`, same triggers (app-scope session collector +
+  `MainActivity.onStart`). Compiles (`:app:compileDebugKotlin`).
+- **Sign-out:** final sync → "Not backed up yet" (Stay Signed In / Sign Out Anyway) if
+  anything is unpushed → clears the device library; next sign-in restores. First
+  account to sync adopts local data (incl. guest favorites); a different account
+  finding foreign leftovers drops them instead of uploading.
+- **Fixed along the way:** iOS Delete Account didn't clear `SavedPrayer`; Android
+  Delete Account didn't clear sync state.
+- Privacy policy + support FAQ wording for the backup is **on the branch only** —
+  deploy with the release, not before.
+- Docs: `docs/cloud-sync.md` (design, triggers, gotchas), `docs/schemas.md`.
+
+### Privacy policy: Meta SDK disclosure (main, pushed + deployed)
+The live policy said "no ads, analytics, or third-party trackers" while 1.3.0 ships
+Meta's SDK. Added an "Install measurement (iOS)" section (activation events, basic
+device info, device identifier; no IDFA — no ATT prompt — SKAdNetwork), a Meta row in
+Service providers, corrected the callout + support recap; policy now covers iOS and
+Android. Deployed to askseekpray.app, verified live. Commit `76099df`.
+
+### Migrations
+- Renamed `20261009190000_health_alert.sql` → `20261009181944` to match production.
+- `20260623120000_ig_schedule_public_view.sql` has **no row** in
+  `supabase_migrations.schema_migrations` (view was applied outside migrations).
+  A replay would try to recreate it. Left as-is pending a decision.
+
+### Decisions
+- Sync scope: everything incl. chat history (policy rewritten accordingly); iOS +
+  Android together; clear the device library on sign-out, restore on sign-in.
+- Last-write-wins with local-dirty precedence; deletes always win; push never sends
+  `updated_at`/`deleted_at`, so a stale device can't un-delete.
+- Sync work stays on a branch until 1.3.0 is approved; it becomes 1.4.0.
+
+### Blocked / next
+- **Simulator test blocked on sign-in.** Sign in with Apple fails in the simulator
+  (`AKAuthenticationError -7022`) because no Apple ID is signed in there; Claude can't
+  enter credentials into an app pointed at production. Lou needs to sign in (Apple ID
+  in simulator Settings, a new email account via Sign Up, or the App Review account —
+  password is in ASC → App Review Information). A guest favorite (John 15:13) was
+  saved first to test guest → account adoption.
+- Then: verify rows in Supabase, delete → `deleted_at`, reinstall → restore, sign-out
+  clears; Android emulator with the same account; 1.3.0 → sync-build upgrade path.
+- App Store privacy label (User Content) + Play data-safety before release.
+- Still waiting: 1.3.0 review (both stores), Seek Ads billing.
+
+### Current status
+1.3.0 in review on iOS + Android. Cloud sync code-complete on both platforms and
+server live, pending end-to-end test, store privacy forms, and the 1.4.0 release.
+
 ## 2026-10-09 — Session 28 (Reality check, backup, security fix, copy buttons, honest password reset → 1.3.0)
 
 Ten weeks after Session 27. Started by checking what actually shipped; several
