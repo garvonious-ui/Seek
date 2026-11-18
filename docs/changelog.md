@@ -1,5 +1,73 @@
 # Changelog
 
+## 2026-11-18, Session 29 (IG content refresh + Seek Ads plan and creative)
+
+Lou pasted a fresh IG snapshot (38 followers, 1,056 reached / 30d, reel skip
+rate mostly 73-95%, ~90% of views from non-followers) and asked for a content
+refresh plus a low-budget ad campaign. Full plan: `docs/instagram-refresh-2026-11.md`
+and `docs/seek-ads-plan.md`.
+
+### Findings
+- **The old reels open on an empty frame.** `render_vfw.py` fades the kicker in at
+  0.25s, the emotion word at 0.65s, the verse at 1.4s, so most of the 3-second
+  swipe window shows a bare gradient. Likely a big part of the skip rate.
+- Top performers make a claim ("The scroll wants you anxious"); weak ones only
+  label a feeling ("grateful"). New hooks all make a claim.
+- `ig-replenish` recycling daily reels is how 28 reels went out in 30 days.
+  Paused for the refresh (`refresh-ops.sql`).
+- Galatians 1:10, Mark 9:24, 1 Kings 19:12, Psalm 46:10 (named in the brief) are not
+  in `seed-nlt.sql`, so they're not used. Add from a verified NLT source first.
+- The Claude Supabase connector is signed in to the POPLIFE org, so it can't read
+  Seek's queue or insights (permission error). Lou is fixing access.
+
+### Built
+- `marketing/instagram/refresh_slate.py`: one source of truth for 20 reels,
+  2 carousels and 4 ads (hook, kicker, NLT ref, palette, caption parts).
+- `render_hook_reels.py`: hook on frame 1, slow 105% push, grain + light leak,
+  0.3s line fades, bed at -18 LUFS, 8.5-11s. Fonts bundled in
+  `marketing/instagram/fonts/` (Lora + Inter, OFL) so it renders anywhere.
+  Verse text only from the NLT seed (refuses anything else).
+- Rendered: `reels-refresh/` (20 reels + `_frame1/` review stills),
+  `carousels-refresh/` (2 sets, 4:5 + 9:16). Media stays out of git per
+  `marketing/instagram/.gitignore` (one example reel, one ad and
+  `frame1_sheet.png` committed); full set sent to Lou as zips. Encoded crf 24,
+  3 Mbps cap (~2-3 MB per reel; the grain made crf 18 renders 14 MB).
+- `render_ads.py`: hook card, then animated iPhone screens in an iPhone frame,
+  then end card ("Free on iPhone"). Ads are **iOS-only** (Lou, 11-18). The
+  screens are drawn in code like the old feature reels (Lou's call):
+  `ios-screens/screens.html` rebuilds Home / Chat / Create Card from the SwiftUI
+  views, `render_ios_screens.py` captures frame sequences with Playwright (chat
+  types and streams its answer, card creator cycles templates). The old
+  `feature-reels/_render` engine couldn't be reused here: it needs the
+  design-system bundle that only lives on Lou's Mac. All 4 ads rendered.
+- `seed_refresh_calendar.py`: writes `seed-refresh-weeks1-2.sql` (time test:
+  wk1 7:30am ET, wk2 7:30pm ET, plus Nov 26 bridge and Saturday prompts) and
+  `seed-refresh-weeks3-4.sql` (winning slot). All rows `pending`; `day_index`
+  continues from the table's max.
+
+### Not done (needs Lou)
+- Upload `reels-refresh/` + `carousels-refresh/` to `ig-media`, run
+  `refresh-ops.sql` steps 1-3, then `seed-refresh-weeks1-2.sql`, approve week 1
+  before Nov 30.
+- Ads: add billing, then publish the iOS draft once 1.3.0 is live and the iOS
+  14+ store option unlocks.
+- Film the two face-to-camera openers (Dec 15, Dec 22). Card tails post on their
+  own if not.
+- Follower bridge (added after Lou asked about follower ads): $5/day Dec 12-22 on
+  the best test reels, optimized for profile visits, building a 50%+ video-viewer
+  audience to retarget with the install ads later. See `docs/seek-ads-plan.md`.
+
+- Review the stand-in chat copy in the iOS ad screens (intro, verse context lines,
+  prayer in `refresh_slate.IOS_SCREENS`) before the ads go to Meta. Verse text is
+  real NLT; the rest was written to stand in for a typical Seek answer.
+- Continue locally: `git checkout claude/vigilant-pascal-0uh898`, unzip or re-render
+  the media (`marketing/instagram/ASSETS.md`), then run the Supabase steps with
+  local Supabase access.
+
+### Shareable page
+- Published the refresh as a private artifact with every reel, carousel and ad
+  playable in place: https://claude.ai/artifact/RCy1PULJGshP1s73ZwWKjf
+
 ## 2026-10-09 — Session 28 (Reality check, backup, security fix, copy buttons, honest password reset → 1.3.0)
 
 Ten weeks after Session 27. Started by checking what actually shipped; several
