@@ -25,6 +25,7 @@ $10/day is about $280.
 | Step | When | What |
 |---|---|---|
 | 1 | Now | Add billing. The 4 ads are rendered and ready to upload. |
+| 1b | Dec 12 to 22 | Follower bridge, $5/day (below). Runs whether or not 1.3.0 is live yet. |
 | 2 | 1.3.0 is live and the iOS 14+ store option shows in the ad set | Edit the existing draft "Seek - App Installs (Lean Test)": store "Apple App Store", finish the SKAN prompt in Events Manager, load the ads, publish at $10/day. |
 | 3 | Day 14 | Keep the best 2 ads, render 2 variants of the winner. |
 
@@ -33,10 +34,36 @@ the SDK in a live App Store build. If 1.3.0 is still in review, that's the
 blocker. Android stays available as a fallback if iOS keeps slipping (the creative
 would only need its end card changed to "Free on iPhone & Android").
 
-**Optional, weeks 3-4 only.** Boost the best organic reel of weeks 1-2 at
-$3-5/day for 5 days. Goal: profile visits, same broad audience. It's a cheap
-read on whether paid reach turns into follows. Keep it out of the install
-campaign's budget.
+## Follower bridge (Dec 12 to 22)
+
+A small follower ad to run while the iPhone install ads are blocked on billing
+and 1.3.0. It needs neither the SDK nor a live build.
+
+**Why it's small.** 38 followers is too small an audience for Meta to target,
+and about 90% of reel views already come from non-followers, so followers
+aren't the goal. A follower is worth less than an install. Holiday auction
+prices are also higher through December.
+
+**What it buys:**
+1. A paid read on which of the new hooks hold strangers, before more money goes
+   into install ads built on the same hooks.
+2. A warm audience. Save everyone who watched 50% or more of a reel as a custom
+   audience. Once it's in the thousands, it's the first audience to try with the
+   install ads.
+
+| | |
+|---|---|
+| When | Dec 12 to 22. Starts after the posting-time test (Dec 11) so paid views don't skew it. |
+| Creative | The best 1 or 2 reels from weeks 1-2, as posted (use the existing post so likes and comments stack). |
+| Objective | Engagement, optimized for Instagram profile visits. |
+| Audience | United States, 18+, Advantage+ audience (same as the install plan). |
+| Budget | $5/day, about $50 total. Separate from the install budget. |
+| Custom audience | Video viewers, 50%+ of the boosted reels (and the organic ones), last 365 days. Create it on day 1 so it fills from the start. |
+| Stop rule | After $25: if it's buying views but almost no follows, stop. Keep the custom audience. |
+
+**When installs unlock:** put most of the budget there. Add one install ad set
+aimed at the video-viewer audience next to the broad one, and compare cost per
+install.
 
 ## Targeting
 

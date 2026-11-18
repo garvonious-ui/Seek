@@ -53,6 +53,13 @@ and `docs/seek-ads-plan.md`.
   14+ store option unlocks.
 - Film the two face-to-camera openers (Dec 15, Dec 22). Card tails post on their
   own if not.
+- Follower bridge (added after Lou asked about follower ads): $5/day Dec 12-22 on
+  the best test reels, optimized for profile visits, building a 50%+ video-viewer
+  audience to retarget with the install ads later. See `docs/seek-ads-plan.md`.
+
+### Shareable page
+- Published the refresh as a private artifact with every reel, carousel and ad
+  playable in place: https://claude.ai/artifact/RCy1PULJGshP1s73ZwWKjf
 
 ## 2026-10-09 — Session 28 (Reality check, backup, security fix, copy buttons, honest password reset → 1.3.0)
 

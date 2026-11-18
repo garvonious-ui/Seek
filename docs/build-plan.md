@@ -198,6 +198,7 @@ See `docs/instagram-refresh-2026-11.md` + `docs/seek-ads-plan.md`.
 - [ ] Upload `reels-refresh/` + `carousels-refresh/` to `ig-media`; run ops + seed SQL; approve week 1
 - [ ] Log time-test results Dec 12; seed weeks 3-4
 - [ ] Film face-to-camera openers (Dec 15, Dec 22)
+- [ ] Follower bridge Dec 12-22 ($5/day, profile visits, save 50%+ video-viewer audience)
 - [ ] Seek Ads: billing; publish the iOS draft once 1.3.0 is live ($10/day)
 
 ### Earlier (Session 20)
