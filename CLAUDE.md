@@ -71,6 +71,7 @@ A native iOS SwiftUI app where users share what's on their heart — joy, gratit
 - **Production health alerts are live: a `health-alert` Edge Function pushes to the owner's phone when production breaks. Check it before assuming a quiet phone means a healthy backend.**
 - **`ig_schedule_public` must stay read-only. Never grant it write access.**
 - **Weekly summary (Home recap tile, in-app recap, shareable story card) shipped in 1.3.0 on iOS and Android. Previews for it must be wrapped in `#if DEBUG`.**
+- **IG reels: the hook must be fully drawn on frame 1.** `render_vfw.py` faded its kicker/emotion in over 0.25-0.65s and the verse at 1.4s, so the swipe window showed a blank gradient (skip rates 73-95%). Use `marketing/instagram/render_hook_reels.py` (slate in `refresh_slate.py`) and check `_frame1/<id>_f1.png` before shipping. Verse text comes only from `supabase/seed-nlt.sql`; the renderer refuses other refs.
 - **`DEVELOPMENT_TEAM` is A3W539C4C3 (Casual Solutions LLC); the old 6QU295KVS2 matched no account, which is why the team reset after every xcodegen run.**
 
 ## Supabase Project

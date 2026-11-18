@@ -28,6 +28,11 @@
 !cards/IMG_4058.jpeg
 # Feature reel (9:16, H.264) — smallest example of the video engine output
 !feature-reels/seek_streak_reel.mp4
+# Nov 2026 refresh: one hook-first reel, one ad cut, and a frame-1 review sheet
+!reels-refresh/r01_not_too_much.mp4
+!ads/ad01_racing_mind_9x16.mp4
+!reels-refresh/frame1_sheet.png
 
 # ── Local-only ──
 admin.html
+__pycache__/

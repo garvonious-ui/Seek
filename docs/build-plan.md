@@ -190,6 +190,17 @@ See `docs/instagram-automation.md` + `docs/instagram-content-plan.md` + `docs/fe
 - [x] Set `META_APP_ID` + `META_APP_SECRET` Edge secrets — **DONE 2026-06-23** (App ID `882028774961076` via supabase CLI; secret revealed in Meta dashboard + pasted into Supabase Edge Function Secrets). Both confirmed in the secrets list.
 - [ ] (Optional) hand-post any reel that wants a *trending* IG sound (API can't attach those)
 
+**Session 29: content refresh + ads (built, not yet live)**
+See `docs/instagram-refresh-2026-11.md` + `docs/seek-ads-plan.md`.
+- [x] Hook-first reel renderer + 20-reel slate (Nov 26 - Dec 25), 2 carousels
+- [x] 4 paid ads (9:16 + 4:5) from real app screens
+- [x] Queue SQL (time test weeks 1-2, weeks 3-4 by winner) + ops SQL (pause refill)
+- [ ] Upload `reels-refresh/` + `carousels-refresh/` to `ig-media`; run ops + seed SQL; approve week 1
+- [ ] Log time-test results Dec 12; seed weeks 3-4
+- [ ] Film face-to-camera openers (Dec 15, Dec 22)
+- [ ] Seek Ads: billing, Android platform on Meta app, launch Android campaign
+- [ ] Seek Ads iOS once 1.3.0 is live
+
 ### Earlier (Session 20)
 See `docs/instagram-automation.md` + `docs/instagram-content-plan.md`.
 - [x] 30-day content plan (calendar, strategy, hashtags)
