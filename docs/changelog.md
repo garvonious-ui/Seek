@@ -57,6 +57,13 @@ and `docs/seek-ads-plan.md`.
   the best test reels, optimized for profile visits, building a 50%+ video-viewer
   audience to retarget with the install ads later. See `docs/seek-ads-plan.md`.
 
+- Review the stand-in chat copy in the iOS ad screens (intro, verse context lines,
+  prayer in `refresh_slate.IOS_SCREENS`) before the ads go to Meta. Verse text is
+  real NLT; the rest was written to stand in for a typical Seek answer.
+- Continue locally: `git checkout claude/vigilant-pascal-0uh898`, unzip or re-render
+  the media (`marketing/instagram/ASSETS.md`), then run the Supabase steps with
+  local Supabase access.
+
 ### Shareable page
 - Published the refresh as a private artifact with every reel, carousel and ad
   playable in place: https://claude.ai/artifact/RCy1PULJGshP1s73ZwWKjf
