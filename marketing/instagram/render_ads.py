@@ -87,7 +87,7 @@ def ad_frames(ad, Wd, Hd):
     wm = R.wordmark(pal, 190)
     lock = Image.new("RGBA", (Wd, Hd), (0, 0, 0, 0)); lock.alpha_composite(wm, ((Wd - wm.width) // 2, Hd - 150 - wm.height))
     # demo phones + captions
-    pw = 640 if Hd > 1500 else 470
+    pw = 700 if Hd > 1500 else 470
     phones = [Phone(s, pw) for s in ad["demo"]]
     shadows = [shadow(p.at(0)) for p in phones]
     split = ad.get("split") or [1 / len(phones)] * len(phones)
@@ -97,7 +97,7 @@ def ad_frames(ad, Wd, Hd):
     for c in ad["captions"]:
         cl = Image.new("RGBA", (Wd, Hd), (0, 0, 0, 0)); cd = ImageDraw.Draw(cl)
         cf, cls, cs = R.fit_block(c, lambda s: R.inter(s, True), Wd - 160, 160, 52, 36, 1.25)
-        cy = 200 if Hd > 1500 else 60
+        cy = 150 if Hd > 1500 else 60
         for ln in cls: cd.text(((Wd - R.tw(ln, cf)) / 2, cy), ln, font=cf, fill=(*pal["ink"], 255)); cy += cs
         caps.append(cl)
     # end card
@@ -118,7 +118,7 @@ def ad_frames(ad, Wd, Hd):
         if phones and HOOK_END - 0.2 < t < DEMO_END + 0.4:
             k = max([j for j in range(len(phones)) if t >= starts[j]] or [0])
             rise = R.ease((t - (HOOK_END - 0.2)) / 0.5)
-            y0 = (330 if Hd > 1500 else 250) + int((1 - rise) * 500) - int(18 * (t - HOOK_END) / (DEMO_END - HOOK_END))
+            y0 = (360 if Hd > 1500 else 250) + int((1 - rise) * 500) - int(18 * (t - HOOK_END) / (DEMO_END - HOOK_END))
             out_a = 1 - R.ease((t - DEMO_END) / 0.3)
             for j in (k - 1, k):
                 if j < 0: continue

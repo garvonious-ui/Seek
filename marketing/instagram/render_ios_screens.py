@@ -19,7 +19,7 @@ def cfg_for(name, s):
     if s["screen"] == "chat":
         c.update(user=s["user"], intro=s["intro"], prayer=s["prayer"],
                  verses=[{"ref": r, "text": verse(r), "context": ctx} for r, ctx in s["verses"]],
-                 timing={"type": 1.3, "send": 1.6, "intro": 2.1, "gap": 0.5})
+                 timing={"type": 1.0, "send": 1.2, "intro": 1.6, "gap": 0.45})
     elif s["screen"] == "home":
         c.update(greeting=s["greeting"], streak=s["streak"], verse={"ref": s["ref"], "text": verse(s["ref"])})
     else:
