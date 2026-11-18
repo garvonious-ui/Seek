@@ -193,13 +193,13 @@ See `docs/instagram-automation.md` + `docs/instagram-content-plan.md` + `docs/fe
 **Session 29: content refresh + ads (built, not yet live)**
 See `docs/instagram-refresh-2026-11.md` + `docs/seek-ads-plan.md`.
 - [x] Hook-first reel renderer + 20-reel slate (Nov 26 - Dec 25), 2 carousels
-- [x] 4 paid ads (9:16 + 4:5) from real app screens
+- [x] Paid-ad pipeline (iOS-only, 9:16 + 4:5); ad04 verse-first rendered
+- [ ] Add 3 iPhone screenshots to `marketing/instagram/ads/screens/ios/`, render ad01-03
 - [x] Queue SQL (time test weeks 1-2, weeks 3-4 by winner) + ops SQL (pause refill)
 - [ ] Upload `reels-refresh/` + `carousels-refresh/` to `ig-media`; run ops + seed SQL; approve week 1
 - [ ] Log time-test results Dec 12; seed weeks 3-4
 - [ ] Film face-to-camera openers (Dec 15, Dec 22)
-- [ ] Seek Ads: billing, Android platform on Meta app, launch Android campaign
-- [ ] Seek Ads iOS once 1.3.0 is live
+- [ ] Seek Ads: billing; publish the iOS draft once 1.3.0 is live ($10/day)
 
 ### Earlier (Session 20)
 See `docs/instagram-automation.md` + `docs/instagram-content-plan.md`.

@@ -32,8 +32,10 @@ and `docs/seek-ads-plan.md`.
   `marketing/instagram/.gitignore` (one example reel, one ad and
   `frame1_sheet.png` committed); full set sent to Lou as zips. Encoded crf 24,
   3 Mbps cap (~2-3 MB per reel; the grain made crf 18 renders 14 MB).
-- `render_ads.py`: hook card, then real app screens (Android store screenshots)
-  in a phone frame, then end card. `ads/` has 4 ads x (9:16, 4:5).
+- `render_ads.py`: hook card, then real iPhone screens in an iPhone frame, then
+  end card ("Free on iPhone"). Ads are **iOS-only** (Lou, 11-18). No iOS
+  screenshots exist in the repo, so the 3 demo ads wait on Lou dropping
+  `home/chat/card.png` into `ads/screens/ios/`; ad04 (verse-first) is rendered.
 - `seed_refresh_calendar.py`: writes `seed-refresh-weeks1-2.sql` (time test:
   wk1 7:30am ET, wk2 7:30pm ET, plus Nov 26 bridge and Saturday prompts) and
   `seed-refresh-weeks3-4.sql` (winning slot). All rows `pending`; `day_index`
@@ -43,8 +45,8 @@ and `docs/seek-ads-plan.md`.
 - Upload `reels-refresh/` + `carousels-refresh/` to `ig-media`, run
   `refresh-ops.sql` steps 1-3, then `seed-refresh-weeks1-2.sql`, approve week 1
   before Nov 30.
-- Ads: add billing to Seek Ads, add Android platform (`com.loucesario.seek`) to the
-  Meta app, launch the Android campaign. iOS waits on 1.3.0 being live.
+- Ads: add billing, add iPhone screenshots + render, then publish the iOS draft
+  once 1.3.0 is live and the iOS 14+ store option unlocks.
 - Film the two face-to-camera openers (Dec 15, Dec 22). Card tails post on their
   own if not.
 

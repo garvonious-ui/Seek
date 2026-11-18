@@ -203,7 +203,7 @@ def zoom(img, z):
     x, y = (nw - W) // 2, (nh - H) // 2
     return big.crop((x, y, x + W, y + H))
 
-def frames(item, with_grain=True, only=None):
+def frames(item, with_grain=True, only=None, tag="FREE ON IPHONE & ANDROID"):
     pal = PALETTES[item["palette"]]; L = layout(item, pal); dur = L["dur"]
     base = gradient(pal); static = draw_static(item, pal, L)
     vlayers = [line_layer(ln, L["vfont"], pal["ink"], y) for ln, y in L["verse"]]
@@ -213,8 +213,9 @@ def frames(item, with_grain=True, only=None):
         sf, slines, sstep = fit_block(L["sub"], lambda s: lora(s, 400, italic=True), W - 240, 300, 54, 40, 1.35)
         sub = Image.new("RGBA", (W, H), (0, 0, 0, 0)); sd = ImageDraw.Draw(sub); y = 1080
         for ln in slines: sd.text(((W - tw(ln, sf)) / 2, y), ln, font=sf, fill=(*pal["soft"], 255)); y += sstep
+    tag_text = tag
     tag = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    tracked(ImageDraw.Draw(tag), TAG_Y, "FREE ON IPHONE & ANDROID", inter(26), (*pal["accent"], 255), 0.18)
+    tracked(ImageDraw.Draw(tag), TAG_Y, tag_text, inter(26), (*pal["accent"], 255), 0.18)
     wm = wordmark(pal, 210); lock = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     lock.alpha_composite(wm, ((W - wm.width) // 2, WM_Y))
     tiles = grain_tiles() if with_grain else None

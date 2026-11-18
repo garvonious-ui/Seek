@@ -16,22 +16,22 @@ Companion to `docs/instagram-refresh-2026-11.md`. Creative renders from
   earlier" store. The iOS 14+ option unlocks once Meta sees the Facebook SDK in a
   live App Store build, and 1.3.0 is the first build that carries it. **Check
   whether 1.3.0 is live yet.** It went to review Oct 9.
-- **Android is not blocked.** Play installs don't need SKAN, so an Android
-  campaign can run as soon as billing is in.
-
 ## Recommendation
 
-Spend the same $10/day, start on Android now, and add iOS once it unlocks. One
-campaign per platform, one broad ad set each, 4-5 ads. At this budget, more ad
-sets just split too little data.
+**iOS only** (Lou's call, 2026-11-18). One campaign, one broad ad set, 4-5 ads,
+$10/day. At this budget, more ad sets just split too little data. 4 weeks at
+$10/day is about $280.
 
-| Phase | When | Campaign | Budget |
-|---|---|---|---|
-| 1 | Billing added (target Nov 30, alongside the organic refresh) | Android: App promotion, Advantage+ app campaign, Google Play `com.loucesario.seek`, goal: installs | $10/day |
-| 2 | 1.3.0 live and the iOS 14+ store option shows | iOS: edit the existing draft, switch store to "Apple App Store", SKAN | $5/day iOS + $5/day Android |
-| 3 | After 14 days of phase 2 | Shift budget toward the platform with the lower cost per install | $10/day total |
+| Step | When | What |
+|---|---|---|
+| 1 | Now | Add billing. Drop 3 iPhone screenshots into `marketing/instagram/ads/screens/ios/` and render the demo ads. |
+| 2 | 1.3.0 is live and the iOS 14+ store option shows in the ad set | Edit the existing draft "Seek - App Installs (Lean Test)": store "Apple App Store", finish the SKAN prompt in Events Manager, load the ads, publish at $10/day. |
+| 3 | Day 14 | Keep the best 2 ads, render 2 variants of the winner. |
 
-4 weeks at $10/day is about $280.
+The campaign can't publish until step 2. Meta's iOS 14+ install campaigns need
+the SDK in a live App Store build. If 1.3.0 is still in review, that's the
+blocker. Android stays available as a fallback if iOS keeps slipping (no creative
+changes beyond the screenshots).
 
 **Optional, weeks 3-4 only.** Boost the best organic reel of weeks 1-2 at
 $3-5/day for 5 days. Goal: profile visits, same broad audience. It's a cheap
@@ -54,6 +54,9 @@ campaign's budget.
 - **Placements:** Advantage+ placements, but exclude Audience Network. On small
   install budgets it tends to buy low-quality installs. Recheck after week 1 if
   delivery is weak.
+- **Devices:** iOS only, set by the campaign's app/store choice. Don't narrow by
+  device model or OS version beyond Seek's iOS 17 minimum, if Meta offers that
+  field.
 - **Exclusions:** none yet. With ~190 users there's nothing worth excluding.
 
 ## Creative
@@ -72,9 +75,15 @@ both to one ad and let placement pick.
 
 - Every ad has the hook on frame 1, a 12-13s runtime, an original ambient bed at
   -18 LUFS, and burned-in text, so they work with sound off.
-- The app screens are the Android store screenshots (`android/store/screenshots`).
-  For the iOS campaign that's acceptable, but swap in iOS screenshots if you have
-  them from the App Store listing.
+- The end card reads "Free on iPhone".
+- **iPhone screens needed** in `marketing/instagram/ads/screens/ios/`:
+  - `home.png`: Home with the daily verse card
+  - `chat.png`: a chat response showing verse cards
+  - `card.png`: the card creator with a template picked
+- Use raw device or simulator screenshots, not the App Store marketing frames.
+  The renderer adds an iPhone body with the Dynamic Island.
+- Then run `python3 render_ads.py`. Ads with missing screens are skipped, and
+  ad04 (verse-first) is already rendered.
 
 **Meta AI creative enhancements and generated variants: keep OFF**, as set in
 Session 28. Auto-generated scripture copy or images is a brand risk.
@@ -89,7 +98,7 @@ nothing like "relieves anxiety" or "better sleep."
 
 **Primary text** (enter all 3, Meta rotates them):
 1. Some nights the mind won't slow down. Seek finds a verse for whatever you're carrying, plus a short prayer. Free, no ads.
-2. Type what's on your heart in plain words. Seek answers with scripture, a prayer and a worship song. Free on iPhone and Android.
+2. Type what's on your heart in plain words. Seek answers with scripture, a prayer and a worship song. Free on iPhone.
 3. One verse before the news. A daily verse, verse cards you can share, and scripture for whatever the day brings. Free.
 
 **Headlines:**
@@ -123,14 +132,15 @@ nothing like "relieves anxiety" or "better sleep."
 ## Launch checklist
 
 1. **Lou:** add a payment method to Seek Ads.
-2. **Lou:** in Meta's app settings (`882028774961076`), confirm the Android
-   platform is added with package `com.loucesario.seek` and the Play store link.
-3. Create the **Android** app promotion campaign as above.
-4. Upload the 4 new ads (both cuts each) plus Demo - Chat, with the copy above.
-5. Set identity to Page **Ask Seek Pray** and Instagram **@askseekpray**.
-6. Publish. Note the date in `docs/changelog.md`.
-7. **When 1.3.0 is live:** finish the iOS draft (store option, SKAN prompt in
-   Events Manager, same ads), then split the budget.
+2. **Lou:** add the 3 iPhone screenshots, then run `python3 render_ads.py`.
+3. **Confirm 1.3.0 is live** on the App Store (App Store Connect).
+4. In Events Manager, check the Seek app's SDK tab. It should no longer say "out
+   of date / release the app". Finish any SKAN schema prompt.
+5. Open the draft "Seek - App Installs (Lean Test)". Switch the ad set store from
+   "Apple App Store (iOS 13.7 or earlier)" to "Apple App Store".
+6. Load the 4 new ads (both cuts each) plus Demo - Chat, with the copy above.
+7. Set identity to Page **Ask Seek Pray** and Instagram **@askseekpray**.
+8. Publish at $10/day. Note the date in `docs/changelog.md`.
 
 ## Reuse at POPLIFE
 

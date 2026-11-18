@@ -7,8 +7,11 @@ real app screens in a phone frame with one sans caption per screen ->
 end card (wordmark, line, "Free on iPhone & Android"). Meta adds the
 Install button, so the end card carries no store badges.
 
-Screens come from android/store/screenshots (real app UI). For the iOS
-campaign, swap in iOS screenshots of the same screens if you prefer.
+Screens are real iPhone screenshots dropped into ads/screens/ios/ as
+home.png, chat.png, card.png (portrait, straight from the device or the
+simulator, no marketing frame). Ads whose screens are missing are skipped
+with a message; the verse-first ad (ad04) needs none. The campaign is
+iOS-only (docs/seek-ads-plan.md), so the end card says "Free on iPhone".
 
 Outputs marketing/instagram/ads/<id>_9x16.mp4 and <id>_4x5.mp4.
 
@@ -20,7 +23,8 @@ import render_hook_reels as R
 from refresh_slate import ADS
 
 OUT = os.path.join(R.HERE, "ads")
-SHOTS = os.path.join(R.ROOT, "android", "store", "screenshots")
+SHOTS = os.path.join(R.HERE, "ads", "screens", "ios")
+END_TAG = "FREE ON IPHONE"
 FPS = 30
 HOOK_END, DEMO_END, TOTAL = 2.6, 9.4, 12.4
 
@@ -32,14 +36,22 @@ def comp(fr, layer, a, xy=(0, 0)):
 def rounded_mask(size, r):
     m = Image.new("L", size, 0); ImageDraw.Draw(m).rounded_rectangle([0, 0, size[0] - 1, size[1] - 1], r, fill=255); return m
 
+def missing_screens(ad):
+    return [s for s in ad["demo"] if not os.path.exists(os.path.join(SHOTS, f"{s}.png"))]
+
 def phone(shot, width):
-    """Screenshot inside a simple dark phone body."""
+    """iPhone-style body: thin bezel, large corner radius, Dynamic Island."""
     src = Image.open(os.path.join(SHOTS, f"{shot}.png")).convert("RGBA")
-    sw = width - 28; sh = int(src.height * sw / src.width)
+    bez = max(10, width // 48)
+    sw = width - 2 * bez; sh = int(src.height * sw / src.width)
     screen = src.resize((sw, sh), Image.LANCZOS)
-    body = Image.new("RGBA", (width, sh + 28), (0, 0, 0, 0))
-    ImageDraw.Draw(body).rounded_rectangle([0, 0, width - 1, sh + 27], 64, fill=(22, 22, 24, 255))
-    body.paste(screen, (14, 14), rounded_mask((sw, sh), 52))
+    body = Image.new("RGBA", (width, sh + 2 * bez), (0, 0, 0, 0)); d = ImageDraw.Draw(body)
+    r = int(width * 0.15)
+    d.rounded_rectangle([0, 0, width - 1, sh + 2 * bez - 1], r, fill=(18, 18, 20, 255))
+    body.paste(screen, (bez, bez), rounded_mask((sw, sh), r - bez))
+    iw, ih = int(sw * 0.30), int(sw * 0.085)
+    iy = bez + int(sw * 0.03)
+    d.rounded_rectangle([(width - iw) // 2, iy, (width + iw) // 2, iy + ih], ih // 2, fill=(0, 0, 0, 255))
     return body
 
 def shadow(img, blur=30, alpha=90):
@@ -79,7 +91,7 @@ def ad_frames(ad, Wd, Hd):
     ef, els, es = R.fit_block("Scripture for whatever\nyou're carrying.", lambda s: R.lora(s, 400, italic=True), Wd - 200, 200, 58, 40, 1.3)
     ey = Hd // 2 + 20
     for ln in els: ed.text(((Wd - R.tw(ln, ef)) / 2, ey), ln, font=ef, fill=(*pal["soft"], 255)); ey += es
-    R.tracked(ed, ey + 40, "FREE ON IPHONE & ANDROID", R.inter(30), (*pal["accent"], 255), 0.18)
+    R.tracked(ed, ey + 40, END_TAG, R.inter(30), (*pal["accent"], 255), 0.18)
 
     n = int(TOTAL * FPS)
     for fi in range(n):
@@ -120,10 +132,10 @@ def verse_ad_frames(ad, Wd, Hd):
     ef, els, es = R.fit_block("Scripture for whatever\nyou're carrying.", lambda s: R.lora(s, 400, italic=True), Wd - 200, 200, 58, 40, 1.3)
     ey = Hd // 2 + 20
     for ln in els: ed.text(((Wd - R.tw(ln, ef)) / 2, ey), ln, font=ef, fill=(*pal["soft"], 255)); ey += es
-    R.tracked(ed, ey + 40, "FREE ON IPHONE & ANDROID", R.inter(30), (*pal["accent"], 255), 0.18)
+    R.tracked(ed, ey + 40, END_TAG, R.inter(30), (*pal["accent"], 255), 0.18)
     bg = R.gradient(pal, Hd)
     last = None
-    for g, _ in R.frames(item, with_grain=False):
+    for g, _ in R.frames(item, with_grain=False, tag=END_TAG):
         last = crop(g); yield last
     last = last.convert("RGBA")
     for fi in range(int(3.0 * FPS)):
@@ -155,4 +167,8 @@ if __name__ == "__main__":
     ids = set(sys.argv[1:])
     for ad in ADS:
         if ids and ad["id"] not in ids: continue
+        miss = missing_screens(ad)
+        if miss:
+            print(f"  skip {ad['id']}: add {', '.join(m + '.png' for m in miss)} to {os.path.relpath(SHOTS, R.HERE)}/")
+            continue
         for fmt in ("9x16", "4x5"): render(ad, fmt)
