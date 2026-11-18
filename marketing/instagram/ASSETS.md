@@ -86,7 +86,8 @@ cd marketing/instagram
 python3 render_hook_reels.py reels                # -> reels-refresh/*.mp4 (20)
 python3 render_hook_reels.py carousels            # -> carousels-refresh/<id>/*.png
 python3 render_hook_reels.py stills               # -> reels-refresh/_frame1/ (review)
-python3 render_ads.py                             # -> ads/*_9x16.mp4, *_4x5.mp4 (needs ads/screens/ios/home|chat|card.png)
+python3 render_ios_screens.py                     # -> ads/screens/ios/<name>/ (code-drawn iPhone screens, needs Node + Playwright)
+python3 render_ads.py                             # -> ads/*_9x16.mp4, *_4x5.mp4
 python3 seed_refresh_calendar.py am               # -> seed-refresh-weeks*.sql
 ```
 Committed examples: `reels-refresh/r01_not_too_much.mp4`, `ads/ad04_foggy_9x16.mp4`,

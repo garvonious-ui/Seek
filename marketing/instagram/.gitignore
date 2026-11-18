@@ -31,9 +31,9 @@
 # Nov 2026 refresh: one hook-first reel, one ad cut, and a frame-1 review sheet
 !reels-refresh/r01_not_too_much.mp4
 !ads/ad04_foggy_9x16.mp4
-!ads/screens/ios/*.png
 !reels-refresh/frame1_sheet.png
 
 # ── Local-only ──
 admin.html
 __pycache__/
+ios-screens/jobs.json

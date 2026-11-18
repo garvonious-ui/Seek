@@ -24,14 +24,14 @@ $10/day is about $280.
 
 | Step | When | What |
 |---|---|---|
-| 1 | Now | Add billing. Drop 3 iPhone screenshots into `marketing/instagram/ads/screens/ios/` and render the demo ads. |
+| 1 | Now | Add billing. The 4 ads are rendered and ready to upload. |
 | 2 | 1.3.0 is live and the iOS 14+ store option shows in the ad set | Edit the existing draft "Seek - App Installs (Lean Test)": store "Apple App Store", finish the SKAN prompt in Events Manager, load the ads, publish at $10/day. |
 | 3 | Day 14 | Keep the best 2 ads, render 2 variants of the winner. |
 
 The campaign can't publish until step 2. Meta's iOS 14+ install campaigns need
 the SDK in a live App Store build. If 1.3.0 is still in review, that's the
-blocker. Android stays available as a fallback if iOS keeps slipping (no creative
-changes beyond the screenshots).
+blocker. Android stays available as a fallback if iOS keeps slipping (the creative
+would only need its end card changed to "Free on iPhone & Android").
 
 **Optional, weeks 3-4 only.** Boost the best organic reel of weeks 1-2 at
 $3-5/day for 5 days. Goal: profile visits, same broad audience. It's a cheap
@@ -76,14 +76,16 @@ both to one ad and let placement pick.
 - Every ad has the hook on frame 1, a 12-13s runtime, an original ambient bed at
   -18 LUFS, and burned-in text, so they work with sound off.
 - The end card reads "Free on iPhone".
-- **iPhone screens needed** in `marketing/instagram/ads/screens/ios/`:
-  - `home.png`: Home with the daily verse card
-  - `chat.png`: a chat response showing verse cards
-  - `card.png`: the card creator with a template picked
-- Use raw device or simulator screenshots, not the App Store marketing frames.
-  The renderer adds an iPhone body with the Dynamic Island.
-- Then run `python3 render_ads.py`. Ads with missing screens are skipped, and
-  ad04 (verse-first) is already rendered.
+- **The iPhone screens are drawn in code**, the same approach as the older feature
+  reels. `marketing/instagram/ios-screens/screens.html` rebuilds Home, Chat and
+  Create Card from the SwiftUI views (colors, copy, layout). Georgia is rendered
+  with Lora and SF Pro with Inter, since neither can be redistributed.
+  - The chat types its message, then the intro, verse cards and prayer stream in.
+  - The card creator cycles templates.
+  - Verse text is the real NLT from the seed. The intro, context lines and
+    prayer stand in for a typical answer.
+- Content lives in `refresh_slate.IOS_SCREENS`. To re-render:
+  `python3 render_ios_screens.py`, then `python3 render_ads.py`.
 
 **Meta AI creative enhancements and generated variants: keep OFF**, as set in
 Session 28. Auto-generated scripture copy or images is a brand risk.
@@ -132,15 +134,14 @@ nothing like "relieves anxiety" or "better sleep."
 ## Launch checklist
 
 1. **Lou:** add a payment method to Seek Ads.
-2. **Lou:** add the 3 iPhone screenshots, then run `python3 render_ads.py`.
-3. **Confirm 1.3.0 is live** on the App Store (App Store Connect).
-4. In Events Manager, check the Seek app's SDK tab. It should no longer say "out
+2. **Confirm 1.3.0 is live** on the App Store (App Store Connect).
+3. In Events Manager, check the Seek app's SDK tab. It should no longer say "out
    of date / release the app". Finish any SKAN schema prompt.
-5. Open the draft "Seek - App Installs (Lean Test)". Switch the ad set store from
+4. Open the draft "Seek - App Installs (Lean Test)". Switch the ad set store from
    "Apple App Store (iOS 13.7 or earlier)" to "Apple App Store".
-6. Load the 4 new ads (both cuts each) plus Demo - Chat, with the copy above.
-7. Set identity to Page **Ask Seek Pray** and Instagram **@askseekpray**.
-8. Publish at $10/day. Note the date in `docs/changelog.md`.
+5. Load the 4 new ads (both cuts each) plus Demo - Chat, with the copy above.
+6. Set identity to Page **Ask Seek Pray** and Instagram **@askseekpray**.
+7. Publish at $10/day. Note the date in `docs/changelog.md`.
 
 ## Reuse at POPLIFE
 

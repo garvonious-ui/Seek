@@ -155,20 +155,43 @@ CAROUSELS = [
 ADS = [
     dict(id="ad01_racing_mind", palette="midnight", kicker="SCRIPTURE FOR 2AM",
          hook="For the nights\nthe mind won't\nslow down.",
-         demo=["chat", "card"],
+         demo=["chat_night", "card_night"], split=[0.62, 0.38],
          captions=["Say what's on your heart.\nGet the verses for it.", "Turn any verse into a card."]),
     dict(id="ad02_words_wont_come", palette="purple", kicker="FOR THE HARD DAYS",
          hook="Prayer, when\nthe words\nwon't come.",
-         demo=["chat", "card"],
+         demo=["chat_words", "card_words"], split=[0.62, 0.38],
          captions=["Say it plainly.\nSeek finds scripture for it.", "Keep the one that meets you."]),
     dict(id="ad03_before_news", palette="peach", kicker="A BETTER MORNING",
          hook="One verse\nbefore\nthe news.",
-         demo=["home", "card"],
+         demo=["home_morning", "card_morning"], split=[0.55, 0.45],
          captions=["A verse waiting\nevery morning.", "Make it a card. Share it."]),
     dict(id="ad04_foggy", palette="green", kicker="WHEN THE FUTURE IS FOGGY",
          hook="You don't\nneed the\nwhole map.",
          verse="Jeremiah 29:11", demo=[], captions=[]),
 ]
+
+# iOS screens for the ad demos, drawn in code (ios-screens/screens.html, from the
+# SwiftUI views) and rendered by render_ios_screens.py. Verse text is filled in
+# from the NLT seed at render time; only references live here. The intro,
+# context lines and prayer stand in for a typical chat response.
+IOS_SCREENS = {
+    "chat_night": dict(screen="chat", dur=4.2,
+        user="I can't sleep. My mind won't stop racing.",
+        intro="Racing thoughts at night are exhausting. Here's scripture to rest your mind on.",
+        verses=[("Psalm 4:8", "David wrote this in a hard season. Lying down to sleep is an act of trust."),
+                ("Isaiah 26:3", "Peace follows where your thoughts settle.")],
+        prayer="Lord, quiet my mind tonight. I give you what I can't fix before morning. Let me rest in your care. Amen."),
+    "chat_words": dict(screen="chat", dur=4.2,
+        user="I don't know how to pray right now.",
+        intro="That's okay. You don't have to find the words alone. Here's what scripture says.",
+        verses=[("Psalm 62:8", "Honest is enough. You can pour it all out."),
+                ("Romans 8:26", "When words run out, the Spirit prays with you.")],
+        prayer="God, I don't have the words today. You know what's in my heart. Meet me here. Amen."),
+    "home_morning": dict(screen="home", dur=3.8, greeting="Good morning", streak=12, ref="Lamentations 3:22-23"),
+    "card_night": dict(screen="card", dur=2.6, ref="Psalm 4:8", templates=["Navy", "Ocean", "Sage"]),
+    "card_words": dict(screen="card", dur=2.6, ref="Psalm 62:8", templates=["Sage", "Cream", "Ocean"]),
+    "card_morning": dict(screen="card", dur=3.1, ref="Lamentations 3:22-23", templates=["Sunrise", "Cream", "Forest"]),
+}
 
 HASHTAGS = ("#dailyverse #verseoftheday #bibleverse #scriptureoftheday #faithoverfear "
             "#christianquotes #godisgood #christianliving #dailydevotional #walkbyfaith "

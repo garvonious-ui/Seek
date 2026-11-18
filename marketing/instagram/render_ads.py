@@ -7,11 +7,12 @@ real app screens in a phone frame with one sans caption per screen ->
 end card (wordmark, line, "Free on iPhone & Android"). Meta adds the
 Install button, so the end card carries no store badges.
 
-Screens are real iPhone screenshots dropped into ads/screens/ios/ as
-home.png, chat.png, card.png (portrait, straight from the device or the
-simulator, no marketing frame). Ads whose screens are missing are skipped
-with a message; the verse-first ad (ad04) needs none. The campaign is
-iOS-only (docs/seek-ads-plan.md), so the end card says "Free on iPhone".
+Screens are drawn in code (ios-screens/screens.html, modeled on the SwiftUI
+views) and rendered as frame sequences by render_ios_screens.py into
+ads/screens/ios/<name>/. The chat types and streams its answer, the card
+creator cycles templates, so the phones move like the old feature reels.
+The campaign is iOS-only (docs/seek-ads-plan.md), so the end card says
+"Free on iPhone".
 
 Outputs marketing/instagram/ads/<id>_9x16.mp4 and <id>_4x5.mp4.
 
@@ -37,22 +38,33 @@ def rounded_mask(size, r):
     m = Image.new("L", size, 0); ImageDraw.Draw(m).rounded_rectangle([0, 0, size[0] - 1, size[1] - 1], r, fill=255); return m
 
 def missing_screens(ad):
-    return [s for s in ad["demo"] if not os.path.exists(os.path.join(SHOTS, f"{s}.png"))]
+    return [s for s in ad["demo"] if not os.path.isdir(os.path.join(SHOTS, s))]
 
-def phone(shot, width):
-    """iPhone-style body: thin bezel, large corner radius, Dynamic Island."""
-    src = Image.open(os.path.join(SHOTS, f"{shot}.png")).convert("RGBA")
-    bez = max(10, width // 48)
-    sw = width - 2 * bez; sh = int(src.height * sw / src.width)
-    screen = src.resize((sw, sh), Image.LANCZOS)
-    body = Image.new("RGBA", (width, sh + 2 * bez), (0, 0, 0, 0)); d = ImageDraw.Draw(body)
-    r = int(width * 0.15)
-    d.rounded_rectangle([0, 0, width - 1, sh + 2 * bez - 1], r, fill=(18, 18, 20, 255))
-    body.paste(screen, (bez, bez), rounded_mask((sw, sh), r - bez))
-    iw, ih = int(sw * 0.30), int(sw * 0.085)
-    iy = bez + int(sw * 0.03)
-    d.rounded_rectangle([(width - iw) // 2, iy, (width + iw) // 2, iy + ih], ih // 2, fill=(0, 0, 0, 255))
-    return body
+class Phone:
+    """iPhone-style body (thin bezel, big radius, Dynamic Island) around an
+    animated screen: frame i of ads/screens/ios/<name>/ at local time t."""
+    def __init__(self, name, width):
+        d = os.path.join(SHOTS, name)
+        self.files = sorted(os.path.join(d, f) for f in os.listdir(d) if f.endswith(".png"))
+        first = Image.open(self.files[0])
+        bez = max(10, width // 48)
+        self.sw = width - 2 * bez; self.sh = int(first.height * self.sw / first.width); self.bez = bez
+        r = int(width * 0.15)
+        self.body = Image.new("RGBA", (width, self.sh + 2 * bez), (0, 0, 0, 0)); bd = ImageDraw.Draw(self.body)
+        bd.rounded_rectangle([0, 0, width - 1, self.sh + 2 * bez - 1], r, fill=(18, 18, 20, 255))
+        self.mask = rounded_mask((self.sw, self.sh), r - bez)
+        iw, ih = int(self.sw * 0.30), int(self.sw * 0.085); iy = bez + int(self.sw * 0.03)
+        self.island = ([(width - iw) // 2, iy, (width + iw) // 2, iy + ih], ih // 2)
+        self.width, self.height = width, self.body.height
+        self._cache = {}
+    def at(self, t):
+        i = max(0, min(len(self.files) - 1, int(t * FPS)))
+        if i not in self._cache:
+            scr = Image.open(self.files[i]).convert("RGBA").resize((self.sw, self.sh), Image.LANCZOS)
+            img = self.body.copy(); img.paste(scr, (self.bez, self.bez), self.mask)
+            ImageDraw.Draw(img).rounded_rectangle(self.island[0], self.island[1], fill=(0, 0, 0, 255))
+            self._cache = {i: img}   # frames only move forward; keep one
+        return self._cache[i]
 
 def shadow(img, blur=30, alpha=90):
     from PIL import ImageFilter
@@ -76,8 +88,11 @@ def ad_frames(ad, Wd, Hd):
     lock = Image.new("RGBA", (Wd, Hd), (0, 0, 0, 0)); lock.alpha_composite(wm, ((Wd - wm.width) // 2, Hd - 150 - wm.height))
     # demo phones + captions
     pw = 640 if Hd > 1500 else 470
-    phones = [phone(s, pw) for s in ad["demo"]]
-    shadows = [shadow(p) for p in phones]
+    phones = [Phone(s, pw) for s in ad["demo"]]
+    shadows = [shadow(p.at(0)) for p in phones]
+    split = ad.get("split") or [1 / len(phones)] * len(phones)
+    span = DEMO_END - HOOK_END
+    starts = [HOOK_END + span * sum(split[:j]) for j in range(len(phones))]
     caps = []
     for c in ad["captions"]:
         cl = Image.new("RGBA", (Wd, Hd), (0, 0, 0, 0)); cd = ImageDraw.Draw(cl)
@@ -101,21 +116,20 @@ def ad_frames(ad, Wd, Hd):
         end_a = R.ease((t - DEMO_END) / 0.4)
         comp(fr, hook_layer, hook_a)
         if phones and HOOK_END - 0.2 < t < DEMO_END + 0.4:
-            seg = (DEMO_END - HOOK_END) / len(phones)
-            k = min(len(phones) - 1, int((t - HOOK_END) / seg)) if t >= HOOK_END else 0
+            k = max([j for j in range(len(phones)) if t >= starts[j]] or [0])
             rise = R.ease((t - (HOOK_END - 0.2)) / 0.5)
             y0 = (330 if Hd > 1500 else 250) + int((1 - rise) * 500) - int(18 * (t - HOOK_END) / (DEMO_END - HOOK_END))
             out_a = 1 - R.ease((t - DEMO_END) / 0.3)
             for j in (k - 1, k):
                 if j < 0: continue
                 a = 1.0 if j == k else 0.0
-                if j == k and k > 0: a = R.ease((t - (HOOK_END + k * seg)) / 0.35)
-                if j == k - 1: a = 1 - R.ease((t - (HOOK_END + k * seg)) / 0.35)
+                if j == k and k > 0: a = R.ease((t - starts[k]) / 0.35)
+                if j == k - 1: a = 1 - R.ease((t - starts[k]) / 0.35)
                 a *= out_a
                 if a <= 0: continue
                 x = (Wd - phones[j].width) // 2
                 comp(fr, shadows[j], a * rise, (x - 60, y0 - 60))
-                comp(fr, phones[j], a * rise, (x, y0))
+                comp(fr, phones[j].at(max(0.0, t - starts[j])), a * rise, (x, y0))
                 comp(fr, caps[j], a * R.ease((t - HOOK_END) / 0.4))
         if end_a > 0: comp(fr, end, end_a)
         elif t < HOOK_END + 0.3: fr.alpha_composite(lock)
@@ -169,6 +183,6 @@ if __name__ == "__main__":
         if ids and ad["id"] not in ids: continue
         miss = missing_screens(ad)
         if miss:
-            print(f"  skip {ad['id']}: add {', '.join(m + '.png' for m in miss)} to {os.path.relpath(SHOTS, R.HERE)}/")
+            print(f"  skip {ad['id']}: run python3 render_ios_screens.py {' '.join(miss)}")
             continue
         for fmt in ("9x16", "4x5"): render(ad, fmt)
